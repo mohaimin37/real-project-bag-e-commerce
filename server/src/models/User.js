@@ -1,0 +1,80 @@
+import mongoose from 'mongoose';
+import bcrypt from 'bcryptjs';
+
+const phoneSchema = new mongoose.Schema(
+  {
+    dialCode: { type: String, trim: true, default: '+91' },
+    number: { type: String, trim: true, default: '' },
+  },
+  { _id: false }
+);
+
+export const addressSchema = new mongoose.Schema(
+  {
+    label: { type: String, trim: true, default: 'Home', maxlength: 40 },
+    fullName: { type: String, trim: true, required: true, maxlength: 120 },
+    phone: { type: phoneSchema, default: () => ({}) },
+    addressLine1: { type: String, trim: true, required: true, maxlength: 200 },
+    addressLine2: { type: String, trim: true, default: '', maxlength: 200 },
+    landmark: { type: String, trim: true, default: '', maxlength: 120 },
+    city: { type: String, trim: true, required: true, maxlength: 80 },
+    state: { type: String, trim: true, required: true, maxlength: 80 },
+    postalCode: { type: String, trim: true, required: true, maxlength: 20 },
+    country: { type: String, trim: true, required: true, maxlength: 2, uppercase: true },
+    isDefault: { type: Boolean, default: false },
+  },
+  { timestamps: true }
+);
+
+const userSchema = new mongoose.Schema(
+  {
+    name: { type: String, required: true, trim: true, maxlength: 120 },
+    email: { type: String, required: true, unique: true, lowercase: true, trim: true },
+    password: { type: String, required: true, minlength: 8, select: false },
+    phone: { type: phoneSchema, default: () => ({}) },
+    country: { type: String, uppercase: true, trim: true, default: 'IN' },
+    nationality: { type: String, uppercase: true, trim: true, default: 'IN' },
+    avatar: { url: String, publicId: String },
+    role: { type: String, enum: ['customer', 'admin'], default: 'customer', index: true },
+    isActive: { type: Boolean, default: true },
+    addresses: [addressSchema],
+    recentlyViewed: [
+      {
+        _id: false,
+        product: { type: mongoose.Schema.Types.ObjectId, ref: 'Product' },
+        viewedAt: { type: Date, default: Date.now },
+      },
+    ],
+    // Bumped on logout-everywhere / password change to invalidate existing JWTs.
+    tokenVersion: { type: Number, default: 0, select: false },
+    passwordResetToken: { type: String, select: false },
+    passwordResetExpires: { type: Date, select: false },
+    // Brute-force protection: consecutive failed sign-ins and the lock they trigger.
+    failedLoginCount: { type: Number, default: 0, select: false },
+    lockUntil: { type: Date, select: false },
+    lastLoginAt: Date,
+  },
+  { timestamps: true }
+);
+
+userSchema.pre('save', async function hashPassword() {
+  if (!this.isModified('password')) return;
+  this.password = await bcrypt.hash(this.password, 12);
+});
+
+userSchema.methods.comparePassword = function comparePassword(plain) {
+  return bcrypt.compare(plain, this.password);
+};
+
+userSchema.methods.toJSON = function toJSON() {
+  const obj = this.toObject({ versionKey: false });
+  delete obj.password;
+  delete obj.tokenVersion;
+  delete obj.passwordResetToken;
+  delete obj.passwordResetExpires;
+  delete obj.failedLoginCount;
+  delete obj.lockUntil;
+  return obj;
+};
+
+export default mongoose.model('User', userSchema);

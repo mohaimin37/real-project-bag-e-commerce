@@ -1,0 +1,12 @@
+{
+  "name": "WILDTANE — Bags & Travel Gear",
+  "short_name": "WILDTANE",
+  "description": "Architectural bags, backpacks and travel gear with a lifetime repair guarantee.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f8f9ff",
+  "theme_color": "#141b2c",
+  "icons": [{ "src": "/logo.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }]
+}

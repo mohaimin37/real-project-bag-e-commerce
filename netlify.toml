@@ -1,0 +1,61 @@
+# Netlify: builds the storefront and forwards API calls to the backend on Render.
+#
+# The backend address below is the Render service from render.yaml. If Render gives your
+# service a different address, replace wildtane-api.onrender.com everywhere in this file.
+#
+# Why forward instead of calling Render directly? The browser then only ever talks to your
+# Netlify site, so the sign-in cookie is "first-party" and works in every browser
+# (Safari and Chrome block cookies set by a different website).
+
+[build]
+  base = "client"
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+# API, uploaded images, sitemap and robots.txt come from the Render backend.
+[[redirects]]
+  from = "/api/*"
+  to = "https://wildtane-api.onrender.com/api/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/uploads/*"
+  to = "https://wildtane-api.onrender.com/uploads/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/sitemap.xml"
+  to = "https://wildtane-api.onrender.com/sitemap.xml"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/robots.txt"
+  to = "https://wildtane-api.onrender.com/robots.txt"
+  status = 200
+  force = true
+
+# Built JS/CSS files have a content hash in their name, so browsers can keep them for a year.
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    X-Frame-Options = "SAMEORIGIN"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=()"
+
+# Every other path (/admin, /admin/login, /product/..., /account) is a page of the React app.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

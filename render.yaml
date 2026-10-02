@@ -1,0 +1,41 @@
+# Render Blueprint for the WILDTANE API (render.com → New → Blueprint → pick this repo).
+# Values marked `sync: false` are secrets: Render asks you for them when you create the Blueprint.
+services:
+  - type: web
+    name: wildtane-api
+    runtime: node
+    plan: free # sleeps after ~15 min idle; upgrade the plan to stay always-on
+    region: singapore # closest Render region to India
+    rootDir: server
+    buildCommand: npm ci --omit=dev
+    startCommand: npm start
+    healthCheckPath: /api/health
+    autoDeploy: true # redeploys on every push to the main branch
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: "20"
+      # Visitors reach the API through Netlify (netlify.toml forwards /api), then Render's proxy.
+      - key: TRUST_PROXY
+        value: "2"
+      - key: CLIENT_URL
+        value: https://wildtane-store.netlify.app
+      - key: SERVER_URL
+        value: https://wildtane-store.netlify.app
+      - key: JWT_SECRET
+        generateValue: true # a fresh random secret, different from your local one
+      - key: MONGODB_URI
+        sync: false
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
+      # Optional but recommended: Render's disk is wiped on each deploy, so photos uploaded
+      # through the admin need Cloudinary to survive. Leave blank to skip for now.
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false

@@ -1,0 +1,10 @@
+# Not uploaded by `railway up` (Railway installs dependencies itself; secrets are set as variables).
+node_modules/
+.env
+.env.*
+!.env.example
+*.log
+# Customer uploads and generated image copies stay local; seed photos are part of the app.
+uploads/*
+!uploads/.gitkeep
+!uploads/seed/
