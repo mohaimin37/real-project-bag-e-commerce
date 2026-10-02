@@ -1,11 +1,6 @@
-# Netlify: builds the storefront and forwards API calls to the backend on Render.
-#
-# The backend address below is the Render service from render.yaml. If Render gives your
-# service a different address, replace wildtane-api.onrender.com everywhere in this file.
-#
-# Why forward instead of calling Render directly? The browser then only ever talks to your
-# Netlify site, so the sign-in cookie is "first-party" and works in every browser
-# (Safari and Chrome block cookies set by a different website).
+# Netlify hosts the whole store: the React storefront (static, on the CDN) and the Express API
+# (a Netlify Function in client/netlify/functions/api.mjs → server/src/netlify.js).
+# Publish with `npm run deploy:web` from the repo root.
 
 [build]
   base = "client"
@@ -14,29 +9,31 @@
 
 [build.environment]
   NODE_VERSION = "20"
+  # Product photos go through Netlify's image CDN (resized, WebP/AVIF) — see client/src/lib/format.js.
+  VITE_IMAGE_CDN = "netlify"
 
-# API, uploaded images, sitemap and robots.txt come from the Render backend.
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
+  # sharp is a native module only used for local image resizing; the image CDN does that here.
+  ignored_node_modules = ["sharp"]
+
+# The API, sitemap and robots.txt are served by the function.
 [[redirects]]
   from = "/api/*"
-  to = "https://wildtane-api.onrender.com/api/:splat"
-  status = 200
-  force = true
-
-[[redirects]]
-  from = "/uploads/*"
-  to = "https://wildtane-api.onrender.com/uploads/:splat"
+  to = "/.netlify/functions/api/api/:splat"
   status = 200
   force = true
 
 [[redirects]]
   from = "/sitemap.xml"
-  to = "https://wildtane-api.onrender.com/sitemap.xml"
+  to = "/.netlify/functions/api/sitemap.xml"
   status = 200
   force = true
 
 [[redirects]]
   from = "/robots.txt"
-  to = "https://wildtane-api.onrender.com/robots.txt"
+  to = "/.netlify/functions/api/robots.txt"
   status = 200
   force = true
 
@@ -45,6 +42,12 @@
   for = "/assets/*"
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
+
+# Product photos (copied into the site at deploy time) — cache for a week.
+[[headers]]
+  for = "/uploads/*"
+  [headers.values]
+    Cache-Control = "public, max-age=604800, stale-while-revalidate=86400"
 
 [[headers]]
   for = "/*"

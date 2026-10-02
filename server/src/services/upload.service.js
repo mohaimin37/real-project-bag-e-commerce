@@ -4,9 +4,12 @@ import crypto from 'crypto';
 import { fileURLToPath } from 'url';
 import { v2 as cloudinary } from 'cloudinary';
 import env from '../config/env.js';
+import ApiError from '../utils/ApiError.js';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-export const UPLOAD_DIR = path.resolve(__dirname, '../../uploads');
+// import.meta.url is undefined when bundled for Netlify Functions (CommonJS); uploads are
+// read-only there anyway, so a temp folder is a safe fallback.
+export const UPLOAD_DIR =
+  typeof import.meta.url === 'string' ? path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../uploads') : path.resolve(process.env.UPLOAD_DIR || '/tmp/uploads');
 
 if (env.cloudinary.enabled) {
   cloudinary.config({
@@ -44,6 +47,10 @@ export async function uploadFile(file, subfolder = 'misc') {
     return { url: result.secure_url, publicId: result.public_id };
   }
 
+  // Serverless hosts (Netlify Functions) have no lasting disk, so local files would vanish.
+  if (process.env.UPLOADS_READONLY) {
+    throw ApiError.badRequest('Photo uploads on the live site need Cloudinary. Add the CLOUDINARY_* keys in your hosting settings.');
+  }
   const dir = path.join(UPLOAD_DIR, subfolder);
   await fs.mkdir(dir, { recursive: true });
   const name = `${Date.now()}-${crypto.randomBytes(6).toString('hex')}${EXT[file.mimetype] || ''}`;

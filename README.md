@@ -105,10 +105,15 @@ With `NODE_ENV=production` the API also serves `client/dist`, so you deploy one 
 
 Configure Cloudinary in production. Many hosts have an ephemeral disk, which would lose files in `server/uploads`.
 
-### Live hosting: Netlify (storefront) + Render (API)
+### Live hosting: everything on Netlify
 
-- **Storefront:** https://wildtane-store.netlify.app. Publish changes with `npm run deploy:web`, which builds, bundles the SEO edge function and deploys.
-- **API:** Render web service from `render.yaml` (free plan, Singapore). It redeploys automatically on every push to `main` of the private GitHub repo. On the free plan it sleeps after about 15 idle minutes, so the first visit after that takes 30–60 s.
-- `netlify.toml` forwards `/api`, `/uploads`, `/sitemap.xml` and `/robots.txt` to `https://wildtane-api.onrender.com`. If Render assigns a different address, update it there and redeploy the storefront.
-- **Admin:** sign in at `https://wildtane-store.netlify.app/login` with `ADMIN_EMAIL` / `ADMIN_PASSWORD` (set in Render's environment).
-- **Scaling up:** move Render to a paid plan (always on), set `WEB_CONCURRENCY` to the number of CPU cores, add more instances, and upgrade the MongoDB Atlas tier as traffic grows. Public catalogue responses are cached in memory for 30 s and the cache is cleared on any admin edit, order or review.
+**Live site:** https://wildtane-store.netlify.app. Admin sign-in is at `/login` with `ADMIN_EMAIL` / `ADMIN_PASSWORD`.
+
+- **Storefront:** static files on Netlify's CDN. Product photos (`server/uploads/seed`) ship with the site and are resized and converted to WebP/AVIF by Netlify's image CDN (`/.netlify/images`).
+- **API:** the same Express app runs as a Netlify Function (`client/netlify/functions/api.mjs` → `server/src/netlify.js`), reached at `/api/*`, `/sitemap.xml` and `/robots.txt`. It uses the MongoDB Atlas database from `MONGODB_URI`.
+- **SEO:** an edge function (`client/netlify/edge-functions/seo-meta.js`) puts each product, category and blog page's title, description, photo, price and structured data into the HTML for link previews and search engines.
+- **Settings:** in Netlify → Site configuration → Environment variables. They were imported from `server/.env`, with production values for `NODE_ENV`, `CLIENT_URL`, `SERVER_URL`, `SITE_URL` and a new `JWT_SECRET`.
+- **Publish changes:** `npm run deploy:web` from the repo root.
+- **Photo uploads in the admin need Cloudinary** on Netlify, because functions have no lasting disk. Add the `CLOUDINARY_*` keys and remove `UPLOADS_READONLY`.
+- **Scaling:** Netlify Functions scale out automatically with traffic. Keep the free-plan limits in mind (function invocations and bandwidth per month), and upgrade the Netlify plan and MongoDB Atlas tier as traffic grows.
+- `render.yaml` remains as an alternative: run the API on Render instead, and point `/api` in `netlify.toml` at it.

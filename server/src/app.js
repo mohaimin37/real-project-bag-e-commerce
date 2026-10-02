@@ -94,7 +94,8 @@ api.use('/admin', adminRoutes);
 app.use('/api', api);
 
 // Production: serve the built React app from client/dist with SPA fallback.
-const CLIENT_DIST = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../client/dist');
+// (Not used on Netlify, where the CDN serves the storefront and import.meta.url is undefined.)
+const CLIENT_DIST = typeof import.meta.url === 'string' ? path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../client/dist') : '';
 if (env.isProd && fs.existsSync(CLIENT_DIST)) {
   app.use(express.static(CLIENT_DIST, { maxAge: '7d', index: false }));
   app.get(/^\/(?!api|uploads).*/, (req, res) => res.sendFile(path.join(CLIENT_DIST, 'index.html')));

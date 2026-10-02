@@ -1,12 +1,20 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import sharp from 'sharp';
 
 // Allowed widths keep the cache small and stop arbitrary-size requests from burning CPU.
 const WIDTHS = new Set([160, 320, 480, 640, 960, 1280]);
 const inflight = new Map(); // output path -> Promise (so a burst of requests resizes once)
 
-sharp.cache(false); // results are kept on disk instead
+// sharp is a native module. Load it lazily so hosts without it (Netlify Functions, where
+// Netlify's image CDN resizes instead) still run; without it, originals are served.
+let sharpPromise;
+const loadSharp = () =>
+  (sharpPromise ||= import('sharp')
+    .then((m) => {
+      m.default.cache(false); // results are kept on disk instead
+      return m.default;
+    })
+    .catch(() => null));
 
 /**
  * Serves /uploads/<file>?w=<width> as a resized image: WebP for browsers that accept it,
@@ -18,6 +26,8 @@ export function resizedImages(uploadDir) {
   return async (req, res, next) => {
     const width = Number(req.query.w);
     if (req.method !== 'GET' || !WIDTHS.has(width)) return next();
+    const sharp = await loadSharp();
+    if (!sharp) return next();
     let rel;
     try {
       rel = decodeURIComponent(req.path);

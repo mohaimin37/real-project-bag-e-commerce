@@ -13,3 +13,4 @@ server/uploads/*
 # Local Netlify folder
 .netlify
 deno.lock
+client/public/uploads/

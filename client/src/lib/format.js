@@ -15,7 +15,11 @@ const IMG_WIDTHS = [160, 320, 480, 640, 960, 1280];
 export function imgUrl(url, width) {
   if (!url) return '';
   const w = width ? IMG_WIDTHS.find((x) => x >= width) || 1280 : null;
-  if (url.startsWith('/uploads/')) return `${API_ORIGIN}${url}${w ? `?w=${w}` : ''}`;
+  if (url.startsWith('/uploads/')) {
+    // On Netlify, its image CDN resizes and picks WebP/AVIF; elsewhere the API resizes (?w=).
+    if (w && import.meta.env.VITE_IMAGE_CDN === 'netlify') return `/.netlify/images?url=${encodeURIComponent(url)}&w=${w}`;
+    return `${API_ORIGIN}${url}${w ? `?w=${w}` : ''}`;
+  }
   if (w && url.includes('res.cloudinary.com') && url.includes('/upload/')) return url.replace('/upload/', `/upload/w_${w},c_limit,f_auto,q_auto/`);
   return url;
 }
