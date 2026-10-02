@@ -9,3 +9,7 @@ server/uploads/*
 !server/uploads/seed/
 *.log
 .DS_Store
+
+# Local Netlify folder
+.netlify
+deno.lock

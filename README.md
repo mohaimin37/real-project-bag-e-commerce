@@ -105,8 +105,10 @@ With `NODE_ENV=production` the API also serves `client/dist`, so you deploy one 
 
 Configure Cloudinary in production. Many hosts have an ephemeral disk, which would lose files in `server/uploads`.
 
-### Netlify (storefront) + Railway (API)
+### Live hosting: Netlify (storefront) + Render (API)
 
-1. **Railway:** deploy the `server` folder (start command `npm start`). Set `NODE_ENV=production`, `MONGODB_URI`, `JWT_SECRET`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `CLIENT_URL=https://your-site.netlify.app` (your Netlify address), `SERVER_URL=https://your-site.netlify.app`, `TRUST_PROXY=2`, and the `CLOUDINARY_*` keys (Railway's disk is wiped on every deploy, so uploaded photos must go to Cloudinary).
-2. **Netlify:** connect the repo. `netlify.toml` already sets the build. Replace `YOUR-RAILWAY-APP.up.railway.app` in it with your Railway domain. Do **not** set `VITE_API_URL`: Netlify forwards `/api` to Railway, so sign-in cookies stay on your own site and work in every browser.
-3. **Admin:** open `https://your-site.netlify.app/login` (or `/admin/login`) and sign in with `ADMIN_EMAIL` / `ADMIN_PASSWORD`. If you use the same MongoDB Atlas database as development, the admin account already exists. Otherwise run `npm run admin:sync` once from Railway's shell.
+- **Storefront:** https://wildtane-store.netlify.app. Publish changes with `npm run deploy:web`, which builds, bundles the SEO edge function and deploys.
+- **API:** Render web service from `render.yaml` (free plan, Singapore). It redeploys automatically on every push to `main` of the private GitHub repo. On the free plan it sleeps after about 15 idle minutes, so the first visit after that takes 30–60 s.
+- `netlify.toml` forwards `/api`, `/uploads`, `/sitemap.xml` and `/robots.txt` to `https://wildtane-api.onrender.com`. If Render assigns a different address, update it there and redeploy the storefront.
+- **Admin:** sign in at `https://wildtane-store.netlify.app/login` with `ADMIN_EMAIL` / `ADMIN_PASSWORD` (set in Render's environment).
+- **Scaling up:** move Render to a paid plan (always on), set `WEB_CONCURRENCY` to the number of CPU cores, add more instances, and upgrade the MongoDB Atlas tier as traffic grows. Public catalogue responses are cached in memory for 30 s and the cache is cleared on any admin edit, order or review.
