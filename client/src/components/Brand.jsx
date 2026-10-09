@@ -133,3 +133,15 @@ export function BrandLogoFull({ className, alt = 'WILDTANE', eager = false }) {
     </picture>
   );
 }
+
+/**
+ * Semantic Brand Name Heading: renders "WILDTANE" as text in an h-tag instead of an image.
+ */
+export function BrandHeading({ as: Tag = 'h1', className, children = 'WILDTANE' }) {
+  return (
+    <Tag className={cn('font-serif tracking-widest font-black uppercase select-none', className)}>
+      {children}
+    </Tag>
+  );
+}
+

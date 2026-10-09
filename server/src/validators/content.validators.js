@@ -94,6 +94,7 @@ const THEME_IDS = ['default', 'luxury', 'modern', 'ocean', 'rose', 'emerald', 'm
 
 export const settingsSchema = z.object({
   storeName: z.string().trim().min(2).max(60).optional(),
+  companyName: z.string().trim().max(100).optional(),
   supportEmail: email.optional(),
   supportPhone: z.string().trim().max(30).optional(),
   businessAddress: z.string().trim().max(300).optional(),

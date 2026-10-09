@@ -12,23 +12,25 @@ const anchor = (heading) => heading.toLowerCase().replace(/[^a-z0-9]+/g, '-').re
 /** Fills {{tokens}} from store settings; a missing contact setting becomes a [PLACEHOLDER]. */
 function fill(text, config) {
   const methods = (config?.shippingMethods || []).map((m) => `${m.label}: ${m.eta}${m.price ? ` (${formatINR(m.price)})` : ' (free)'}`);
-  const address = config?.businessAddress?.trim();
+  const address = config?.businessAddress?.trim() || 'A 370 Amar Puri Nabi Karim, Paharganj, New Delhi-110055';
   const values = {
     storeName: config?.storeName || 'WILDTANE',
-    supportEmail: config?.supportEmail || '[SUPPORT EMAIL]',
-    supportPhone: config?.supportPhone || '[CONTACT NUMBER]',
-    businessAddress: address || '[BUSINESS ADDRESS]',
-    // Address phrases simply drop out while no business address is set in Admin → Settings.
-    addressSuffix: address ? `, ${address}` : '',
-    writeToUs: address ? `, or write to us at ${address}` : '',
-    supportHours: config?.supportHours || '[CUSTOMER CARE HOURS]',
-    grievanceName: config?.grievanceOfficer?.name ? `${config.grievanceOfficer.name}, ${config.grievanceOfficer.designation || 'Grievance Officer'}` : '[GRIEVANCE OFFICER NAME]',
-    grievanceEmail: config?.grievanceOfficer?.email || config?.supportEmail || '[SUPPORT EMAIL]',
-    grievancePhone: config?.grievanceOfficer?.phone || config?.supportPhone || '[CONTACT NUMBER]',
+    companyName: config?.companyName || 'WILDTANE PRIVATE LIMITED',
+    supportEmail: config?.supportEmail || 'info@wildtane.com',
+    supportPhone: config?.supportPhone || '8920550465',
+    businessAddress: address,
+    registeredAddress: address,
+    gstin: config?.gstin || '07AAECW3767F1Z4',
+    addressSuffix: `, ${address}`,
+    writeToUs: `, or write to us at ${address}`,
+    supportHours: config?.supportHours || 'Monday to Saturday, 10:00 am – 6:00 pm (except public holidays)',
+    grievanceName: config?.grievanceOfficer?.name ? `${config.grievanceOfficer.name}, ${config.grievanceOfficer.designation || 'Grievance Officer'}` : 'Grievance Officer',
+    grievanceEmail: config?.grievanceOfficer?.email || config?.supportEmail || 'info@wildtane.com',
+    grievancePhone: config?.grievanceOfficer?.phone || config?.supportPhone || '8920550465',
     taxLabel: config?.taxLabel || 'GST',
-    freeShippingThreshold: config?.freeShippingThreshold ? formatINR(config.freeShippingThreshold) : '[FREE SHIPPING THRESHOLD]',
+    freeShippingThreshold: config?.freeShippingThreshold ? formatINR(config.freeShippingThreshold) : '₹10,000',
     shippingOptions: methods.length ? `Current options: ${methods.join('; ')}.` : '',
-    freeShippingLine: config?.freeShippingThreshold ? `Standard shipping is free on orders above ${formatINR(config.freeShippingThreshold)}.` : '',
+    freeShippingLine: config?.freeShippingThreshold ? `Standard shipping is free on orders above ${formatINR(config.freeShippingThreshold)}.` : 'Standard shipping is free on orders above ₹10,000.',
   };
   return text.replace(/\{\{(\w+)\}\}/g, (m, key) => values[key] ?? m).replace(/\s{2,}/g, ' ').trim();
 }

@@ -87,11 +87,20 @@ export default function Seo({ title, description = DEFAULT_DESCRIPTION, image = 
 export const organizationLd = (config) => ({
   '@context': 'https://schema.org',
   '@type': 'Organization',
-  name: SITE_NAME,
+  name: config?.companyName || 'WILDTANE PRIVATE LIMITED',
+  alternateName: SITE_NAME,
   url: SITE_URL,
   logo: `${SITE_URL}/logo.png`,
-  email: config?.supportEmail,
-  telephone: config?.supportPhone,
+  email: config?.supportEmail || 'info@wildtane.com',
+  telephone: config?.supportPhone || '8920550465',
+  address: {
+    '@type': 'PostalAddress',
+    streetAddress: 'A 370 Amar Puri Nabi Karim, Paharganj',
+    addressLocality: 'New Delhi',
+    postalCode: '110055',
+    addressCountry: 'IN',
+  },
+  taxID: config?.gstin || '07AAECW3767F1Z4',
   sameAs: Object.values(config?.social || {}).filter(Boolean),
 });
 

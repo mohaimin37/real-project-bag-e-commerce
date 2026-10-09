@@ -12,9 +12,12 @@
  *   A section's link anchor is its heading in lower case with dashes ("Refund Policy" → #refund-policy).
  */
 
-export const COMPANY = 'WILDTANE Private Limited';
+export const COMPANY = 'WILDTANE PRIVATE LIMITED';
 export const POLICY_LAST_UPDATED = '7 October 2026';
 export const EFFECTIVE_DATE = '7 October 2026';
+export const REGISTERED_ADDRESS = 'A 370 Amar Puri Nabi Karim, Paharganj, New Delhi-110055';
+export const GSTIN = '07AAECW3767F1Z4';
+export const PHONE = '8920550465';
 
 const LAWS = 'the Consumer Protection Act, 2019, the Consumer Protection (E-Commerce) Rules, 2020, the Information Technology Act, 2000, the Digital Personal Data Protection Act, 2023 and applicable RBI and payment gateway regulations';
 const AMEND = 'WILDTANE reserves the right to amend these policies without prior notice. Continued use of our services constitutes acceptance of the updated terms.';
@@ -354,6 +357,7 @@ export const POLICIES = [
         heading: 'Registered office and customer care',
         list: [
           `Registered office: ${COMPANY}, {{businessAddress}}`,
+          'GSTIN: {{gstin}}',
           'Customer care: {{supportEmail}} · {{supportPhone}} · {{supportHours}}',
           'Grievance Officer: {{grievanceName}} · {{grievanceEmail}} · {{grievancePhone}}',
           'Complaints are acknowledged within 48 hours and resolved within 7 working days.',

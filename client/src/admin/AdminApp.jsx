@@ -8,7 +8,7 @@ import { setThemeOpen, toggleTheme } from '../store';
 import ThemeDrawer from '../components/theme/ThemePanel';
 import { useAuthActions } from '../hooks/useAuth';
 import { Icon, PageLoader } from '../components/ui';
-import { BrandLogo, LogoMark } from '../components/Brand';
+import { LogoMark } from '../components/Brand';
 import NotFound from '../pages/NotFound';
 import Dashboard from './Dashboard';
 import Guide from './Guide';
@@ -53,7 +53,12 @@ function Sidebar({ open, onClose, collapsed }) {
         )}
       >
         <Link to="/admin" aria-label="WILDTANE admin home" className={cn('h-16 flex items-center px-5 shrink-0 border-b border-surface-container-high', collapsed && 'lg:justify-center lg:px-0')}>
-          <BrandLogo className={cn('h-9', collapsed && 'lg:hidden')} alt="WILDTANE" tone="auto" />
+          <div className={cn('flex items-center gap-2.5', collapsed && 'lg:hidden')}>
+            <LogoMark className="w-8 h-8 shrink-0" tone="auto" />
+            <h1 className="font-serif tracking-widest font-black text-xl text-on-surface uppercase select-none">
+              WILDTANE
+            </h1>
+          </div>
           {collapsed && <LogoMark className="hidden lg:block w-9 h-9" tone="auto" />}
         </Link>
         <nav className="flex-1 overflow-y-auto scrollbar-none py-space-md px-3 flex flex-col gap-space-md" aria-label="Admin">

@@ -194,7 +194,12 @@ function SideNav({ categories }) {
       onClose={close}
       side="left"
       width="max-w-xs"
-      title={<BrandLogo className="h-8" />}
+      title={
+        <div className="flex items-center gap-2">
+          <LogoMark className="w-7 h-7 shrink-0" />
+          <h2 className="font-serif tracking-widest font-black text-lg text-on-surface uppercase">WILDTANE</h2>
+        </div>
+      }
       footer={
         <div className="flex items-center justify-between gap-2 text-label-md text-on-surface-variant">
           <CurrencySelect className="min-w-0" optionClassName="bg-surface-container-lowest text-on-surface" />
@@ -463,10 +468,11 @@ export default function Header() {
           <button type="button" className={cn(iconBtn, '-ml-2 hover:bg-surface-container')} aria-label="Open menu" onClick={() => dispatch(setMobileNavOpen(true))}>
             <Icon name="menu" className="text-[22px]" />
           </button>
-          <Link to="/" className="flex items-center shrink-0" aria-label="WILDTANE home">
-            {/* Phones: the square mark (keeps room for search); wider screens: mark + name. */}
-            <LogoMark className="w-9 h-9 sm:hidden" />
-            <BrandLogo className="hidden sm:block h-9" alt="" eager />
+          <Link to="/" className="flex items-center gap-2 md:gap-2.5 shrink-0" aria-label="WILDTANE home">
+            <LogoMark className="w-8 h-8 md:w-9 md:h-9 shrink-0" />
+            <h1 className="font-serif tracking-widest font-black text-xl md:text-2xl text-on-surface uppercase select-none">
+              WILDTANE
+            </h1>
           </Link>
 
           {/* Pill nav: the current page is a gradient pill; Shop opens the mega-menu. */}

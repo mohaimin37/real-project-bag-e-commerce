@@ -41,8 +41,11 @@ function AuthShell({ title, subtitle, children, footer }) {
       <div className="hidden lg:block relative h-[620px] rounded-3xl overflow-hidden shadow-lift">
         <Img w={640} src="/uploads/seed/terminal-traveler.jpg" alt="" className="absolute inset-0" />
         <div className="absolute inset-0 bg-gradient-to-t from-ink/90 via-ink/20 to-transparent" />
-        <Link to="/" aria-label="WILDTANE home" className="absolute top-8 left-8">
-          <BrandLogoFull className="w-24 rounded-2xl shadow-lift" alt="WILDTANE" />
+        <Link to="/" aria-label="WILDTANE home" className="absolute top-8 left-8 flex items-center gap-3">
+          <BrandLogoFull className="w-20 rounded-2xl shadow-lift" alt="WILDTANE" />
+          <h1 className="font-serif tracking-widest font-black text-2xl text-white uppercase drop-shadow-md">
+            WILDTANE
+          </h1>
         </Link>
         <div className="absolute bottom-10 left-10 right-10 text-white flex flex-col gap-3">
           <span className="text-label-sm uppercase tracking-wider text-secondary-fixed">Member benefits</span>

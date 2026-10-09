@@ -183,10 +183,12 @@ export const publicConfig = asyncHandler(async (req, res) => {
   res.json({
     success: true,
     config: {
-      storeName: s.storeName,
-      supportEmail: s.supportEmail,
-      supportPhone: s.supportPhone,
-      businessAddress: s.businessAddress, // public business details for the policy pages (also printed on bills)
+      storeName: s.storeName || 'WILDTANE',
+      companyName: s.companyName || 'WILDTANE PRIVATE LIMITED',
+      supportEmail: s.supportEmail || 'info@wildtane.com',
+      supportPhone: s.supportPhone || '8920550465',
+      businessAddress: s.businessAddress || 'A 370 Amar Puri Nabi Karim, Paharganj, New Delhi-110055', // public business details for the policy pages (also printed on bills)
+      gstin: s.gstin || '07AAECW3767F1Z4',
       supportHours: s.supportHours,
       grievanceOfficer: {
         name: s.grievanceOfficer?.name || '',

@@ -4,7 +4,7 @@ import toast from 'react-hot-toast';
 import { api } from '../../lib/api';
 import { useConfig } from '../../hooks/useStore';
 import { Icon, Spinner } from '../ui';
-import { BrandLogo } from '../Brand';
+import { LogoMark } from '../Brand';
 import { CurrencySelect } from './Header';
 
 // Flipkart-style footer: link columns on the left, "Mail us" and "Registered office" on the right.
@@ -88,15 +88,16 @@ function Newsletter() {
   );
 }
 
-/** "Mail us" / "Registered office" block: the company name and address from Admin → Settings. */
+/** "Mail us" / "Registered office" block: the company name and address. */
 function AddressBlock({ title, config, children }) {
-  const address = config?.businessAddress?.trim();
+  const address = config?.businessAddress?.trim() || 'A 370 Amar Puri Nabi Karim, Paharganj, New Delhi-110055';
+  const companyName = config?.companyName || 'WILDTANE PRIVATE LIMITED';
   return (
-    <div className="flex flex-col gap-1">
-      <p className={heading}>{title}</p>
+    <div className="flex flex-col gap-1.5">
+      <h3 className={heading}>{title}</h3>
       <address className="not-italic text-[13px] leading-relaxed text-on-band">
-        WILDTANE Private Limited
-        {address ? <span className="block whitespace-pre-line">{address}</span> : <span className="block text-on-band/55">Address coming soon</span>}
+        <h4 className="font-bold text-sm tracking-wide text-on-band uppercase">{companyName}</h4>
+        <span className="block whitespace-pre-line mt-1 text-on-band/90">{address}</span>
         {children}
       </address>
     </div>
@@ -105,7 +106,7 @@ function AddressBlock({ title, config, children }) {
 
 export default function Footer() {
   const { data: config } = useConfig();
-  const phone = config?.supportPhone;
+  const phone = config?.supportPhone || '8920550465';
   const payments = (config?.paymentMethods || []).filter((m) => m.available);
   return (
     // Deep shade of the theme's brand colour (dark, so the gold logo, telephone and email stand out).
@@ -113,7 +114,7 @@ export default function Footer() {
       <div className="container-x py-8 md:py-10 grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-[repeat(4,minmax(0,1fr))_1px_minmax(0,1.3fr)_minmax(0,1.3fr)] gap-x-6 gap-y-8">
         {COLUMNS.map((col) => (
           <nav key={col.title} aria-label={col.title} className="flex flex-col gap-2">
-            <p className={heading}>{col.title}</p>
+            <h3 className={heading}>{col.title}</h3>
             {col.links.map(([to, label]) => (
               <Link key={label} to={to} className={link}>{label}</Link>
             ))}
@@ -124,25 +125,27 @@ export default function Footer() {
         <div className="col-span-2 sm:col-span-2 lg:col-span-1 flex flex-col gap-5">
           <AddressBlock title="Mail us" config={config} />
           <div className="flex flex-col gap-2">
-            <p className={heading}>Newsletter</p>
+            <h3 className={heading}>Newsletter</h3>
             <Newsletter />
           </div>
         </div>
         <div className="col-span-2 sm:col-span-2 lg:col-span-1 flex flex-col gap-5">
           <AddressBlock title="Registered office address" config={config}>
-            {phone && (
-              <span className="block mt-1">
-                Telephone: <a href={`tel:${phone.replace(/\s/g, '')}`} className="text-accent hover:underline">{phone}</a>
-              </span>
-            )}
-            {config?.supportEmail && (
-              <span className="block">
-                Email: <a href={`mailto:${config.supportEmail}`} className="text-accent hover:underline">{config.supportEmail}</a>
-              </span>
-            )}
+            <p className="block text-[13px] text-on-band/90 mt-1.5 font-medium">
+              GSTIN: <span className="font-mono font-bold text-accent">07AAECW3767F1Z4</span>
+            </p>
+            <p className="block text-[13px] text-on-band/90 mt-1">
+              Telephone: <a href="tel:8920550465" className="text-accent hover:underline font-semibold">8920550465</a>
+            </p>
+            <p className="block text-[13px] text-on-band/90 mt-0.5">
+              Email: <a href={`mailto:${config?.supportEmail || 'info@wildtane.com'}`} className="text-accent hover:underline">{config?.supportEmail || 'info@wildtane.com'}</a>
+            </p>
           </AddressBlock>
-          <Link to="/" className="w-fit" aria-label="WILDTANE home">
-            <BrandLogo className="h-10" alt="WILDTANE" tone="gold" />
+          <Link to="/" className="flex items-center gap-2.5 w-fit mt-1" aria-label="WILDTANE home">
+            <LogoMark className="w-8 h-8 shrink-0" tone="gold" />
+            <h2 className="font-serif tracking-widest font-black text-2xl text-on-band uppercase select-none">
+              WILDTANE
+            </h2>
           </Link>
         </div>
       </div>
@@ -158,7 +161,7 @@ export default function Footer() {
                 <Icon name={icon} className="text-[18px] text-on-band/80" /> {label}
               </Link>
             ))}
-            <span className="text-on-band/70">© {new Date().getFullYear()} WILDTANE Private Limited</span>
+            <span className="text-on-band/70">© {new Date().getFullYear()} WILDTANE PRIVATE LIMITED</span>
           </div>
           <div className="flex flex-wrap items-center justify-center gap-3">
             {/* Only the payment methods checkout offers right now (Admin → Settings → Payments). */}

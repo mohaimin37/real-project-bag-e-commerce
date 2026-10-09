@@ -566,6 +566,33 @@ export default function About() {
       {/* Brand Values component */}
       <BrandValues className="py-12 md:py-16" title="Why 50,000+ Explorers Choose Us" eyebrow="The WILDTANE Standard" />
 
+      {/* Official Corporate Entity & Registration Details */}
+      <section className="container-x pb-12">
+        <div className="card p-6 md:p-8 border border-surface-container-high bg-surface-container-lowest/80 backdrop-blur-sm rounded-3xl grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-start">
+          <div className="flex flex-col gap-1.5">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-secondary">Brand Name</span>
+            <h2 className="font-serif tracking-widest font-black text-xl text-on-surface uppercase">WILDTANE</h2>
+            <p className="text-[13px] text-on-surface-variant">Architectural Carry & Travel Gear</p>
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-secondary">Company Name</span>
+            <h3 className="font-bold text-[15px] text-on-surface uppercase tracking-wide">WILDTANE PRIVATE LIMITED</h3>
+            <p className="text-[13px] text-on-surface-variant">Incorporated in India</p>
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-secondary">Registered Address</span>
+            <address className="not-italic text-[13px] text-on-surface-variant leading-relaxed">
+              A 370 Amar Puri Nabi Karim, Paharganj, New Delhi-110055
+            </address>
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-secondary">Legal & Contact</span>
+            <p className="text-[13px] text-on-surface">GSTIN: <span className="font-mono font-bold text-secondary">07AAECW3767F1Z4</span></p>
+            <p className="text-[13px] text-on-surface">Phone: <a href="tel:8920550465" className="font-semibold text-secondary hover:underline">8920550465</a></p>
+          </div>
+        </div>
+      </section>
+
       {/* ── 6. COLORFUL CLOSING CALL TO ACTION ── */}
       <section className="container-x pb-14 md:pb-24">
         <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-amber-600 via-rose-600 to-indigo-700 text-white p-8 md:p-14 shadow-2xl flex flex-col lg:flex-row lg:items-center justify-between gap-8">

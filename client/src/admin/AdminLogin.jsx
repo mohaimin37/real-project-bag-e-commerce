@@ -8,7 +8,7 @@ import toast from 'react-hot-toast';
 import { useAuthActions } from '../hooks/useAuth';
 import { Button, Field, Icon, Img, Input, PageLoader, Spinner } from '../components/ui';
 import Seo from '../components/Seo';
-import { BrandLogo, BrandLogoFull } from '../components/Brand';
+import { BrandLogoFull, LogoMark } from '../components/Brand';
 
 const schema = z.object({
   email: z.string().email('Enter a valid email'),
@@ -51,8 +51,11 @@ export default function AdminLogin() {
         <div className="hidden lg:block relative h-[600px] rounded-3xl overflow-hidden shadow-lift">
           <Img w={640} src="/uploads/seed/terminal-traveler.jpg" alt="" className="absolute inset-0 w-full h-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-t from-ink/95 via-ink/40 to-transparent" />
-          <Link to="/" aria-label="WILDTANE home" className="absolute top-8 left-8">
-            <BrandLogoFull className="w-24 rounded-2xl shadow-lift" alt="WILDTANE" />
+          <Link to="/" aria-label="WILDTANE home" className="absolute top-8 left-8 flex items-center gap-3">
+            <BrandLogoFull className="w-20 rounded-2xl shadow-lift" alt="WILDTANE" />
+            <h1 className="font-serif tracking-widest font-black text-2xl text-white uppercase drop-shadow-md">
+              WILDTANE
+            </h1>
           </Link>
           <div className="absolute bottom-10 left-10 right-10 text-white flex flex-col gap-3">
             <span className="text-label-sm uppercase tracking-wider text-secondary-fixed font-bold">Store operations</span>
@@ -76,8 +79,11 @@ export default function AdminLogin() {
 
         {/* Right form container */}
         <div className="w-full max-w-md mx-auto flex flex-col gap-space-lg">
-          <Link to="/" aria-label="WILDTANE home" className="lg:hidden self-center">
-            <BrandLogo className="h-10" alt="WILDTANE" eager tone="auto" />
+          <Link to="/" aria-label="WILDTANE home" className="lg:hidden self-center flex items-center gap-2.5">
+            <LogoMark className="w-9 h-9" />
+            <h1 className="font-serif tracking-widest font-black text-2xl text-on-surface uppercase">
+              WILDTANE
+            </h1>
           </Link>
 
           <div>

@@ -15,7 +15,7 @@ import { Button, CountrySelect, EmptyState, Field, Icon, Img, Input, PageLoader,
 import { CouponBox, SummaryRows } from './Cart';
 import Seo from '../components/Seo';
 import { UseCoinsCard } from '../components/coins';
-import { BrandLogo } from '../components/Brand';
+import { LogoMark } from '../components/Brand';
 
 const STEPS = ['Your details', 'Delivery address', 'How to pay', 'Check & order'];
 
@@ -26,8 +26,11 @@ function CheckoutHeader() {
       <Seo title="Secure Checkout" noindex />
       <div className="container-x py-4 flex flex-col sm:flex-row items-center justify-between gap-3">
         <div className="flex items-center gap-space-md">
-          <Link to="/" aria-label="WILDTANE home">
-            <BrandLogo className="h-9 md:h-10" alt="WILDTANE" eager />
+          <Link to="/" className="flex items-center gap-2.5" aria-label="WILDTANE home">
+            <LogoMark className="w-8 h-8 md:w-9 md:h-9 shrink-0" />
+            <h1 className="font-serif tracking-widest font-black text-xl md:text-2xl text-on-surface uppercase select-none">
+              WILDTANE
+            </h1>
           </Link>
           <span className="h-4 w-px bg-surface-container-highest" />
           <span className="flex items-center gap-1.5 text-secondary text-label-sm uppercase tracking-wider bg-secondary/10 px-2.5 py-1 rounded-full">
@@ -37,7 +40,9 @@ function CheckoutHeader() {
         <div className="flex items-center gap-4 text-on-surface-variant text-label-md">
           <span className="flex items-center gap-2">
             <Icon name="support_agent" className="text-secondary text-[18px]" /> Need help?
-            {config?.supportPhone && <a href={`tel:${config.supportPhone.replace(/\s/g, '')}`} className="text-on-surface hover:text-secondary">{config.supportPhone}</a>}
+            <a href={`tel:${(config?.supportPhone || '8920550465').replace(/\s/g, '')}`} className="text-on-surface hover:text-secondary font-medium">
+              {config?.supportPhone || '8920550465'}
+            </a>
           </span>
           <Link to="/cart" className="hidden sm:inline-flex items-center gap-1 hover:text-secondary"><Icon name="arrow_back" className="text-[16px]" /> Back to bag</Link>
           <Link to="/" className="inline-flex items-center gap-1 h-8 px-3 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface"><Icon name="home" className="text-[16px]" /> Home</Link>

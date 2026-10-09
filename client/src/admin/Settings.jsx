@@ -140,6 +140,7 @@ export default function Settings() {
             <Panel title="Store details">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-space-md">
                 <Field label="Store name"><Input value={s.storeName} onChange={(e) => set('storeName', e.target.value)} /></Field>
+                <Field label="Company legal name" hint="Appears on bills and legal policies"><Input value={s.companyName || ''} onChange={(e) => set('companyName', e.target.value)} placeholder="WILDTANE PRIVATE LIMITED" /></Field>
                 <Field label="Support email"><Input type="email" value={s.supportEmail} onChange={(e) => set('supportEmail', e.target.value)} /></Field>
                 <Field label="Support phone"><Input value={s.supportPhone} onChange={(e) => set('supportPhone', e.target.value)} /></Field>
                 <Field label="GSTIN" hint="Printed on customer bills"><Input className="uppercase" maxLength={15} value={s.gstin || ''} onChange={(e) => set('gstin', e.target.value)} placeholder="27ABCDE1234F1Z5" /></Field>

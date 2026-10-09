@@ -25,29 +25,35 @@ const TOPICS = ['Order status & delivery', 'Returns & exchanges', 'Damaged or de
  * Filled from Admin → Settings → Store details; each card stays hidden until its details are set.
  */
 function OfficeCards({ config }) {
-  const address = config?.businessAddress?.trim();
+  const address = config?.businessAddress?.trim() || 'A 370 Amar Puri Nabi Karim, Paharganj, New Delhi-110055';
+  const companyName = config?.companyName || 'WILDTANE PRIVATE LIMITED';
+  const gstin = config?.gstin || '07AAECW3767F1Z4';
+  const phone = config?.supportPhone || '8920550465';
   const officer = config?.grievanceOfficer;
-  if (!address && !officer?.name) return null;
   return (
     <div className="grid gap-3">
-      {address && (
-        <section aria-labelledby="office-title" className="card p-space-md flex flex-col gap-2">
-          <h2 id="office-title" className="flex items-center gap-2 text-label-lg uppercase tracking-wider text-outline">
-            <Icon name="apartment" className="text-[20px] text-secondary" /> Registered office
-          </h2>
-          <p className="text-body-md font-semibold">WILDTANE Private Limited</p>
-          <address className="not-italic text-body-md whitespace-pre-line">{address}</address>
-          <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`} target="_blank" rel="noreferrer" className="btn-tonal btn-sm self-start">
-            <Icon name="map" className="text-[18px]" /> Open in Maps
-          </a>
-        </section>
-      )}
+      <section aria-labelledby="office-title" className="card p-space-md flex flex-col gap-2">
+        <h2 id="office-title" className="flex items-center gap-2 text-label-lg uppercase tracking-wider text-outline">
+          <Icon name="apartment" className="text-[20px] text-secondary" /> Registered Office
+        </h2>
+        <h3 className="text-body-lg font-bold text-on-surface uppercase">{companyName}</h3>
+        <address className="not-italic text-body-md text-on-surface-variant whitespace-pre-line">{address}</address>
+        <h4 className="text-body-sm font-semibold text-on-surface flex items-center gap-2 mt-1">
+          GSTIN: <span className="font-mono font-bold text-secondary">{gstin}</span>
+        </h4>
+        <p className="text-body-sm text-on-surface-variant flex items-center gap-2">
+          Phone: <a href={`tel:${phone.replace(/\s/g, '')}`} className="font-semibold text-secondary hover:underline">{phone}</a>
+        </p>
+        <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`} target="_blank" rel="noreferrer" className="btn-tonal btn-sm self-start mt-1">
+          <Icon name="map" className="text-[18px]" /> Open in Maps
+        </a>
+      </section>
       {officer?.name && (
         <section aria-labelledby="grievance-title" className="card p-space-md flex flex-col gap-1.5">
           <h2 id="grievance-title" className="flex items-center gap-2 text-label-lg uppercase tracking-wider text-outline">
             <Icon name="gavel" className="text-[20px] text-secondary" /> Grievance Officer
           </h2>
-          <p className="text-body-md font-semibold">{officer.name}{officer.designation ? <span className="font-normal text-on-surface-variant">, {officer.designation}</span> : null}</p>
+          <h3 className="text-body-md font-semibold text-on-surface">{officer.name}{officer.designation ? <span className="font-normal text-on-surface-variant">, {officer.designation}</span> : null}</h3>
           {officer.email && <a href={`mailto:${officer.email}`} className="text-body-md hover:text-secondary inline-flex items-center gap-1.5 w-fit"><Icon name="mail" className="text-[18px]" /> {officer.email}</a>}
           {officer.phone && <a href={`tel:${officer.phone.replace(/\s/g, '')}`} className="text-body-md hover:text-secondary inline-flex items-center gap-1.5 w-fit"><Icon name="call" className="text-[18px]" /> {officer.phone}</a>}
           <p className="text-body-sm text-on-surface-variant">Complaints are acknowledged within 48 hours and resolved within 7 working days.</p>
@@ -91,9 +97,9 @@ export default function Contact() {
             <Link to="/faq" className="btn-tonal btn-sm"><Icon name="quiz" className="text-[18px]" /> FAQs</Link>
           </div>
           {[
-            ['mail', 'Email', config?.supportEmail, config?.supportEmail && `mailto:${config.supportEmail}`],
-            ['call', 'Phone', config?.supportPhone, config?.supportPhone && `tel:${config.supportPhone.replace(/\s/g, '')}`],
-            config?.supportHours && ['support_agent', 'Customer care hours', config.supportHours],
+            ['mail', 'Email', config?.supportEmail || 'info@wildtane.com', `mailto:${config?.supportEmail || 'info@wildtane.com'}`],
+            ['call', 'Phone', config?.supportPhone || '8920550465', `tel:${(config?.supportPhone || '8920550465').replace(/\s/g, '')}`],
+            ['schedule', 'Customer care hours', config?.supportHours || 'Monday to Saturday, 10:00 am – 6:00 pm'],
             ['schedule', 'Response time', '24–48 working hours. Please share your Order ID, registered email or mobile number, and a clear description of the issue.'],
             ['inventory_2', 'Damaged item?', 'Record an unboxing video and tell us within 24 hours of delivery — choose "Damaged or defective item" below.'],
           ].filter(Boolean).map(([icon, k, v, href]) => (

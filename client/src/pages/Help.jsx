@@ -68,17 +68,19 @@ function Blocks({ blocks, config }) {
 
 function ContactCard({ config }) {
   const email = config?.supportEmail || 'info@wildtane.com';
+  const phone = config?.supportPhone || '8920550465';
   return (
     <section aria-labelledby="support-title" className="rounded-2xl bg-band text-on-band ring-1 ring-accent/30 p-5 md:p-7 grid md:grid-cols-[1fr_auto] gap-5 items-center">
       <div className="flex flex-col gap-2">
         <h2 id="support-title" className="font-display text-[24px] md:text-[28px] leading-tight">Still need help?</h2>
         <p className="text-[14px] text-on-band/75">
-          Email <a href={`mailto:${email}`} className="text-accent font-semibold underline underline-offset-2">{email}</a>. Response time: {SUPPORT.responseTime}.
+          Call <a href={`tel:${phone.replace(/\s/g, '')}`} className="text-accent font-semibold underline underline-offset-2">{phone}</a> or email <a href={`mailto:${email}`} className="text-accent font-semibold underline underline-offset-2">{email}</a>. Response time: {SUPPORT.responseTime}.
         </p>
         <p className="text-[13px] text-on-band/60">Please always share: {SUPPORT.share.join(' · ')}.</p>
       </div>
       <div className="flex flex-wrap gap-2">
-        <a href={`mailto:${email}`} className="btn bg-accent text-on-accent hover:brightness-105"><Icon name="mail" className="text-[18px]" /> Email us</a>
+        <a href={`tel:${phone.replace(/\s/g, '')}`} className="btn bg-accent text-on-accent hover:brightness-105"><Icon name="call" className="text-[18px]" /> Call {phone}</a>
+        <a href={`mailto:${email}`} className="btn border border-on-band/25 text-on-band hover:bg-on-band/10"><Icon name="mail" className="text-[18px]" /> Email us</a>
         <Link to="/contact" className="btn border border-on-band/25 text-on-band hover:bg-on-band/10">Contact form</Link>
       </div>
     </section>
