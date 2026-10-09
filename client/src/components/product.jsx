@@ -149,77 +149,87 @@ export const ProductCard = memo(function ProductCard({ product, priority }) {
     <article
       onMouseEnter={prefetch}
       onFocus={prefetch}
-      className="surface-card cv-auto group relative flex flex-col h-full bg-surface-container-lowest rounded-2xl overflow-hidden"
+      className="surface-card cv-auto group relative flex flex-col h-full bg-surface-container-lowest rounded-2xl overflow-hidden shadow-xs hover:shadow-xl transition-all duration-300"
     >
       <div className="relative">
-      <Link to={`/product/${product.slug}`} className="relative block aspect-square overflow-hidden bg-surface-container-low" aria-label={product.name}>
-        <Img
-          src={productImage(product, variant)}
-          alt={product.name}
-          w={480}
-          className="absolute inset-0"
-          imgClassName="md:group-hover:scale-[1.04] transition-transform duration-500 ease-out"
-          loading={priority ? 'eager' : 'lazy'}
-        />
-        <span className="absolute top-2 left-2 md:top-3 md:left-3 flex flex-col items-start gap-1">
-          {badge && (
-            <span className={cn('px-1.5 py-1 md:px-2 rounded-full bg-gradient-to-r text-white text-[10px] md:text-[11px] font-bold leading-none tracking-wide shadow-sm', BADGE_TONES[badge] || 'from-indigo-600 to-sky-500')}>
-              {badge}
+        <Link to={`/product/${product.slug}`} className="relative block aspect-square overflow-hidden bg-surface-container-low" aria-label={product.name}>
+          <Img
+            src={productImage(product, variant)}
+            alt={product.name}
+            w={480}
+            className="absolute inset-0"
+            imgClassName="md:group-hover:scale-[1.05] transition-transform duration-500 ease-out"
+            loading={priority ? 'eager' : 'lazy'}
+          />
+          <span className="absolute top-2.5 left-2.5 md:top-3 md:left-3 flex flex-col items-start gap-1.5 z-10">
+            {badge && (
+              <span className={cn('px-2 py-0.5 md:px-2.5 md:py-1 rounded-full bg-gradient-to-r text-white text-[10px] md:text-[11px] font-bold leading-none tracking-wide shadow-sm', BADGE_TONES[badge] || 'from-indigo-600 to-sky-500')}>
+                {badge}
+              </span>
+            )}
+            {pct > 0 && !soldOut && (
+              <span className="px-2 py-0.5 md:px-2.5 md:py-1 rounded-full bg-gradient-to-r from-emerald-600 to-teal-500 text-white text-[9.5px] md:text-[11px] font-bold leading-none shadow-sm">
+                −{pct}%
+              </span>
+            )}
+          </span>
+          {!soldOut && variant.stock <= 5 && (
+            <span className="absolute inset-x-0 bottom-0 py-1 bg-gradient-to-r from-rose-600/90 to-pink-500/90 text-white text-[10px] md:text-[11.5px] font-bold text-center">
+              Only {variant.stock} left
             </span>
           )}
-          {pct > 0 && !soldOut && (
-            <span className="px-1.5 py-0.5 md:px-2 md:py-1 rounded-full bg-gradient-to-r from-emerald-600 to-teal-500 text-white text-[9px] md:text-[11px] font-bold leading-none shadow-sm">−{pct}%</span>
+          {soldOut && (
+            <span className="absolute inset-x-0 bottom-0 py-1 bg-on-surface/80 text-surface-container-lowest text-[10px] md:text-[11.5px] font-semibold text-center">
+              Out of stock
+            </span>
           )}
-        </span>
-        {!soldOut && variant.stock <= 5 && (
-          <span className="absolute inset-x-0 bottom-0 py-0.5 md:py-1 bg-gradient-to-r from-rose-600/90 to-pink-500/90 text-white text-[9px] md:text-[11px] font-bold text-center">
-            Only {variant.stock} left
-          </span>
-        )}
-        {soldOut && (
-          <span className="absolute inset-x-0 bottom-0 py-0.5 md:py-1 bg-on-surface/70 text-surface-container-lowest text-[10px] md:text-[11px] font-semibold text-center">Out of stock</span>
-        )}
-      </Link>
+        </Link>
       </div>
-      <WishlistButton product={product} className="absolute top-1 right-1 w-6 h-6 sm:w-8 sm:h-8" />
+      <WishlistButton product={product} className="absolute top-2.5 right-2.5 w-7 h-7 sm:w-8 sm:h-8" />
 
-      <div className="flex flex-col gap-0.5 sm:gap-1 md:gap-1.5 p-1 sm:p-2.5 md:p-4 flex-1">
+      <div className="flex flex-col gap-2 sm:gap-2.5 p-3 sm:p-3.5 md:p-4 flex-1">
         {kind && (
-          <span className={cn('inline-flex items-center gap-1 self-start max-w-full px-1 sm:px-1.5 py-0.2 sm:py-0.5 rounded-full text-[7.5px] sm:text-[9.5px] md:text-[11px] font-bold uppercase tracking-wide leading-none', tone.tint, tone.text)}>
-            <span className={cn('w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full shrink-0', tone.dot)} />
+          <span className={cn('inline-flex items-center gap-1.5 self-start max-w-full px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] md:text-[11px] font-bold uppercase tracking-wider leading-none', tone.tint, tone.text)}>
+            <span className={cn('w-1.5 h-1.5 rounded-full shrink-0', tone.dot)} />
             <span className="truncate">{kind}</span>
           </span>
         )}
-        <Link to={`/product/${product.slug}`} className="text-[10px] leading-[13px] sm:text-[13px] sm:leading-[18px] md:text-[16px] md:leading-[22px] text-on-surface line-clamp-2 min-h-[26px] sm:min-h-[36px] md:min-h-[44px] hover:text-secondary font-medium">
+        <Link to={`/product/${product.slug}`} className="text-[12.5px] leading-[17px] sm:text-[14px] sm:leading-[20px] md:text-[16px] md:leading-[22px] text-on-surface line-clamp-2 min-h-[34px] sm:min-h-[40px] md:min-h-[44px] hover:text-secondary font-semibold transition-colors">
           {product.name}
         </Link>
-        <div className="flex items-center gap-1 min-h-[15px] sm:min-h-[16px]">
+        <div className="flex items-center gap-1.5 min-h-[18px]">
           {product.ratingCount > 0 ? (
             <>
-              <span className="inline-flex items-center gap-0.5 px-1 md:px-1.5 h-[14px] sm:h-[17px] md:h-5 rounded bg-emerald-700 text-white text-[8px] sm:text-[10px] md:text-[12px] font-bold leading-none">
+              <span className="inline-flex items-center gap-0.5 px-1.5 h-[17px] sm:h-[19px] rounded bg-emerald-700 text-white text-[9px] sm:text-[11px] font-bold leading-none">
                 {product.ratingAverage.toFixed(1)}
-                <Icon name="star" fill className="text-[7.5px] sm:text-[10px]" />
+                <Icon name="star" fill className="text-[9px] sm:text-[10px]" />
               </span>
-              <span className="text-[8px] sm:text-[11px] md:text-[12px] text-outline">({product.ratingCount})</span>
+              <span className="text-[10px] sm:text-[11.5px] text-outline">({product.ratingCount})</span>
             </>
           ) : null}
           {(product.ratingAverage >= 4 || product.isBestseller) && (
-            <span className="inline-flex items-center text-[7.5px] sm:text-[9px] font-black text-amber-600 dark:text-amber-400 tracking-tight ml-auto sm:ml-0">
+            <span className="inline-flex items-center text-[9px] sm:text-[10px] font-black text-amber-600 dark:text-amber-400 tracking-tight ml-auto sm:ml-0">
               ⚡Assured
             </span>
           )}
           {colours > 1 && <span className="ml-auto hidden sm:inline text-[11px] md:text-[12px] text-outline">{colours} colours</span>}
         </div>
-        <div className="mt-auto flex items-end justify-between gap-1 pt-0.5">
-          <div className="flex flex-col sm:flex-row sm:items-baseline sm:gap-x-1.5 min-w-0">
-            <span className="text-[11px] sm:text-[14px] md:text-[19px] font-bold text-on-surface whitespace-nowrap">{money(product.finalPrice ?? product.price)}</span>
+        <div className="mt-auto flex items-end justify-between gap-2 pt-2 border-t border-surface-container-high/40">
+          <div className="flex flex-col min-w-0 gap-0.5">
+            <span className="text-[13.5px] sm:text-[16px] md:text-[19px] font-extrabold text-on-surface whitespace-nowrap">
+              {money(product.finalPrice ?? product.price)}
+            </span>
             {pct > 0 && (
-              <div className="flex items-center gap-0.5 sm:gap-1">
-                <span className="text-[8px] sm:text-[11px] md:text-[13px] text-outline line-through whitespace-nowrap">{money(product.price)}</span>
-                <span className="text-[8px] sm:text-[11px] md:text-[13px] font-bold text-emerald-600 dark:text-emerald-400 whitespace-nowrap">{pct}% off</span>
+              <div className="flex items-center gap-1.5">
+                <span className="text-[10px] sm:text-[12px] text-outline line-through whitespace-nowrap">
+                  {money(product.price)}
+                </span>
+                <span className="text-[10px] sm:text-[12px] font-bold text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
+                  {pct}% off
+                </span>
               </div>
             )}
-            <span className="text-[7.5px] sm:text-[9.5px] font-semibold text-emerald-600 dark:text-emerald-400 block -mt-0.5">
+            <span className="text-[9px] sm:text-[10.5px] font-semibold text-emerald-600 dark:text-emerald-400 block pt-0.5">
               Free Delivery
             </span>
           </div>
@@ -229,11 +239,11 @@ export const ProductCard = memo(function ProductCard({ product, priority }) {
             onClick={() => add.mutate({ productId: product._id, variantId: variant._id, quantity: 1 }, { onSuccess: () => setAdded(true) })}
             aria-label={`Add ${product.name} to bag`}
             className={cn(
-              'shrink-0 w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10 rounded-full text-white flex items-center justify-center shadow-xs transition-all hover:shadow-md hover:scale-105 active:scale-90 disabled:opacity-30 disabled:pointer-events-none bg-gradient-to-br',
+              'shrink-0 w-7 h-7 sm:w-8 sm:h-8 md:w-9 md:h-9 rounded-full text-white flex items-center justify-center shadow-xs transition-all hover:shadow-md hover:scale-105 active:scale-90 disabled:opacity-30 disabled:pointer-events-none bg-gradient-to-br',
               added ? 'from-emerald-500 to-teal-500 animate-pop' : 'from-indigo-600 to-violet-500'
             )}
           >
-            <Icon name={added ? 'check' : 'add'} className="text-[13px] sm:text-[17px]" />
+            <Icon name={added ? 'check' : 'add'} className="text-[15px] sm:text-[17px]" />
           </button>
         </div>
       </div>
@@ -243,20 +253,21 @@ export const ProductCard = memo(function ProductCard({ product, priority }) {
 
 export function ProductCardSkeleton() {
   return (
-    <div className="flex flex-col bg-surface-container-lowest rounded-xl sm:rounded-2xl overflow-hidden">
+    <div className="flex flex-col bg-surface-container-lowest rounded-2xl overflow-hidden shadow-xs">
       <Skeleton className="aspect-square rounded-none" />
-      <div className="p-1.5 sm:p-2.5 flex flex-col gap-1 sm:gap-1.5">
-        <Skeleton className="h-3 sm:h-3.5 w-11/12" />
-        <Skeleton className="h-3 sm:h-3.5 w-2/3" />
-        <Skeleton className="h-2.5 sm:h-3 w-1/3" />
-        <Skeleton className="h-3.5 sm:h-4 w-1/2 mt-1" />
+      <div className="p-3 sm:p-3.5 md:p-4 flex flex-col gap-2.5">
+        <Skeleton className="h-3.5 w-1/3 rounded-full" />
+        <Skeleton className="h-4 w-11/12 rounded" />
+        <Skeleton className="h-4 w-2/3 rounded" />
+        <Skeleton className="h-3 w-1/4 rounded mt-1" />
+        <Skeleton className="h-5 w-1/2 rounded mt-2" />
       </div>
     </div>
   );
 }
 
-/** Responsive product grid: 3 columns on mobile, 3 on tablets/laptops, 4 on desktop/office monitors. */
-export const GRID_COLS = 'grid grid-cols-3 md:grid-cols-3 xl:grid-cols-4 gap-1.5 sm:gap-2.5 md:gap-3.5';
+/** Responsive product grid: 2 columns on mobile, 3 on tablets/laptops, 4 on desktop/office monitors. */
+export const GRID_COLS = 'grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 md:gap-5 lg:gap-6';
 
 export function ProductGrid({ products, loading, count = 8, className }) {
   return (

@@ -77,65 +77,65 @@ function HomeHero() {
       <div aria-hidden="true" className="absolute top-1/2 -right-16 w-80 h-80 rounded-full bg-rose-500/20 blur-3xl pointer-events-none" />
       <div aria-hidden="true" className="absolute -bottom-20 left-1/3 w-80 h-80 rounded-full bg-indigo-500/20 blur-3xl pointer-events-none" />
 
-      <div className="relative container-x grid lg:grid-cols-[1.15fr_0.85fr] gap-8 lg:gap-12 items-center">
+      <div className="relative container-x grid lg:grid-cols-[1.15fr_0.85fr] gap-10 lg:gap-14 items-center">
         {/* Content Column */}
-        <div className="flex flex-col gap-3.5 text-center lg:text-left">
-          <div className="inline-flex items-center gap-2 self-center lg:self-start px-3.5 py-1.5 rounded-full bg-surface/80 backdrop-blur-md ring-1 ring-secondary/30 shadow-sm">
+        <div className="flex flex-col gap-5 text-center lg:text-left">
+          <div className="inline-flex items-center gap-2 self-center lg:self-start px-4 py-1.5 rounded-full bg-surface/85 backdrop-blur-md ring-1 ring-secondary/35 shadow-sm">
             <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
-            <span className="text-[11.5px] font-bold uppercase tracking-wider text-secondary">
+            <span className="text-[12px] font-bold uppercase tracking-wider text-secondary">
               Architectural Carry • Handcrafted in India
             </span>
           </div>
 
-          <h1 className="font-display text-[34px] sm:text-[44px] md:text-[54px] leading-[1.1] tracking-tight text-on-surface">
+          <h1 className="font-display text-[36px] sm:text-[46px] md:text-[56px] leading-[1.08] tracking-tight text-on-surface">
             Carry Your World in{' '}
             <span className="bg-gradient-to-r from-amber-500 via-rose-500 to-indigo-600 bg-clip-text text-transparent">
               Color & Craft.
             </span>
           </h1>
 
-          <p className="text-[14px] md:text-[16px] leading-relaxed text-on-surface-variant max-w-xl mx-auto lg:mx-0">
+          <p className="text-[14.5px] md:text-[16.5px] leading-relaxed text-on-surface-variant max-w-xl mx-auto lg:mx-0">
             Engineered for daily hustle, airport security, and life on the go. Heavy-duty ballistic nylon, vegetable-tanned leather, and intuitive compartments.
           </p>
 
           {/* 4 Stat Badges */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
-            <div className="p-2.5 rounded-2xl bg-amber-500/10 ring-1 ring-amber-500/25 flex flex-col items-center lg:items-start">
-              <span className="text-[17px] md:text-[20px] font-extrabold text-amber-700 dark:text-amber-300">50,000+</span>
-              <span className="text-[11px] font-semibold text-on-surface-variant">Journeys Made</span>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
+            <div className="p-3.5 rounded-2xl bg-amber-500/10 ring-1 ring-amber-500/25 flex flex-col items-center lg:items-start gap-1">
+              <span className="text-[19px] md:text-[22px] font-extrabold text-amber-700 dark:text-amber-300">50,000+</span>
+              <span className="text-[11.5px] font-semibold text-on-surface-variant">Journeys Made</span>
             </div>
-            <div className="p-2.5 rounded-2xl bg-emerald-500/10 ring-1 ring-emerald-500/25 flex flex-col items-center lg:items-start">
-              <span className="text-[17px] md:text-[20px] font-extrabold text-emerald-700 dark:text-emerald-300">4.6★</span>
-              <span className="text-[11px] font-semibold text-on-surface-variant">30+ Reviews</span>
+            <div className="p-3.5 rounded-2xl bg-emerald-500/10 ring-1 ring-emerald-500/25 flex flex-col items-center lg:items-start gap-1">
+              <span className="text-[19px] md:text-[22px] font-extrabold text-emerald-700 dark:text-emerald-300">4.6★</span>
+              <span className="text-[11.5px] font-semibold text-on-surface-variant">30+ Reviews</span>
             </div>
-            <div className="p-2.5 rounded-2xl bg-sky-500/10 ring-1 ring-sky-500/25 flex flex-col items-center lg:items-start">
-              <span className="text-[17px] md:text-[20px] font-extrabold text-sky-700 dark:text-sky-300">100%</span>
-              <span className="text-[11px] font-semibold text-on-surface-variant">Recycled Linings</span>
+            <div className="p-3.5 rounded-2xl bg-sky-500/10 ring-1 ring-sky-500/25 flex flex-col items-center lg:items-start gap-1">
+              <span className="text-[19px] md:text-[22px] font-extrabold text-sky-700 dark:text-sky-300">100%</span>
+              <span className="text-[11.5px] font-semibold text-on-surface-variant">Recycled Linings</span>
             </div>
-            <div className="p-2.5 rounded-2xl bg-rose-500/10 ring-1 ring-rose-500/25 flex flex-col items-center lg:items-start">
-              <span className="text-[17px] md:text-[20px] font-extrabold text-rose-700 dark:text-rose-300">7-Day</span>
-              <span className="text-[11px] font-semibold text-on-surface-variant">Home Trial</span>
+            <div className="p-3.5 rounded-2xl bg-rose-500/10 ring-1 ring-rose-500/25 flex flex-col items-center lg:items-start gap-1">
+              <span className="text-[19px] md:text-[22px] font-extrabold text-rose-700 dark:text-rose-300">7-Day</span>
+              <span className="text-[11.5px] font-semibold text-on-surface-variant">Home Trial</span>
             </div>
           </div>
 
           {/* Quick Department Action Buttons */}
-          <div className="flex flex-wrap gap-2.5 justify-center lg:justify-start pt-2">
-            <Link to="/men" className="btn bg-gradient-to-r from-blue-700 to-indigo-600 text-white font-semibold shadow-md hover:brightness-110 active:scale-95 transition-all text-[13px]">
+          <div className="flex flex-wrap gap-3 justify-center lg:justify-start pt-2.5">
+            <Link to="/men" className="btn bg-gradient-to-r from-blue-700 to-indigo-600 text-white font-semibold shadow-md hover:brightness-110 active:scale-95 transition-all text-[13.5px]">
               <Icon name="man" className="text-[18px]" /> Shop Men
             </Link>
-            <Link to="/women" className="btn bg-gradient-to-r from-rose-600 to-pink-600 text-white font-semibold shadow-md hover:brightness-110 active:scale-95 transition-all text-[13px]">
+            <Link to="/women" className="btn bg-gradient-to-r from-rose-600 to-pink-600 text-white font-semibold shadow-md hover:brightness-110 active:scale-95 transition-all text-[13.5px]">
               <Icon name="woman" className="text-[18px]" /> Shop Women
             </Link>
-            <Link to="/universal" className="btn bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-semibold shadow-md hover:brightness-110 active:scale-95 transition-all text-[13px]">
+            <Link to="/universal" className="btn bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-semibold shadow-md hover:brightness-110 active:scale-95 transition-all text-[13.5px]">
               <Icon name="public" className="text-[18px]" /> Universal
             </Link>
-            <Link to="/shop/travel-utility" className="btn bg-gradient-to-r from-cyan-600 to-blue-600 text-white font-semibold shadow-md hover:brightness-110 active:scale-95 transition-all text-[13px]">
+            <Link to="/shop/travel-utility" className="btn bg-gradient-to-r from-cyan-600 to-blue-600 text-white font-semibold shadow-md hover:brightness-110 active:scale-95 transition-all text-[13.5px]">
               <Icon name="flight_takeoff" className="text-[18px]" /> Travel & Utility
             </Link>
-            <Link to="/shop/accessories" className="btn bg-gradient-to-r from-amber-600 to-orange-600 text-white font-semibold shadow-md hover:brightness-110 active:scale-95 transition-all text-[13px]">
+            <Link to="/shop/accessories" className="btn bg-gradient-to-r from-amber-600 to-orange-600 text-white font-semibold shadow-md hover:brightness-110 active:scale-95 transition-all text-[13.5px]">
               <Icon name="watch" className="text-[18px]" /> Accessories
             </Link>
-            <Link to="/shop" className="btn bg-surface/90 backdrop-blur-md ring-1 ring-surface-container-high text-on-surface hover:bg-surface-container transition-all text-[13px]">
+            <Link to="/shop" className="btn bg-surface/90 backdrop-blur-md ring-1 ring-surface-container-high text-on-surface hover:bg-surface-container transition-all text-[13.5px]">
               Explore All <Icon name="arrow_forward" className="text-[16px]" />
             </Link>
           </div>
@@ -376,7 +376,7 @@ function ProductRail({ eyebrow, icon, title, link, products, loading, tone = 'in
     <section className={cn('mt-6 md:mt-10 py-4 md:py-6 bg-gradient-to-br to-transparent', t.band)} aria-label={title}>
       <div className="container-x">
       <SectionHead eyebrow={eyebrow} icon={icon} title={title} link={link} tone={t} />
-      <div className="grid grid-flow-col auto-cols-[46%] sm:auto-cols-[31%] lg:auto-cols-[calc(25%-9px)] gap-1.5 sm:gap-2 md:gap-3 overflow-x-auto snap-x snap-mandatory scrollbar-none -mx-3 px-3 md:mx-0 md:px-0 pb-1">
+      <div className="grid grid-flow-col auto-cols-[75%] sm:auto-cols-[45%] md:auto-cols-[32%] lg:auto-cols-[calc(25%-18px)] gap-4 sm:gap-5 md:gap-6 overflow-x-auto snap-x snap-mandatory scrollbar-none -mx-3 px-3 md:mx-0 md:px-0 pb-2">
         {loading
           ? Array.from({ length: 4 }, (_, i) => <div key={i} className="snap-start"><ProductCardSkeleton /></div>)
           : products.map((p) => (

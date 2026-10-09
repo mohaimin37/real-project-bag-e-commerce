@@ -260,8 +260,8 @@ function MobileValueStrip() {
   );
 }
 
-// ── 5. Flipkart 3-Column Compact Product Card (Mesmerizing & Easy) ──
-function Flipkart3ColCard({ product }) {
+// ── 5. Modern 2-Column Mobile Product Card (Spacious, Clear & Touch-Friendly) ──
+function MobileProductCard({ product }) {
   const money = useMoney();
   const { has, toggle } = useWishlist();
   const { add } = useCart();
@@ -288,19 +288,19 @@ function Flipkart3ColCard({ product }) {
   };
 
   return (
-    <div className="bg-surface-container-lowest rounded-xl border border-outline-variant/30 overflow-hidden flex flex-col relative group active:scale-[0.98] transition-all shadow-xs">
+    <div className="bg-surface-container-lowest rounded-2xl border border-outline-variant/30 overflow-hidden flex flex-col relative group active:scale-[0.98] transition-all shadow-xs">
       {/* Product Image Area */}
       <Link to={`/product/${product.slug}`} className="relative block aspect-square bg-surface-container-low overflow-hidden">
         <Img
           src={productImage(product, variant)}
           alt={product.name}
-          w={260}
+          w={320}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
         />
 
         {/* Discount Badge */}
         {pct > 0 && (
-          <span className="absolute top-1 left-1 px-1.5 py-0.5 rounded-md bg-emerald-600 text-white text-[8.5px] font-black tracking-tight leading-none shadow-xs">
+          <span className="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-emerald-600 text-white text-[9.5px] font-black tracking-tight leading-none shadow-xs">
             {pct}% OFF
           </span>
         )}
@@ -314,62 +314,68 @@ function Flipkart3ColCard({ product }) {
             e.stopPropagation();
             toggle.mutate(product);
           }}
-          className="absolute top-1 right-1 w-6 h-6 rounded-full bg-surface-container-lowest/90 backdrop-blur-xs flex items-center justify-center shadow-xs active:scale-75 transition-transform"
+          className="absolute top-2 right-2 w-7 h-7 rounded-full bg-surface-container-lowest/90 backdrop-blur-xs flex items-center justify-center shadow-xs active:scale-75 transition-transform"
         >
           <Icon
             name="favorite"
             fill={saved}
-            className={cn('text-[13px]', saved ? 'text-error' : 'text-outline')}
+            className={cn('text-[14px]', saved ? 'text-error' : 'text-outline')}
           />
         </button>
 
         {soldOut && (
-          <span className="absolute inset-x-0 bottom-0 py-0.5 bg-black/70 text-white text-[9px] font-bold text-center">
+          <span className="absolute inset-x-0 bottom-0 py-1 bg-black/75 text-white text-[9.5px] font-bold text-center">
             Out of Stock
           </span>
         )}
       </Link>
 
-      {/* Product Details (Tailored for 3 Items Per Row) */}
-      <div className="p-1.5 flex flex-col flex-1 justify-between gap-1">
-        <div>
-          <span className="text-[8.5px] font-bold uppercase tracking-tight text-secondary line-clamp-1 block">
+      {/* Product Details with Generous Gaps */}
+      <div className="p-2.5 sm:p-3 flex flex-col flex-1 justify-between gap-1.5 sm:gap-2">
+        <div className="flex flex-col gap-1">
+          <span className="text-[9.5px] font-bold uppercase tracking-wider text-secondary line-clamp-1 block">
             {product.category?.name || 'WILDTANE'}
           </span>
           <Link
             to={`/product/${product.slug}`}
-            className="text-[10px] font-semibold text-on-surface line-clamp-2 leading-[13px] min-h-[26px] mt-0.5 hover:text-secondary block"
+            className="text-[12px] sm:text-[13px] font-semibold text-on-surface line-clamp-2 leading-[16px] min-h-[32px] hover:text-secondary block"
           >
             {product.name}
           </Link>
         </div>
 
-        {/* Rating Badge (Flipkart Green Pill) */}
-        <div className="flex items-center gap-1">
-          <span className="inline-flex items-center gap-0.5 px-1 py-0.2 rounded bg-emerald-700 text-white text-[8.5px] font-bold leading-none">
-            {(product.ratingAverage || 4.6).toFixed(1)} <Icon name="star" fill className="text-[8px]" />
+        {/* Rating Badge + Assured */}
+        <div className="flex items-center gap-1.5">
+          <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-emerald-700 text-white text-[9px] font-bold leading-none">
+            {(product.ratingAverage || 4.6).toFixed(1)} <Icon name="star" fill className="text-[8.5px]" />
           </span>
-          <span className="text-[8px] text-outline font-medium">
+          <span className="text-[9px] text-outline font-medium">
             ({product.ratingCount || 34})
+          </span>
+          <span className="text-[9px] font-black text-amber-600 dark:text-amber-400 ml-auto">
+            ⚡Assured
           </span>
         </div>
 
         {/* Price & Quick Add Button */}
-        <div className="mt-auto pt-1 flex items-end justify-between gap-1 border-t border-outline-variant/20">
+        <div className="mt-auto pt-1.5 flex items-end justify-between gap-1.5 border-t border-outline-variant/20">
           <div className="flex flex-col min-w-0">
-            <span className="text-[11.5px] font-black text-on-surface leading-none tracking-tight">
+            <span className="text-[13px] sm:text-[14.5px] font-extrabold text-on-surface leading-none tracking-tight">
               {money(product.finalPrice ?? product.price)}
             </span>
             {pct > 0 && (
-              <div className="flex items-center gap-1 mt-0.5">
-                <span className="text-[8.5px] text-outline line-through leading-none">
+              <div className="flex items-center gap-1 mt-1">
+                <span className="text-[9.5px] text-outline line-through leading-none">
                   {money(product.price)}
                 </span>
-                <span className="text-[8px] font-bold text-emerald-600 leading-none">
+                <span className="text-[9px] font-bold text-emerald-600 leading-none">
                   {pct}%
                 </span>
               </div>
             )}
+            <span className="text-[8.5px] font-medium text-emerald-600 dark:text-emerald-400 block mt-1">
+              Free Delivery
+            </span>
           </div>
 
           {/* Quick Add Button */}
@@ -379,11 +385,11 @@ function Flipkart3ColCard({ product }) {
             onClick={handleQuickAdd}
             aria-label={`Add ${product.name} to bag`}
             className={cn(
-              'w-6 h-6 rounded-lg text-white flex items-center justify-center shrink-0 shadow-xs active:scale-80 transition-all disabled:opacity-40',
+              'w-7 h-7 sm:w-8 sm:h-8 rounded-full text-white flex items-center justify-center shrink-0 shadow-xs active:scale-80 transition-all disabled:opacity-40',
               added ? 'bg-emerald-600 animate-pop' : 'bg-secondary hover:bg-secondary/90'
             )}
           >
-            <Icon name={added ? 'check' : 'add'} className="text-[14px]" />
+            <Icon name={added ? 'check' : 'add'} className="text-[15px]" />
           </button>
         </div>
       </div>
@@ -391,7 +397,7 @@ function Flipkart3ColCard({ product }) {
   );
 }
 
-// ── 6. Deal of the Day (3 Items Per Row + Countdown Timer) ──
+// ── 6. Deal of the Day (2-Column Grid + Countdown Timer) ──
 function MobileDealOfTheDay({ products }) {
   const [timeLeft, setTimeLeft] = useState({ h: 14, m: 28, s: 45 });
 
@@ -407,25 +413,24 @@ function MobileDealOfTheDay({ products }) {
     return () => clearInterval(timer);
   }, []);
 
-  // Show exactly 6 items (2 complete rows of 3)
-  const dealProducts = (products || []).slice(0, 6);
+  const dealProducts = (products || []).slice(0, 4);
   if (!dealProducts.length) return null;
 
   return (
     <section className="px-2 py-2 w-full max-w-full">
       <div className="rounded-2xl bg-surface-container-lowest border border-outline-variant/30 overflow-hidden shadow-xs">
         {/* Deal Header */}
-        <div className="px-3 py-2 bg-gradient-to-r from-amber-500/15 via-rose-500/10 to-transparent flex items-center justify-between border-b border-outline-variant/30">
+        <div className="px-3 py-2.5 bg-gradient-to-r from-amber-500/15 via-rose-500/10 to-transparent flex items-center justify-between border-b border-outline-variant/30">
           <div className="flex items-center gap-2">
-            <span className="w-6 h-6 rounded-lg bg-amber-500 text-white flex items-center justify-center shadow-xs">
-              <Icon name="bolt" className="text-[17px]" />
+            <span className="w-7 h-7 rounded-lg bg-amber-500 text-white flex items-center justify-center shadow-xs">
+              <Icon name="bolt" className="text-[18px]" />
             </span>
             <div className="flex flex-col">
-              <span className="text-[12.5px] font-black tracking-tight text-on-surface uppercase">
+              <span className="text-[13px] font-black tracking-tight text-on-surface uppercase">
                 Deal of the Day
               </span>
-              <div className="flex items-center gap-1 text-[10px] font-semibold text-amber-700 dark:text-amber-400">
-                <Icon name="timer" className="text-[11px]" />
+              <div className="flex items-center gap-1 text-[10.5px] font-semibold text-amber-700 dark:text-amber-400">
+                <Icon name="timer" className="text-[12px]" />
                 <span>
                   {String(timeLeft.h).padStart(2, '0')}h : {String(timeLeft.m).padStart(2, '0')}m : {String(timeLeft.s).padStart(2, '0')}s
                 </span>
@@ -435,16 +440,16 @@ function MobileDealOfTheDay({ products }) {
 
           <Link
             to="/offers"
-            className="text-[11px] font-bold text-secondary flex items-center gap-0.5 active:scale-95"
+            className="text-[11.5px] font-bold text-secondary flex items-center gap-0.5 active:scale-95"
           >
-            VIEW ALL <Icon name="chevron_right" className="text-[15px]" />
+            VIEW ALL <Icon name="chevron_right" className="text-[16px]" />
           </Link>
         </div>
 
-        {/* 3 Items Per Row Grid */}
-        <div className="p-1.5 grid grid-cols-3 gap-1.5">
+        {/* 2 Items Per Row Grid */}
+        <div className="p-2.5 grid grid-cols-2 gap-2.5">
           {dealProducts.map((p) => (
-            <Flipkart3ColCard key={p._id} product={p} />
+            <MobileProductCard key={p._id} product={p} />
           ))}
         </div>
       </div>
@@ -464,29 +469,29 @@ function Mobile3DepartmentRow() {
 
   return (
     <div className="px-2 py-1.5 w-full max-w-full">
-      <div className="rounded-2xl bg-surface-container-lowest border border-outline-variant/30 p-2 shadow-xs">
+      <div className="rounded-2xl bg-surface-container-lowest border border-outline-variant/30 p-2.5 shadow-xs">
         <div className="flex items-center justify-between px-1 mb-2">
           <h3 className="text-[13px] font-black text-on-surface tracking-tight uppercase">
             Curated Departments
           </h3>
-          <Link to="/shop" className="text-[10.5px] font-bold text-secondary flex items-center gap-0.5">
-            Explore All <Icon name="chevron_right" className="text-[14px]" />
+          <Link to="/shop" className="text-[11px] font-bold text-secondary flex items-center gap-0.5">
+            Explore All <Icon name="chevron_right" className="text-[15px]" />
           </Link>
         </div>
 
         {/* 5 Departments in a Smooth Scrolling Snap Strip */}
-        <div className="flex gap-2 overflow-x-auto snap-x scrollbar-none pb-1">
+        <div className="flex gap-2.5 overflow-x-auto snap-x scrollbar-none pb-1">
           {departments.map((dept, idx) => (
             <Link
               key={idx}
               to={dept.to}
-              className="relative rounded-xl overflow-hidden aspect-[3/4] w-[105px] shrink-0 snap-start border border-outline-variant/20 group active:scale-[0.97] transition-transform"
+              className="relative rounded-2xl overflow-hidden aspect-[3/4] w-[115px] shrink-0 snap-start border border-outline-variant/20 group active:scale-[0.97] transition-transform"
             >
               <Img src={dept.image} alt={dept.name} w={240} className="w-full h-full object-cover" />
               <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent" />
-              <div className="absolute bottom-1.5 left-1.5 right-1.5 text-white">
-                <span className="text-[10.5px] font-bold line-clamp-1 leading-tight">{dept.name}</span>
-                <span className="text-[8.5px] font-semibold text-amber-300 block leading-tight mt-0.5 truncate">{dept.tag}</span>
+              <div className="absolute bottom-2 left-2 right-2 text-white">
+                <span className="text-[11px] font-bold line-clamp-1 leading-tight">{dept.name}</span>
+                <span className="text-[9px] font-semibold text-amber-300 block leading-tight mt-0.5 truncate">{dept.tag}</span>
               </div>
             </Link>
           ))}
@@ -496,7 +501,7 @@ function Mobile3DepartmentRow() {
   );
 }
 
-// ── 8. Interactive Filter Chip Switcher (Mesmerizing Feature: Instant 3-Col Switch) ──
+// ── 8. Interactive Filter Chip Switcher (Instant 2-Col Switch) ──
 function MobileInteractiveTabShowcase({ allProducts }) {
   const [activeTab, setActiveTab] = useState('All');
 
@@ -504,7 +509,7 @@ function MobileInteractiveTabShowcase({ allProducts }) {
 
   const filtered = useMemo(() => {
     if (!allProducts || !allProducts.length) return [];
-    if (activeTab === 'All') return allProducts.slice(0, 6);
+    if (activeTab === 'All') return allProducts.slice(0, 4);
     const slugMap = {
       Universal: 'unisex',
       'Travel & Utility': 'travel',
@@ -520,37 +525,37 @@ function MobileInteractiveTabShowcase({ allProducts }) {
         (p.category?.slug && p.category.slug.toLowerCase().includes(key)) ||
         p.name.toLowerCase().includes(key)
     );
-    return matches.length >= 3 ? matches.slice(0, 6) : allProducts.slice(0, 6);
+    return matches.length >= 2 ? matches.slice(0, 4) : allProducts.slice(0, 4);
   }, [allProducts, activeTab]);
 
   if (!filtered.length) return null;
 
   return (
     <section className="px-2 py-2 w-full max-w-full">
-      <div className="rounded-2xl bg-surface-container-lowest border border-outline-variant/30 p-2 shadow-xs">
+      <div className="rounded-2xl bg-surface-container-lowest border border-outline-variant/30 p-2.5 shadow-xs">
         <div className="flex items-center justify-between px-1 mb-2">
           <div>
             <h3 className="text-[13px] font-black text-on-surface tracking-tight uppercase">
               Trending Collections
             </h3>
-            <span className="text-[9.5px] text-outline font-medium">
+            <span className="text-[10px] text-outline font-medium">
               Tap a category to filter instantly
             </span>
           </div>
-          <Link to="/shop" className="text-[10.5px] font-bold text-secondary flex items-center gap-0.5">
-            Shop All <Icon name="chevron_right" className="text-[14px]" />
+          <Link to="/shop" className="text-[11px] font-bold text-secondary flex items-center gap-0.5">
+            Shop All <Icon name="chevron_right" className="text-[15px]" />
           </Link>
         </div>
 
         {/* Interactive Chip Switcher */}
-        <div className="flex gap-1.5 overflow-x-auto scrollbar-none pb-2 pt-0.5 snap-x">
+        <div className="flex gap-1.5 overflow-x-auto scrollbar-none pb-2.5 pt-0.5 snap-x">
           {tabs.map((tab) => (
             <button
               key={tab}
               type="button"
               onClick={() => setActiveTab(tab)}
               className={cn(
-                'px-2.5 py-1 rounded-full text-[10px] font-bold shrink-0 snap-start transition-all border',
+                'px-3 py-1.5 rounded-full text-[11px] font-bold shrink-0 snap-start transition-all border',
                 activeTab === tab
                   ? 'bg-secondary text-on-secondary border-secondary shadow-xs scale-102'
                   : 'bg-surface-container-low text-on-surface border-outline-variant/30 hover:border-outline'
@@ -561,10 +566,10 @@ function MobileInteractiveTabShowcase({ allProducts }) {
           ))}
         </div>
 
-        {/* 3 Items Per Row Grid */}
-        <div className="grid grid-cols-3 gap-1.5 pt-1">
+        {/* 2 Items Per Row Grid */}
+        <div className="grid grid-cols-2 gap-2.5 pt-1">
           {filtered.map((p) => (
-            <Flipkart3ColCard key={p._id} product={p} />
+            <MobileProductCard key={p._id} product={p} />
           ))}
         </div>
       </div>
@@ -572,38 +577,37 @@ function MobileInteractiveTabShowcase({ allProducts }) {
   );
 }
 
-// ── 9. Generic 3-Column Mobile Section Grid (Bestsellers & New In) ──
+// ── 9. Generic 2-Column Mobile Section Grid (Bestsellers & New In) ──
 function Mobile3ColSection({ title, subtitle, link = '/shop', products }) {
-  // Show 6 products = exactly 2 rows of 3 items
-  const items = (products || []).slice(0, 6);
+  const items = (products || []).slice(0, 4);
   if (!items.length) return null;
 
   return (
     <section className="px-2 py-2 w-full max-w-full">
-      <div className="rounded-2xl bg-surface-container-lowest border border-outline-variant/30 p-2 shadow-xs">
+      <div className="rounded-2xl bg-surface-container-lowest border border-outline-variant/30 p-2.5 shadow-xs">
         <div className="flex items-center justify-between px-1 mb-2">
           <div className="flex flex-col">
             <h3 className="text-[13px] font-black text-on-surface tracking-tight uppercase">
               {title}
             </h3>
             {subtitle && (
-              <span className="text-[9.5px] text-outline font-medium">
+              <span className="text-[10px] text-outline font-medium">
                 {subtitle}
               </span>
             )}
           </div>
           <Link
             to={link}
-            className="text-[10.5px] font-bold text-secondary flex items-center gap-0.5 active:scale-95"
+            className="text-[11px] font-bold text-secondary flex items-center gap-0.5 active:scale-95"
           >
-            See All <Icon name="chevron_right" className="text-[14px]" />
+            See All <Icon name="chevron_right" className="text-[15px]" />
           </Link>
         </div>
 
-        {/* Exactly 3 Items Per Row */}
-        <div className="grid grid-cols-3 gap-1.5">
+        {/* 2 Items Per Row */}
+        <div className="grid grid-cols-2 gap-2.5">
           {items.map((p) => (
-            <Flipkart3ColCard key={p._id} product={p} />
+            <MobileProductCard key={p._id} product={p} />
           ))}
         </div>
       </div>
@@ -611,11 +615,11 @@ function Mobile3ColSection({ title, subtitle, link = '/shop', products }) {
   );
 }
 
-// ── 10. Entire Store Catalog Showcase (Browse All Items in 3-Col Grid) ──
+// ── 10. Entire Store Catalog Showcase (Browse Items in 2-Col Grid) ──
 function MobileEntireStoreSection() {
   const { data, isLoading } = useQuery({
     queryKey: ['products', 'mobile-all-feed'],
-    queryFn: () => api.products({ limit: 18, sort: 'featured' }),
+    queryFn: () => api.products({ limit: 8, sort: 'featured' }),
     staleTime: 5 * 60 * 1000,
   });
 
@@ -624,37 +628,37 @@ function MobileEntireStoreSection() {
 
   return (
     <section className="px-2 py-2 w-full max-w-full">
-      <div className="rounded-2xl bg-surface-container-lowest border border-outline-variant/30 p-2 shadow-xs">
+      <div className="rounded-2xl bg-surface-container-lowest border border-outline-variant/30 p-2.5 shadow-xs">
         <div className="flex items-center justify-between px-1 mb-2">
           <div className="flex flex-col">
             <h3 className="text-[13px] font-black text-on-surface tracking-tight uppercase">
               All Bags & Backpacks
             </h3>
-            <span className="text-[9.5px] text-outline font-medium">
+            <span className="text-[10px] text-outline font-medium">
               Explore the complete collection
             </span>
           </div>
           <Link
             to="/shop"
-            className="text-[10.5px] font-bold text-secondary flex items-center gap-0.5 active:scale-95"
+            className="text-[11px] font-bold text-secondary flex items-center gap-0.5 active:scale-95"
           >
-            Filter & Sort <Icon name="tune" className="text-[14px]" />
+            Filter & Sort <Icon name="tune" className="text-[15px]" />
           </Link>
         </div>
 
-        {/* 3 Items Per Row Grid */}
-        <div className="grid grid-cols-3 gap-1.5">
+        {/* 2 Items Per Row Grid */}
+        <div className="grid grid-cols-2 gap-2.5">
           {products.map((p) => (
-            <Flipkart3ColCard key={p._id} product={p} />
+            <MobileProductCard key={p._id} product={p} />
           ))}
         </div>
 
         <div className="pt-3 pb-1 flex justify-center">
           <Link
             to="/shop"
-            className="w-full py-2.5 rounded-xl bg-surface-container-low border border-outline-variant/40 text-on-surface font-bold text-[12px] flex items-center justify-center gap-1 active:bg-surface-container transition-colors shadow-xs"
+            className="w-full py-2.5 rounded-xl bg-surface-container-low border border-outline-variant/40 text-on-surface font-bold text-[12.5px] flex items-center justify-center gap-1.5 active:bg-surface-container transition-colors shadow-xs"
           >
-            View Complete Catalog ({data?.total || '50+'} items) <Icon name="arrow_forward" className="text-[14px]" />
+            View Complete Catalog ({data?.total || '60+'} items) <Icon name="arrow_forward" className="text-[15px]" />
           </Link>
         </div>
       </div>
