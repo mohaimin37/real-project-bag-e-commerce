@@ -36,9 +36,9 @@ function MobileTopSearchHeader() {
       {/* Brand & Assured Top Row */}
       <div className="flex items-center justify-between mb-1.5 px-0.5">
         <Link to="/" className="flex items-center gap-1.5 active:opacity-80">
-          <h1 className="font-serif tracking-wider font-bold text-[17px] text-on-surface uppercase">
+          <span className="font-serif tracking-wider font-bold text-[17px] text-on-surface uppercase">
             WILDTANE
-          </h1>
+          </span>
           <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-gradient-to-r from-amber-500 to-amber-600 text-white text-[8.5px] font-black uppercase tracking-tight shadow-xs">
             <Icon name="bolt" className="text-[10px]" /> Assured
           </span>

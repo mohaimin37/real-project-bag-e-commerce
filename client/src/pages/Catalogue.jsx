@@ -6,7 +6,7 @@ import { cn } from '../lib/format';
 import { categoryTone } from '../lib/categoryTone';
 import { useCategories } from '../hooks/useStore';
 import { ProductCard, ProductCardSkeleton } from '../components/product';
-import Seo from '../components/Seo';
+import Seo, { breadcrumbLd } from '../components/Seo';
 import SortMenu from '../components/SortMenu';
 import { EmptyState, ErrorState, Icon, Toggle } from '../components/ui';
 
@@ -142,7 +142,12 @@ export default function Catalogue() {
 
   return (
     <div className="pb-space-xl">
-      <Seo title="Full Catalogue — Every Bag in One Place" description="Browse every WILDTANE bag, backpack, travel piece and accessory on one page, grouped by category." canonical="/catalogue" />
+      <Seo
+        title="Full Catalogue — Every Bag in One Place"
+        description="Browse every WILDTANE bag, backpack, travel piece and accessory on one page, grouped by category."
+        canonical="/catalogue"
+        jsonLd={breadcrumbLd([{ label: 'Home', to: '/' }, { label: 'Catalogue' }])}
+      />
 
       {/* Header */}
       <section className="bg-surface-container-low">

@@ -6,7 +6,7 @@ import { api } from '../lib/api';
 import { useUser } from '../hooks/useStore';
 import { Button, CountrySelect, Field, Icon, Img, Input, Select, Textarea } from '../components/ui';
 import { applyServerErrors } from './Auth';
-import Seo from '../components/Seo';
+import Seo, { breadcrumbLd } from '../components/Seo';
 import ImageDrop from '../components/ImageDrop';
 
 const schema = z.object({
@@ -53,7 +53,13 @@ export default function Corporate() {
 
   return (
     <>
-      <Seo title="Corporate Gifting & Bulk Bag Orders" description="Custom-branded backpacks, laptop bags and leather gifts for teams and clients. Volume pricing from 10 units, debossed logos and pan-India dispatch." canonical="/corporate" image="/uploads/seed/briefcase-black.jpg" />
+      <Seo
+        title="Corporate Gifting & Bulk Bag Orders"
+        description="Custom-branded backpacks, laptop bags and leather gifts for teams and clients. Volume pricing from 10 units, debossed logos and pan-India dispatch."
+        canonical="/corporate"
+        image="/uploads/seed/briefcase-black.jpg"
+        jsonLd={breadcrumbLd([{ label: 'Home', to: '/' }, { label: 'Corporate Gifting' }])}
+      />
       <section className="relative bg-ink text-on-ink overflow-hidden">
         <Img src="/uploads/seed/briefcase-black.jpg" alt="" className="absolute inset-0 opacity-30" />
         <div className="absolute inset-0 bg-gradient-to-r from-ink via-ink/90 to-transparent" />

@@ -770,14 +770,16 @@ export default function Shop({ preset }) {
 
   return (
     <>
-      <Seo
-        title={isHome ? undefined : genderPage && activeCategory ? `${genderPage.title}’s ${activeCategory.name} — WILDTANE` : genderPage ? genderPage.seoTitle : activeCategory ? `Buy ${activeCategory.name} Online` : title}
-        description={isHome ? undefined : genderPage ? genderPage.description : `${description} Shop ${activeCategory?.name?.toLowerCase() || 'bags'} at WILDTANE.`}
-        canonical={canonical}
-        image={genderPage?.image}
-        noindex={Boolean(get('q'))}
-        jsonLd={isHome ? [organizationLd(config), websiteLd(), ...listLd] : [breadcrumbLd(crumbs), ...listLd]}
-      />
+      {!isHome && (
+        <Seo
+          title={genderPage && activeCategory ? `${genderPage.title}’s ${activeCategory.name} — WILDTANE` : genderPage ? genderPage.seoTitle : activeCategory ? `Buy ${activeCategory.name} Online` : title}
+          description={genderPage ? genderPage.description : `${description} Shop ${activeCategory?.name?.toLowerCase() || 'bags'} at WILDTANE.`}
+          canonical={canonical}
+          image={genderPage?.image}
+          noindex={Boolean(get('q'))}
+          jsonLd={[breadcrumbLd(crumbs), ...listLd]}
+        />
+      )}
 
       {/* Desktop Department / Collection Hero (Men, Women, Unisex, Offers, or Master Shop) */}
       {!get('q') && (

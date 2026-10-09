@@ -10,7 +10,11 @@ const STATIC_PAGES = [
   ['/shop', 'daily', '0.9'],
   ['/men', 'daily', '0.9'],
   ['/women', 'daily', '0.9'],
-  ['/unisex', 'daily', '0.9'],
+  ['/universal', 'daily', '0.9'],
+  ['/unisex', 'daily', '0.8'],
+  ['/shop/travel-utility', 'daily', '0.9'],
+  ['/shop/accessories', 'daily', '0.9'],
+  ['/catalogue', 'weekly', '0.8'],
   ['/offers', 'daily', '0.8'],
   ['/blog', 'weekly', '0.7'],
   ['/about', 'monthly', '0.6'],
@@ -50,12 +54,19 @@ router.get(
   asyncHandler(async (req, res) => {
     const [products, categories, posts] = await Promise.all([
       Product.find({ isVisible: true }).select('slug updatedAt images name').lean(),
-      Category.find({ isActive: true }).select('slug updatedAt').lean(),
+      Category.find({ isActive: true }).select('slug updatedAt image name').lean(),
       Blog.find({ status: 'published' }).select('slug updatedAt coverImage title').lean(),
     ]);
     const entries = [
       ...STATIC_PAGES.map(([loc, changefreq, priority]) => urlEntry(loc, { changefreq, priority })),
-      ...categories.map((c) => urlEntry(`/shop/${c.slug}`, { lastmod: c.updatedAt, changefreq: 'weekly', priority: '0.8' })),
+      ...categories.map((c) =>
+        urlEntry(`/shop/${c.slug}`, {
+          lastmod: c.updatedAt,
+          changefreq: 'weekly',
+          priority: '0.8',
+          images: c.image?.url ? [{ url: c.image.url, alt: `${c.name} Collection` }] : [],
+        })
+      ),
       ...products.map((p) => urlEntry(`/product/${p.slug}`, { lastmod: p.updatedAt, changefreq: 'weekly', priority: '0.9', images: p.images.map((i) => ({ url: i.url, alt: i.alt || p.name })) })),
       ...posts.map((b) => urlEntry(`/blog/${b.slug}`, { lastmod: b.updatedAt, changefreq: 'monthly', priority: '0.6', images: b.coverImage?.url ? [{ url: b.coverImage.url, alt: b.title }] : [] })),
     ];

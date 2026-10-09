@@ -15,7 +15,7 @@ import { useConfig, useMoney, useUser } from '../hooks/useStore';
 import { ProductCard, Swatches, WishlistButton, firstAvailable } from '../components/product';
 import { Badge, Breadcrumbs, Button, CountrySelect, EmptyState, ErrorState, Field, Icon, Img, Input, Modal, Pagination, QuantityStepper, Skeleton, StarInput, Stars, Textarea } from '../components/ui';
 import NotFound from './NotFound';
-import Seo, { breadcrumbLd, productLd } from '../components/Seo';
+import Seo, { breadcrumbLd, faqPageLd, productLd } from '../components/Seo';
 import { EarnCoins } from '../components/coins';
 
 const FEATURE_ICON = { 'IPX5 Waterproof': 'water_drop', 'Laptop 16" Sleeve': 'laptop_mac', 'Laptop 14" Sleeve': 'laptop_mac', 'Trolley Pass-Through': 'luggage', 'RFID Blocking Pocket': 'security', 'Fidlock® Magnetic Fasteners': 'adjust', 'Shoe Compartment': 'steps' };
@@ -404,7 +404,11 @@ export default function ProductDetail() {
         image={product.images?.[0]?.url}
         type="product"
         canonical={`/product/${product.slug}`}
-        jsonLd={[productLd(product), breadcrumbLd(crumbs)]}
+        jsonLd={[
+          productLd(product),
+          breadcrumbLd(crumbs),
+          ...(product.faqs?.length ? [faqPageLd(product.faqs)] : []),
+        ]}
       />
       <div className="container-x pt-space-md"><Breadcrumbs items={crumbs} /></div>
       <section className="container-x py-space-lg grid grid-cols-1 lg:grid-cols-12 gap-gutter-lg items-start">

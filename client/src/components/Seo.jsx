@@ -42,9 +42,22 @@ function upsertLink(rel, href) {
  * Per-page SEO: title, description, canonical, Open Graph / Twitter cards,
  * robots and JSON-LD structured data. Values are written straight to <head>.
  */
-export default function Seo({ title, description = DEFAULT_DESCRIPTION, image = DEFAULT_IMAGE, type = 'website', noindex = false, canonical, jsonLd }) {
+export default function Seo({
+  title,
+  description = DEFAULT_DESCRIPTION,
+  image = DEFAULT_IMAGE,
+  type = 'website',
+  noindex = false,
+  canonical,
+  jsonLd,
+  keywords,
+}) {
   const { pathname } = useLocation();
-  const fullTitle = title ? `${title} | ${SITE_NAME}` : `${SITE_NAME} — Architectural Bags, Backpacks & Travel Gear`;
+  const fullTitle = !title
+    ? `${SITE_NAME} — Architectural Bags, Backpacks & Travel Gear`
+    : title.includes(SITE_NAME)
+      ? title
+      : `${title} | ${SITE_NAME}`;
   const url = `${SITE_URL}${canonical || pathname}`;
   const desc = description.length > 160 ? `${description.slice(0, 157).trimEnd()}…` : description;
   const ld = jsonLd ? JSON.stringify(Array.isArray(jsonLd) ? jsonLd : [jsonLd]) : '';
@@ -52,6 +65,7 @@ export default function Seo({ title, description = DEFAULT_DESCRIPTION, image = 
   useEffect(() => {
     document.title = fullTitle;
     upsertMeta('name', 'description', desc);
+    if (keywords) upsertMeta('name', 'keywords', keywords);
     upsertMeta('name', 'robots', noindex ? 'noindex, nofollow' : 'index, follow, max-image-preview:large');
     upsertLink('canonical', url);
     upsertMeta('property', 'og:site_name', SITE_NAME);
@@ -77,7 +91,7 @@ export default function Seo({ title, description = DEFAULT_DESCRIPTION, image = 
       // Escape "<" so content can never close the script tag.
       script.textContent = ld.replace(/</g, '\\u003c');
     } else script?.remove();
-  }, [fullTitle, desc, url, image, type, noindex, ld]);
+  }, [fullTitle, desc, url, image, type, noindex, ld, keywords]);
 
   return null;
 }
@@ -153,19 +167,44 @@ export function productLd(product, reviews = []) {
     },
     ...(product.ratingCount > 0
       ? {
-          aggregateRating: { '@type': 'AggregateRating', ratingValue: product.ratingAverage, reviewCount: product.ratingCount, bestRating: 5, worstRating: 1 },
-          review: reviews.slice(0, 5).map((r) => ({
-            '@type': 'Review',
-            author: { '@type': 'Person', name: r.user?.name || 'WILDTANE customer' },
-            datePublished: r.createdAt?.slice(0, 10),
-            reviewRating: { '@type': 'Rating', ratingValue: r.rating, bestRating: 5 },
-            name: r.title || undefined,
-            reviewBody: r.comment,
-          })),
+          aggregateRating: {
+            '@type': 'AggregateRating',
+            ratingValue: Number((product.ratingAverage || 0).toFixed(1)),
+            reviewCount: product.ratingCount,
+            bestRating: 5,
+            worstRating: 1,
+          },
+          ...(reviews?.length > 0
+            ? {
+                review: reviews.slice(0, 5).map((r) => ({
+                  '@type': 'Review',
+                  author: { '@type': 'Person', name: r.user?.name || 'WILDTANE Customer' },
+                  datePublished: r.createdAt?.slice(0, 10),
+                  reviewRating: { '@type': 'Rating', ratingValue: r.rating, bestRating: 5 },
+                  name: r.title || undefined,
+                  reviewBody: r.comment,
+                })),
+              }
+            : {}),
         }
       : {}),
   };
 }
+
+export const faqPageLd = (items = []) => ({
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: items
+    .map((it) => ({
+      '@type': 'Question',
+      name: it.question || it.q || '',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: it.answer || it.a || '',
+      },
+    }))
+    .filter((q) => q.name && q.acceptedAnswer.text),
+});
 
 export const articleLd = (post) => ({
   '@context': 'https://schema.org',

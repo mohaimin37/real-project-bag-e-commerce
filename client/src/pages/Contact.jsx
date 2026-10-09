@@ -7,7 +7,7 @@ import { api } from '../lib/api';
 import { useConfig, useUser } from '../hooks/useStore';
 import { Button, Field, Icon, Input, Select, Textarea } from '../components/ui';
 import { applyServerErrors } from './Auth';
-import Seo from '../components/Seo';
+import Seo, { breadcrumbLd, organizationLd } from '../components/Seo';
 
 const schema = z.object({
   name: z.string().trim().min(2, 'Enter your name'),
@@ -84,7 +84,12 @@ export default function Contact() {
 
   return (
     <div className="container-x py-space-xl">
-      <Seo title="Contact Customer Care" description="Questions about an order, a return or a WILDTANE product? Email, call or message our care team — we usually reply within 24–48 working hours." canonical="/contact" />
+      <Seo
+        title="Contact Customer Care"
+        description="Questions about an order, a return or a WILDTANE product? Email, call or message our care team — we usually reply within 24–48 working hours."
+        canonical="/contact"
+        jsonLd={[breadcrumbLd([{ label: 'Home', to: '/' }, { label: 'Contact Us' }]), organizationLd(config)]}
+      />
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-gutter-lg">
         <div className="lg:col-span-5 flex flex-col gap-space-lg">
           <div className="flex flex-col gap-1">

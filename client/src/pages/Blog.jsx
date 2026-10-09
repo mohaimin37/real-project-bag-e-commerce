@@ -2,7 +2,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { api } from '../lib/api';
 import { cn, formatDate } from '../lib/format';
-import Seo from '../components/Seo';
+import Seo, { breadcrumbLd } from '../components/Seo';
 import LiveFeed from '../components/LiveFeed';
 import { EmptyState, ErrorState, Img, Pagination, Skeleton } from '../components/ui';
 
@@ -20,7 +20,12 @@ export default function Blog() {
 
   return (
     <div className="container-x py-space-xl">
-      <Seo title="The Journal — Travel Guides, Leather Care & Stories" description="Packing guides, leather care routines and stories from the WILDTANE workshop on building bags that last decades." canonical="/blog" />
+      <Seo
+        title="The Journal — Travel Guides, Leather Care & Stories"
+        description="Packing guides, leather care routines and stories from the WILDTANE workshop on building bags that last decades."
+        canonical="/blog"
+        jsonLd={[breadcrumbLd([{ label: 'Home', to: '/' }, { label: 'The Journal' }])]}
+      />
       <div className="flex flex-col gap-1 mb-space-lg">
         <span className="eyebrow">The Journal</span>
         <h1 className="text-headline-xl-mobile md:text-headline-xl">Field Notes, Care Guides & Stories.</h1>

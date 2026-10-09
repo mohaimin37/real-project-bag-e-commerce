@@ -11,6 +11,7 @@ import { ProductCard, ProductCardSkeleton } from '../components/product';
 import BrandValues from '../components/BrandValues';
 import { AVATAR_GRADIENTS, SEED_CUSTOMER_REVIEWS, WriteReviewModal } from '../components/CustomerReviews';
 import MobileFlipkartHome from '../components/mobile/MobileFlipkartHome';
+import Seo, { organizationLd, websiteLd } from '../components/Seo';
 import Shop from './Shop';
 
 const RING_TONES = ['from-sky-500 to-cyan-400', 'from-emerald-500 to-teal-400', 'from-indigo-500 to-sky-400', 'from-pink-500 to-rose-400', 'from-violet-500 to-indigo-400', 'from-teal-500 to-emerald-400'];
@@ -87,12 +88,12 @@ function HomeHero() {
             </span>
           </div>
 
-          <h1 className="font-display text-[36px] sm:text-[46px] md:text-[56px] leading-[1.08] tracking-tight text-on-surface">
+          <h2 className="font-display text-[36px] sm:text-[46px] md:text-[56px] leading-[1.08] tracking-tight text-on-surface">
             Carry Your World in{' '}
             <span className="bg-gradient-to-r from-amber-500 via-rose-500 to-indigo-600 bg-clip-text text-transparent">
               Color & Craft.
             </span>
-          </h1>
+          </h2>
 
           <p className="text-[14.5px] md:text-[16.5px] leading-relaxed text-on-surface-variant max-w-xl mx-auto lg:mx-0">
             Engineered for daily hustle, airport security, and life on the go. Heavy-duty ballistic nylon, vegetable-tanned leather, and intuitive compartments.
@@ -1092,10 +1093,17 @@ function useIsMobile() {
  */
 export default function Home() {
   const isMobile = useIsMobile();
+  const { data: config } = useConfig();
 
   return (
     <>
-      <h1 className="sr-only">WILDTANE: bags, backpacks & travel gear</h1>
+      <Seo
+        title="WILDTANE — Architectural Luxury Bags, Backpacks & Travel Gear"
+        description="Discover WILDTANE luxury handcrafted bags, laptop backpacks, office briefcases, travel duffles, wallets & accessories in India. Express shipping & 7-day returns."
+        canonical="/"
+        jsonLd={[organizationLd(config), websiteLd()]}
+      />
+      <h1 className="sr-only">WILDTANE — Architectural Luxury Bags, Backpacks, Luggage & Travel Accessories</h1>
 
       {/* ── MOBILE VIEW: Dedicated Flipkart-style App Experience (Phones / Touch screens) ── */}
       {isMobile ? (
