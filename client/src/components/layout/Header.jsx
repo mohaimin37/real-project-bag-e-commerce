@@ -409,8 +409,8 @@ function ShopMenu({ categories }) {
 
 const SEARCH_HINTS = ['backpacks', 'tote bags', 'laptop bags', 'cabin luggage', 'wallets', 'duffle bags'];
 
-/** Pill search button with a placeholder that cycles through popular searches. */
-function SearchPill({ onOpen }) {
+/** Pill search button with modern interactive widgets (voice search mic, rotating hints, keyboard badge). */
+function SearchPill({ onOpen, onVoiceOpen }) {
   const [i, setI] = useState(0);
   useEffect(() => {
     if (prefersReducedMotion()) return undefined;
@@ -418,20 +418,38 @@ function SearchPill({ onOpen }) {
     return () => clearInterval(t);
   }, []);
   return (
-    <button
-      type="button"
+    <div
       onClick={onOpen}
+      role="button"
+      tabIndex={0}
       aria-label="Search products"
-      className="group flex-1 md:max-w-xl md:mx-auto flex items-center gap-2 h-10 pl-1.5 pr-3 rounded-full bg-surface-container text-on-surface-variant text-[13px] ring-1 ring-transparent hover:ring-indigo-400/60 hover:bg-surface-container-lowest hover:shadow-md transition-all min-w-0"
+      className="group flex-1 md:max-w-xl md:mx-auto flex items-center gap-2 h-10 pl-1.5 pr-2 rounded-full bg-surface-container/80 text-on-surface-variant text-[13px] ring-1 ring-outline-variant/40 hover:ring-secondary/60 hover:bg-surface-container-lowest hover:shadow-lg hover:shadow-secondary/5 transition-all cursor-pointer min-w-0"
     >
-      <span className="w-7 h-7 rounded-full bg-gradient-to-br from-indigo-600 to-violet-500 text-white flex items-center justify-center shrink-0 transition-transform group-hover:scale-110">
+      <span className="w-7 h-7 rounded-full bg-gradient-to-br from-secondary via-amber-500 to-rose-500 text-white flex items-center justify-center shrink-0 transition-transform group-hover:scale-110 shadow-xs">
         <Icon name="search" className="text-[17px]" />
       </span>
-      <span className="truncate">
+      <span className="truncate flex-1 min-w-0">
         Search <span key={i} className="inline-block font-semibold text-on-surface animate-promo-in">{SEARCH_HINTS[i]}</span>…
       </span>
-      <kbd className="hidden lg:inline-flex ml-auto items-center h-5 px-1.5 text-[10px] rounded-md bg-surface-container-lowest text-outline font-sans ring-1 ring-outline-variant">{IS_MAC ? '⌘K' : 'Ctrl K'}</kbd>
-    </button>
+
+      {/* Voice Search Widget Button */}
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          onVoiceOpen?.();
+        }}
+        className="w-7 h-7 rounded-full hover:bg-secondary/15 hover:text-secondary text-outline flex items-center justify-center transition-all shrink-0 active:scale-90"
+        title="Voice Search"
+        aria-label="Voice Search"
+      >
+        <Icon name="mic" className="text-[17px]" />
+      </button>
+
+      <kbd className="hidden lg:inline-flex items-center h-5 px-1.5 text-[10px] rounded-md bg-surface-container-lowest text-outline font-sans ring-1 ring-outline-variant/50 shrink-0">
+        {IS_MAC ? '⌘K' : 'Ctrl K'}
+      </kbd>
+    </div>
   );
 }
 
@@ -508,7 +526,10 @@ export default function Header() {
             <ShopMenu categories={categories} />
           </nav>
 
-          <SearchPill onOpen={() => dispatch(setSearchOpen(true))} />
+          <SearchPill
+            onOpen={() => dispatch(setSearchOpen(true))}
+            onVoiceOpen={() => dispatch(setSearchOpen({ open: true, voice: true }))}
+          />
 
           <div className="flex items-center gap-0.5 shrink-0">
             <button type="button" onClick={() => dispatch(setThemeOpen(true))} aria-label="Appearance and theme" title="Appearance & theme" className={cn(iconBtn, 'hidden md:inline-flex hover:bg-violet-500/10 hover:text-violet-600')}>

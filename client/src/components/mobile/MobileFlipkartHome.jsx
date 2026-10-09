@@ -19,6 +19,17 @@ const SEARCH_SUGGESTIONS = [
   'Waterproof Travel Packs...',
 ];
 
+const SEARCH_QUICK_WIDGETS = [
+  { label: '50% OFF', icon: 'sell', to: '/offers', highlight: true },
+  { label: 'Laptop Bags', icon: 'laptop_mac', to: '/shop?q=Laptop' },
+  { label: 'Under ₹1,499', icon: 'payments', to: '/shop?maxPrice=1499' },
+  { label: 'Cabin Trolley', icon: 'luggage', to: '/shop?q=Cabin' },
+  { label: 'Briefcases', icon: 'work', to: '/shop/briefcases' },
+  { label: '4.5★ Rated', icon: 'star', to: '/shop?rating=4.5' },
+  { label: 'Waterproof', icon: 'water_drop', to: '/shop?q=Waterproof' },
+  { label: 'RFID Wallets', icon: 'wallet', to: '/shop/wallets' },
+];
+
 function MobileTopSearchHeader() {
   const dispatch = useDispatch();
   const { count: cartCount } = useCart();
@@ -68,23 +79,65 @@ function MobileTopSearchHeader() {
         </div>
       </div>
 
-      {/* Flipkart-Style Search Input Pill */}
-      <button
-        type="button"
-        onClick={() => dispatch(setSearchOpen(true))}
-        className="w-full h-10 px-3 rounded-xl bg-surface-container-low border border-outline-variant/40 flex items-center justify-between text-on-surface-variant text-[12.5px] active:bg-surface-container transition-colors shadow-xs"
-      >
-        <div className="flex items-center gap-2 overflow-hidden">
+      {/* Modern Search Input Pill with Voice Mic & Lens */}
+      <div className="w-full h-10 px-2.5 rounded-xl bg-surface-container-low border border-outline-variant/40 flex items-center justify-between text-on-surface-variant text-[12.5px] shadow-xs">
+        <div
+          onClick={() => dispatch(setSearchOpen(true))}
+          role="button"
+          tabIndex={0}
+          className="flex-1 flex items-center gap-2 overflow-hidden cursor-pointer h-full"
+        >
           <Icon name="search" className="text-[18px] text-secondary shrink-0" />
           <span className="text-outline text-[12px] truncate transition-opacity duration-300">
             Search for {SEARCH_SUGGESTIONS[index]}
           </span>
         </div>
-        <div className="flex items-center gap-2 shrink-0 text-outline">
-          <Icon name="mic" className="text-[17px]" />
-          <Icon name="photo_camera" className="text-[17px]" />
+        <div className="flex items-center gap-1 shrink-0">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              dispatch(setSearchOpen({ open: true, voice: true }));
+            }}
+            className="w-7 h-7 rounded-full flex items-center justify-center text-outline hover:text-secondary active:scale-90 transition-transform"
+            aria-label="Voice Search"
+            title="Voice Search"
+          >
+            <Icon name="mic" className="text-[18px]" />
+          </button>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              dispatch(setSearchOpen(true));
+            }}
+            className="w-7 h-7 rounded-full flex items-center justify-center text-outline hover:text-secondary active:scale-90 transition-transform"
+            aria-label="Visual Category Search"
+            title="Visual Category Search"
+          >
+            <Icon name="photo_camera" className="text-[17px]" />
+          </button>
         </div>
-      </button>
+      </div>
+
+      {/* Modern Search Quick-Widgets Horizontal Strip */}
+      <div className="flex items-center gap-1.5 overflow-x-auto pt-2 pb-0.5 scrollbar-none">
+        {SEARCH_QUICK_WIDGETS.map((w) => (
+          <Link
+            key={w.label}
+            to={w.to}
+            className={cn(
+              'inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold shrink-0 transition-all border active:scale-95 shadow-xs',
+              w.highlight
+                ? 'bg-rose-500/10 text-rose-500 border-rose-500/30'
+                : 'bg-surface-container-low text-on-surface border-outline-variant/30 hover:border-secondary/40'
+            )}
+          >
+            <Icon name={w.icon} className={cn('text-[13px]', w.highlight ? 'text-rose-500' : 'text-secondary')} />
+            <span>{w.label}</span>
+          </Link>
+        ))}
+      </div>
     </div>
   );
 }

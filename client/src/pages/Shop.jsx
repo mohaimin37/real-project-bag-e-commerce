@@ -876,9 +876,18 @@ export default function Shop({ preset }) {
                 <Icon name="close" className="text-[13px]" />
               </button>
             ) : (
-              <div className="flex items-center gap-1.5 text-outline shrink-0">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  dispatch(setSearchOpen({ open: true, voice: true }));
+                }}
+                className="w-7 h-7 rounded-full flex items-center justify-center text-outline hover:text-secondary active:scale-90 shrink-0"
+                aria-label="Voice Search"
+                title="Voice Search"
+              >
                 <Icon name="mic" className="text-[17px]" />
-              </div>
+              </button>
             )}
           </div>
 

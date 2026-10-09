@@ -171,6 +171,7 @@ const uiSlice = createSlice({
   initialState: {
     cartOpen: false,
     searchOpen: false,
+    searchVoice: false,
     mobileNavOpen: false,
     quickView: null, // product slug
     adminEdit: null, // product id being edited in place on the storefront (admins only)
@@ -190,7 +191,16 @@ const uiSlice = createSlice({
   },
   reducers: {
     setCartOpen: (s, { payload }) => void (s.cartOpen = payload),
-    setSearchOpen: (s, { payload }) => void (s.searchOpen = payload),
+    setSearchOpen: (s, { payload }) => {
+      if (typeof payload === 'object' && payload !== null) {
+        s.searchOpen = Boolean(payload.open);
+        s.searchVoice = Boolean(payload.voice);
+      } else {
+        s.searchOpen = Boolean(payload);
+        if (!payload) s.searchVoice = false;
+      }
+    },
+    setSearchVoice: (s, { payload }) => void (s.searchVoice = Boolean(payload)),
     setMobileNavOpen: (s, { payload }) => void (s.mobileNavOpen = payload),
     openQuickView: (s, { payload }) => void (s.quickView = payload),
     closeQuickView: (s) => void (s.quickView = null),
@@ -250,6 +260,7 @@ export const { toggleGuestWishlist, clearGuestWishlist, pushRecent } = guestList
 export const {
   setCartOpen,
   setSearchOpen,
+  setSearchVoice,
   setMobileNavOpen,
   openQuickView,
   closeQuickView,

@@ -46,11 +46,12 @@ export const suggest = asyncHandler(async (req, res) => {
   const rx = new RegExp(escapeRegex(q), 'i');
   const [products, categories] = await Promise.all([
     Product.find({ isVisible: true, $or: [{ name: rx }, { tags: rx }, { tagline: rx }, { materials: rx }] })
-      .select('name slug images price salePrice finalPrice tagline')
+      .select('name slug images price salePrice finalPrice tagline ratingAverage ratingCount category isBestseller')
+      .populate('category', 'name slug')
       .sort({ soldCount: -1 })
-      .limit(6)
+      .limit(8)
       .lean(),
-    Category.find({ isActive: true, name: rx }).select('name slug parent').limit(4).lean(),
+    Category.find({ isActive: true, name: rx }).select('name slug parent image').limit(6).lean(),
   ]);
   res.json({ success: true, products, categories });
 });
