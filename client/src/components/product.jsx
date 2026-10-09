@@ -187,49 +187,53 @@ export const ProductCard = memo(function ProductCard({ product, priority }) {
       </div>
       <WishlistButton product={product} className="absolute top-2.5 right-2.5 w-7 h-7 sm:w-8 sm:h-8" />
 
-      <div className="flex flex-col gap-2 sm:gap-2.5 p-3 sm:p-3.5 md:p-4 flex-1">
+      <div className="flex flex-col gap-1 sm:gap-1.5 p-2.5 sm:p-3 md:p-3.5 flex-1">
         {kind && (
-          <span className={cn('inline-flex items-center gap-1.5 self-start max-w-full px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] md:text-[11px] font-bold uppercase tracking-wider leading-none', tone.tint, tone.text)}>
+          <span className={cn('inline-flex items-center gap-1 self-start max-w-full px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-bold uppercase tracking-wider leading-none', tone.tint, tone.text)}>
             <span className={cn('w-1.5 h-1.5 rounded-full shrink-0', tone.dot)} />
             <span className="truncate">{kind}</span>
           </span>
         )}
-        <Link to={`/product/${product.slug}`} className="text-[12.5px] leading-[17px] sm:text-[14px] sm:leading-[20px] md:text-[16px] md:leading-[22px] text-on-surface line-clamp-2 min-h-[34px] sm:min-h-[40px] md:min-h-[44px] hover:text-secondary font-semibold transition-colors">
+        <Link to={`/product/${product.slug}`} className="text-[12px] sm:text-[13.5px] md:text-[15px] leading-tight text-on-surface line-clamp-2 min-h-[30px] sm:min-h-[34px] hover:text-secondary font-semibold transition-colors">
           {product.name}
         </Link>
-        <div className="flex items-center gap-1.5 min-h-[18px]">
+        <div className="flex items-center gap-1.5 min-h-[16px]">
           {product.ratingCount > 0 ? (
             <>
-              <span className="inline-flex items-center gap-0.5 px-1.5 h-[17px] sm:h-[19px] rounded bg-emerald-700 text-white text-[9px] sm:text-[11px] font-bold leading-none">
+              <span className="inline-flex items-center gap-0.5 px-1.5 h-[16px] sm:h-[18px] rounded bg-emerald-700 text-white text-[8.5px] sm:text-[10px] font-bold leading-none">
                 {product.ratingAverage.toFixed(1)}
-                <Icon name="star" fill className="text-[9px] sm:text-[10px]" />
+                <Icon name="star" fill className="text-[8.5px] sm:text-[9.5px]" />
               </span>
-              <span className="text-[10px] sm:text-[11.5px] text-outline">({product.ratingCount})</span>
+              <span className="text-[9.5px] sm:text-[11px] text-outline">({product.ratingCount})</span>
             </>
           ) : null}
           {(product.ratingAverage >= 4 || product.isBestseller) && (
-            <span className="inline-flex items-center text-[9px] sm:text-[10px] font-black text-amber-600 dark:text-amber-400 tracking-tight ml-auto sm:ml-0">
+            <span className="inline-flex items-center text-[8.5px] sm:text-[9.5px] font-black text-amber-600 dark:text-amber-400 tracking-tight ml-auto sm:ml-0">
               ⚡Assured
             </span>
           )}
-          {colours > 1 && <span className="ml-auto hidden sm:inline text-[11px] md:text-[12px] text-outline">{colours} colours</span>}
+          {colours > 1 && <span className="ml-auto hidden sm:inline text-[10.5px] md:text-[11.5px] text-outline">{colours} colours</span>}
         </div>
-        <div className="mt-auto flex items-end justify-between gap-2 pt-1">
-          <div className="flex flex-col min-w-0 gap-0.5">
-            <span className="text-[13.5px] sm:text-[16px] md:text-[19px] font-extrabold text-on-surface whitespace-nowrap">
+        <div className="mt-auto flex items-center justify-between gap-1.5 pt-0.5">
+          <div className="flex items-baseline flex-wrap gap-x-1.5 gap-y-0.5 min-w-0">
+            {/* Actual Price */}
+            <span className="text-[13px] sm:text-[15.5px] md:text-[18px] font-extrabold text-on-surface whitespace-nowrap leading-none">
               {money(product.finalPrice ?? product.price)}
             </span>
+            {/* Real Price on right side */}
             {pct > 0 && (
-              <div className="flex items-center gap-1.5">
-                <span className="text-[10px] sm:text-[12px] text-outline line-through whitespace-nowrap">
-                  {money(product.price)}
-                </span>
-                <span className="text-[10px] sm:text-[12px] font-bold text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
-                  {pct}% off
-                </span>
-              </div>
+              <span className="text-[9.5px] sm:text-[11.5px] text-outline line-through whitespace-nowrap leading-none">
+                {money(product.price)}
+              </span>
             )}
-            <span className="text-[9px] sm:text-[10.5px] font-semibold text-emerald-600 dark:text-emerald-400 block pt-0.5">
+            {/* Percentage Off on right side */}
+            {pct > 0 && (
+              <span className="text-[9.5px] sm:text-[11.5px] font-bold text-emerald-600 dark:text-emerald-400 whitespace-nowrap leading-none">
+                {pct}% off
+              </span>
+            )}
+            {/* Free Delivery on right side */}
+            <span className="text-[8.5px] sm:text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 whitespace-nowrap leading-none">
               Free Delivery
             </span>
           </div>
@@ -239,11 +243,11 @@ export const ProductCard = memo(function ProductCard({ product, priority }) {
             onClick={() => add.mutate({ productId: product._id, variantId: variant._id, quantity: 1 }, { onSuccess: () => setAdded(true) })}
             aria-label={`Add ${product.name} to bag`}
             className={cn(
-              'shrink-0 w-7 h-7 sm:w-8 sm:h-8 md:w-9 md:h-9 rounded-full text-white flex items-center justify-center shadow-xs transition-all hover:shadow-md hover:scale-105 active:scale-90 disabled:opacity-30 disabled:pointer-events-none bg-gradient-to-br',
+              'shrink-0 w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 rounded-full text-white flex items-center justify-center shadow-xs transition-all hover:shadow-md hover:scale-105 active:scale-90 disabled:opacity-30 disabled:pointer-events-none bg-gradient-to-br',
               added ? 'from-emerald-500 to-teal-500 animate-pop' : 'from-indigo-600 to-violet-500'
             )}
           >
-            <Icon name={added ? 'check' : 'add'} className="text-[15px] sm:text-[17px]" />
+            <Icon name={added ? 'check' : 'add'} className="text-[14px] sm:text-[16px]" />
           </button>
         </div>
       </div>
@@ -255,12 +259,11 @@ export function ProductCardSkeleton() {
   return (
     <div className="flex flex-col bg-surface-container-lowest rounded-2xl overflow-hidden shadow-xs">
       <Skeleton className="aspect-square rounded-none" />
-      <div className="p-3 sm:p-3.5 md:p-4 flex flex-col gap-2.5">
-        <Skeleton className="h-3.5 w-1/3 rounded-full" />
-        <Skeleton className="h-4 w-11/12 rounded" />
-        <Skeleton className="h-4 w-2/3 rounded" />
-        <Skeleton className="h-3 w-1/4 rounded mt-1" />
-        <Skeleton className="h-5 w-1/2 rounded mt-2" />
+      <div className="p-2.5 sm:p-3 md:p-3.5 flex flex-col gap-1.5">
+        <Skeleton className="h-3 w-1/3 rounded-full" />
+        <Skeleton className="h-3.5 w-11/12 rounded" />
+        <Skeleton className="h-3 w-1/2 rounded" />
+        <Skeleton className="h-4 w-2/3 rounded mt-1" />
       </div>
     </div>
   );

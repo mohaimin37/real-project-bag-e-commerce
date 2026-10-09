@@ -330,50 +330,54 @@ function MobileProductCard({ product }) {
         )}
       </Link>
 
-      {/* Product Details with Generous Gaps */}
-      <div className="p-2.5 sm:p-3 flex flex-col flex-1 justify-between gap-1.5 sm:gap-2">
-        <div className="flex flex-col gap-1">
-          <span className="text-[9.5px] font-bold uppercase tracking-wider text-secondary line-clamp-1 block">
+      {/* Product Details with Compact, Clean Layout */}
+      <div className="p-2 sm:p-2.5 flex flex-col flex-1 justify-between gap-1">
+        <div className="flex flex-col gap-0.5">
+          <span className="text-[9px] font-bold uppercase tracking-wider text-secondary line-clamp-1 block">
             {product.category?.name || 'WILDTANE'}
           </span>
           <Link
             to={`/product/${product.slug}`}
-            className="text-[12px] sm:text-[13px] font-semibold text-on-surface line-clamp-2 leading-[16px] min-h-[32px] hover:text-secondary block"
+            className="text-[11.5px] sm:text-[12.5px] font-semibold text-on-surface line-clamp-2 leading-[15px] min-h-[30px] hover:text-secondary block"
           >
             {product.name}
           </Link>
         </div>
 
         {/* Rating Badge + Assured */}
-        <div className="flex items-center gap-1.5">
-          <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-emerald-700 text-white text-[9px] font-bold leading-none">
-            {(product.ratingAverage || 4.6).toFixed(1)} <Icon name="star" fill className="text-[8.5px]" />
+        <div className="flex items-center gap-1">
+          <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-emerald-700 text-white text-[8.5px] sm:text-[9px] font-bold leading-none">
+            {(product.ratingAverage || 4.6).toFixed(1)} <Icon name="star" fill className="text-[8px]" />
           </span>
-          <span className="text-[9px] text-outline font-medium">
+          <span className="text-[8.5px] sm:text-[9px] text-outline font-medium">
             ({product.ratingCount || 34})
           </span>
-          <span className="text-[9px] font-black text-amber-600 dark:text-amber-400 ml-auto">
+          <span className="text-[8.5px] sm:text-[9px] font-black text-amber-600 dark:text-amber-400 ml-auto">
             ⚡Assured
           </span>
         </div>
 
-        {/* Price & Quick Add Button */}
-        <div className="mt-auto pt-1 flex items-end justify-between gap-1.5">
-          <div className="flex flex-col min-w-0">
-            <span className="text-[13px] sm:text-[14.5px] font-extrabold text-on-surface leading-none tracking-tight">
+        {/* Price on left, Real Price, % off, Free Delivery on right side + Quick Add Button */}
+        <div className="mt-auto pt-0.5 flex items-center justify-between gap-1">
+          <div className="flex items-baseline flex-wrap gap-x-1.5 gap-y-0 min-w-0">
+            {/* Actual Price */}
+            <span className="text-[12.5px] sm:text-[14px] font-extrabold text-on-surface leading-none tracking-tight whitespace-nowrap">
               {money(product.finalPrice ?? product.price)}
             </span>
+            {/* Real Price on right side */}
             {pct > 0 && (
-              <div className="flex items-center gap-1 mt-1">
-                <span className="text-[9.5px] text-outline line-through leading-none">
-                  {money(product.price)}
-                </span>
-                <span className="text-[9px] font-bold text-emerald-600 leading-none">
-                  {pct}%
-                </span>
-              </div>
+              <span className="text-[9px] sm:text-[10px] text-outline line-through leading-none whitespace-nowrap">
+                {money(product.price)}
+              </span>
             )}
-            <span className="text-[8.5px] font-medium text-emerald-600 dark:text-emerald-400 block mt-1">
+            {/* Percentage Off on right side */}
+            {pct > 0 && (
+              <span className="text-[9px] sm:text-[10px] font-bold text-emerald-600 leading-none whitespace-nowrap">
+                {pct}% off
+              </span>
+            )}
+            {/* Free Delivery on right side */}
+            <span className="text-[8px] sm:text-[9px] font-medium text-emerald-600 dark:text-emerald-400 whitespace-nowrap leading-none">
               Free Delivery
             </span>
           </div>
@@ -385,11 +389,11 @@ function MobileProductCard({ product }) {
             onClick={handleQuickAdd}
             aria-label={`Add ${product.name} to bag`}
             className={cn(
-              'w-7 h-7 sm:w-8 sm:h-8 rounded-full text-white flex items-center justify-center shrink-0 shadow-xs active:scale-80 transition-all disabled:opacity-40',
+              'w-6 h-6 sm:w-7 sm:h-7 rounded-full text-white flex items-center justify-center shrink-0 shadow-xs active:scale-80 transition-all disabled:opacity-40',
               added ? 'bg-emerald-600 animate-pop' : 'bg-secondary hover:bg-secondary/90'
             )}
           >
-            <Icon name={added ? 'check' : 'add'} className="text-[15px]" />
+            <Icon name={added ? 'check' : 'add'} className="text-[14px]" />
           </button>
         </div>
       </div>
