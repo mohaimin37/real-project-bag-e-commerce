@@ -214,7 +214,7 @@ export const ProductCard = memo(function ProductCard({ product, priority }) {
           )}
           {colours > 1 && <span className="ml-auto hidden sm:inline text-[11px] md:text-[12px] text-outline">{colours} colours</span>}
         </div>
-        <div className="mt-auto flex items-end justify-between gap-2 pt-2 border-t border-surface-container-high/40">
+        <div className="mt-auto flex items-end justify-between gap-2 pt-1">
           <div className="flex flex-col min-w-0 gap-0.5">
             <span className="text-[13.5px] sm:text-[16px] md:text-[19px] font-extrabold text-on-surface whitespace-nowrap">
               {money(product.finalPrice ?? product.price)}

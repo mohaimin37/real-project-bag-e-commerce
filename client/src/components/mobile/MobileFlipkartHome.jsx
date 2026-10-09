@@ -358,7 +358,7 @@ function MobileProductCard({ product }) {
         </div>
 
         {/* Price & Quick Add Button */}
-        <div className="mt-auto pt-1.5 flex items-end justify-between gap-1.5 border-t border-outline-variant/20">
+        <div className="mt-auto pt-1 flex items-end justify-between gap-1.5">
           <div className="flex flex-col min-w-0">
             <span className="text-[13px] sm:text-[14.5px] font-extrabold text-on-surface leading-none tracking-tight">
               {money(product.finalPrice ?? product.price)}
