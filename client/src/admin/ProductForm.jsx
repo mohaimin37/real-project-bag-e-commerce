@@ -346,9 +346,9 @@ export default function ProductForm() {
                   {subOptions.map((c) => <option key={c._id} value={c._id}>{c.name}</option>)}
                 </Select>
               </Field>
-              <Field label="Audience" hint="Listed on /men, /women or /unisex">
+              <Field label="Audience" hint="Listed on /men, /women or /universal">
                 <Select {...register('gender')}>
-                  <option value="unisex">Unisex</option>
+                  <option value="unisex">Universal</option>
                   <option value="women">Women</option>
                   <option value="men">Men</option>
                 </Select>

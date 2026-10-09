@@ -126,8 +126,14 @@ function HomeHero() {
             <Link to="/women" className="btn bg-gradient-to-r from-rose-600 to-pink-600 text-white font-semibold shadow-md hover:brightness-110 active:scale-95 transition-all text-[13px]">
               <Icon name="woman" className="text-[18px]" /> Shop Women
             </Link>
-            <Link to="/unisex" className="btn bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-semibold shadow-md hover:brightness-110 active:scale-95 transition-all text-[13px]">
-              <Icon name="wc" className="text-[18px]" /> Shop Unisex
+            <Link to="/universal" className="btn bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-semibold shadow-md hover:brightness-110 active:scale-95 transition-all text-[13px]">
+              <Icon name="public" className="text-[18px]" /> Universal
+            </Link>
+            <Link to="/shop/travel-utility" className="btn bg-gradient-to-r from-cyan-600 to-blue-600 text-white font-semibold shadow-md hover:brightness-110 active:scale-95 transition-all text-[13px]">
+              <Icon name="flight_takeoff" className="text-[18px]" /> Travel & Utility
+            </Link>
+            <Link to="/shop/accessories" className="btn bg-gradient-to-r from-amber-600 to-orange-600 text-white font-semibold shadow-md hover:brightness-110 active:scale-95 transition-all text-[13px]">
+              <Icon name="watch" className="text-[18px]" /> Accessories
             </Link>
             <Link to="/shop" className="btn bg-surface/90 backdrop-blur-md ring-1 ring-surface-container-high text-on-surface hover:bg-surface-container transition-all text-[13px]">
               Explore All <Icon name="arrow_forward" className="text-[16px]" />
@@ -167,9 +173,9 @@ function HomeHero() {
   );
 }
 
-/** MEN | WOMEN | UNISEX: vibrant curated department showcases. */
+/** MEN | WOMEN | UNIVERSAL | TRAVEL & UTILITY | ACCESSORIES: 5 curated department showcases. */
 function GenderSplit() {
-  const cards = [
+  const primaryCards = [
     {
       to: '/men',
       label: 'Men',
@@ -193,15 +199,40 @@ function GenderSplit() {
       tag: 'Featherlight Balance',
     },
     {
-      to: '/unisex',
-      label: 'Unisex',
+      to: '/universal',
+      label: 'Universal',
       eyebrow: 'UNIVERSAL ERGONOMIC',
-      text: 'Backpacks, luggage & travel gear for everyone',
+      text: 'Backpacks, daily carry & travel gear for everyone',
       image: '/uploads/seed/apex-navy.jpg',
       wash: 'from-zinc-950 via-emerald-950/85 to-teal-950/60',
       pill: 'bg-emerald-500/20 text-emerald-300 ring-1 ring-emerald-400/30',
       buttonHover: 'hover:bg-emerald-500 hover:text-white',
       tag: '180° Clamshell TSA',
+    },
+  ];
+
+  const featureCards = [
+    {
+      to: '/shop/travel-utility',
+      label: 'Travel & Utility',
+      eyebrow: 'TRANSIT ENGINEERING',
+      text: 'Cabin spinners, check-in trolleys, heavy-duty duffles & toiletry wash kits',
+      image: '/uploads/seed/cabin-hardshell.jpg',
+      wash: 'from-slate-950 via-cyan-950/85 to-blue-950/60',
+      pill: 'bg-cyan-500/20 text-cyan-300 ring-1 ring-cyan-400/30',
+      buttonHover: 'hover:bg-cyan-500 hover:text-black',
+      tag: 'Polycarbonate & Hinomoto',
+    },
+    {
+      to: '/shop/accessories',
+      label: 'Accessories',
+      eyebrow: 'MICRO-ORGANIZATION',
+      text: 'Full-grain leather wallets, RFID cardholders, passport sleeves & cable folios',
+      image: '/uploads/seed/wallet-onyx.jpg',
+      wash: 'from-stone-950 via-amber-950/85 to-orange-950/60',
+      pill: 'bg-amber-500/20 text-amber-300 ring-1 ring-amber-400/30',
+      buttonHover: 'hover:bg-amber-500 hover:text-black',
+      tag: 'RFID Armor & Patina',
     },
   ];
 
@@ -212,19 +243,17 @@ function GenderSplit() {
           Curated Departments
         </span>
         <h2 className="font-display text-[26px] md:text-[34px] leading-tight">
-          Find The Bag Designed For Your Routine
+          Find The Carry Designed For Your Routine
         </h2>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
-        {cards.map((c, i) => (
+      {/* Row 1: Men, Women, Universal (3 Columns) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 md:gap-4 mb-3 md:mb-4">
+        {primaryCards.map((c) => (
           <Link
             key={c.to}
             to={c.to}
-            className={cn(
-              'group relative overflow-hidden rounded-3xl flex items-end shadow-md hover:shadow-2xl transition-all duration-500 border border-white/10 hover:-translate-y-1',
-              i === 2 ? 'sm:col-span-2 md:col-span-1 aspect-[16/9] md:aspect-[4/5]' : 'aspect-[4/5]'
-            )}
+            className="group relative overflow-hidden rounded-3xl flex items-end shadow-md hover:shadow-2xl transition-all duration-500 border border-white/10 hover:-translate-y-1 aspect-[4/5]"
           >
             <Img
               src={c.image}
@@ -246,11 +275,54 @@ function GenderSplit() {
             </div>
 
             {/* Bottom info */}
-            <div className="relative p-5 md:p-7 flex flex-col gap-1.5 text-white w-full">
-              <h3 className="font-display text-[32px] md:text-[42px] leading-none tracking-wide drop-shadow">
+            <div className="relative p-5 md:p-6 flex flex-col gap-1.5 text-white w-full">
+              <h3 className="font-display text-[30px] md:text-[38px] leading-none tracking-wide drop-shadow">
                 {c.label}
               </h3>
-              <p className="text-[13px] md:text-[14px] text-white/85 line-clamp-2">
+              <p className="text-[13px] md:text-[13.5px] text-white/85 line-clamp-2">
+                {c.text}
+              </p>
+              <span className={cn('mt-2 inline-flex items-center gap-1.5 self-start h-9 px-4 rounded-full bg-white text-neutral-900 text-[12.5px] font-bold shadow-md transition-all group-hover:shadow-lg', c.buttonHover)}>
+                Explore {c.label} <Icon name="arrow_forward" className="text-[15px] transition-transform group-hover:translate-x-1" />
+              </span>
+            </div>
+          </Link>
+        ))}
+      </div>
+
+      {/* Row 2: Travel & Utility and Accessories (Panoramic Modern Design) */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
+        {featureCards.map((c) => (
+          <Link
+            key={c.to}
+            to={c.to}
+            className="group relative overflow-hidden rounded-3xl flex items-end shadow-md hover:shadow-2xl transition-all duration-500 border border-white/10 hover:-translate-y-1 aspect-[16/9] md:aspect-[21/9]"
+          >
+            <Img
+              src={c.image}
+              alt=""
+              w={960}
+              className="!absolute inset-0 !bg-transparent"
+              imgClassName="opacity-90 transition-transform duration-700 ease-out group-hover:scale-105"
+            />
+            <div aria-hidden="true" className={cn('absolute inset-0 bg-gradient-to-t to-transparent', c.wash)} />
+
+            {/* Top pill badge */}
+            <div className="absolute top-4 left-4 right-4 flex items-center justify-between pointer-events-none">
+              <span className={cn('text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-1 rounded-full backdrop-blur-md', c.pill)}>
+                {c.eyebrow}
+              </span>
+              <span className="text-[10px] font-bold text-white/80 bg-black/50 backdrop-blur-md px-2 py-0.5 rounded-md">
+                {c.tag}
+              </span>
+            </div>
+
+            {/* Bottom info */}
+            <div className="relative p-5 md:p-7 flex flex-col gap-1.5 text-white w-full">
+              <h3 className="font-display text-[28px] md:text-[36px] leading-none tracking-wide drop-shadow">
+                {c.label}
+              </h3>
+              <p className="text-[13px] md:text-[14px] text-white/85 line-clamp-2 max-w-lg">
                 {c.text}
               </p>
               <span className={cn('mt-2 inline-flex items-center gap-1.5 self-start h-9 px-4 rounded-full bg-white text-neutral-900 text-[12.5px] font-bold shadow-md transition-all group-hover:shadow-lg', c.buttonHover)}>
@@ -269,6 +341,8 @@ const RAIL_TONES = {
   indigo: { band: 'from-indigo-500/[0.07] via-sky-500/[0.05]', pill: 'from-indigo-600 to-sky-500', link: 'text-indigo-700 dark:text-indigo-300 hover:bg-indigo-500/10' },
   fuchsia: { band: 'from-fuchsia-500/[0.07] via-violet-500/[0.05]', pill: 'from-fuchsia-600 to-violet-500', link: 'text-fuchsia-700 dark:text-fuchsia-300 hover:bg-fuchsia-500/10' },
   rose: { band: 'from-rose-500/[0.07] via-pink-500/[0.05]', pill: 'from-rose-600 to-pink-500', link: 'text-rose-700 dark:text-rose-300 hover:bg-rose-500/10' },
+  cyan: { band: 'from-cyan-500/[0.07] via-blue-500/[0.05]', pill: 'from-cyan-600 to-blue-500', link: 'text-cyan-700 dark:text-cyan-300 hover:bg-cyan-500/10' },
+  amber: { band: 'from-amber-500/[0.07] via-orange-500/[0.05]', pill: 'from-amber-600 to-orange-500', link: 'text-amber-700 dark:text-amber-300 hover:bg-amber-500/10' },
 };
 
 function SectionHead({ eyebrow, icon, title, link, linkLabel = 'View all', tone = RAIL_TONES.indigo }) {
@@ -318,11 +392,24 @@ function ProductRail({ eyebrow, icon, title, link, products, loading, tone = 'in
 
 function Collections() {
   const { data, isLoading } = useQuery({ queryKey: ['collections'], queryFn: api.collections, staleTime: 5 * 60 * 1000 });
+  const { data: travelData, isLoading: travelLoading } = useQuery({
+    queryKey: ['products', 'home-travel-rail'],
+    queryFn: () => api.products({ category: 'travel-utility', limit: 8 }),
+    staleTime: 5 * 60 * 1000,
+  });
+  const { data: accessoriesData, isLoading: accessoriesLoading } = useQuery({
+    queryKey: ['products', 'home-accessories-rail'],
+    queryFn: () => api.products({ category: 'accessories', limit: 8 }),
+    staleTime: 5 * 60 * 1000,
+  });
+
   return (
     <>
       <ProductRail eyebrow="Handpicked" icon="diamond" tone="indigo" title="Featured products" link="/shop?featured=true" products={data?.featured} loading={isLoading} />
       <ProductRail eyebrow="Just landed" icon="rocket_launch" tone="fuchsia" title="New arrivals" link="/shop?newArrival=true&sort=newest" products={data?.newArrivals} loading={isLoading} />
       <ProductRail eyebrow="Customer favourites" icon="favorite" tone="rose" title="Best sellers" link="/shop?bestseller=true&sort=bestseller" products={data?.bestSellers} loading={isLoading} />
+      <ProductRail eyebrow="Transit & Flight Ready" icon="flight_takeoff" tone="cyan" title="Travel & Utility" link="/shop/travel-utility" products={travelData?.items} loading={travelLoading} />
+      <ProductRail eyebrow="Everyday Accents" icon="watch" tone="amber" title="Accessories" link="/shop/accessories" products={accessoriesData?.items} loading={accessoriesLoading} />
     </>
   );
 }

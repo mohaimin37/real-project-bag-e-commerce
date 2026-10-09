@@ -193,6 +193,7 @@ export default function App() {
           <Route path="shop/:category" element={<Shop />} />
           <Route path="men" element={<Shop key="men" preset="men" />} />
           <Route path="women" element={<Shop key="women" preset="women" />} />
+          <Route path="universal" element={<Shop key="universal" preset="universal" />} />
           <Route path="unisex" element={<Shop key="unisex" preset="unisex" />} />
           <Route path="offers" element={<Shop preset="offers" />} />
           <Route path="catalogue" element={<Catalogue />} />

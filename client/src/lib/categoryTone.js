@@ -153,11 +153,12 @@ export function categoryTone(cat) {
   return TONES[FALLBACK[h % FALLBACK.length]];
 }
 
-/** Tones for the non-category shortcuts (All, Men, Women, Unisex, Offers). */
+/** Tones for the non-category shortcuts (All, Men, Women, Universal, Offers). */
 export const TAB_TONES = {
   all: TONES.tech,
   men: TONES.navy,
   women: TONES.rose,
+  universal: TONES.teal,
   unisex: TONES.teal,
   offers: TONES.forest,
 };

@@ -92,11 +92,11 @@ function MobileTopSearchHeader() {
 // ── 2. Flipkart-style Category Story Circles ──
 const FALLBACK_CATEGORIES = [
   { name: 'Offers', icon: 'sell', to: '/offers', color: 'from-rose-500 via-pink-500 to-amber-500' },
-  { name: 'Backpacks', icon: 'backpack', to: '/shop/backpacks', color: 'from-indigo-500 to-blue-500', img: '/uploads/seed/apex-navy.jpg' },
-  { name: 'Handbags', icon: 'shopping_bag', to: '/shop/handbags-and-totes', color: 'from-emerald-500 to-teal-500', img: '/uploads/seed/tote-teal.jpg' },
-  { name: 'Luggage', icon: 'luggage', to: '/shop/cabin-and-check-in-luggage', color: 'from-amber-500 to-orange-500', img: '/uploads/seed/cabin-hardshell.jpg' },
-  { name: 'Duffles', icon: 'work', to: '/shop/duffles-and-weekenders', color: 'from-violet-500 to-purple-500', img: '/uploads/seed/duffle-tan.jpg' },
-  { name: 'Wallets', icon: 'wallet', to: '/shop/wallets-and-cardholders', color: 'from-cyan-500 to-sky-500', img: '/uploads/seed/wallet-onyx.jpg' },
+  { name: 'Universal', icon: 'public', to: '/universal', color: 'from-emerald-500 to-teal-500', img: '/uploads/seed/apex-navy.jpg' },
+  { name: 'Travel', icon: 'flight_takeoff', to: '/shop/travel-utility', color: 'from-cyan-500 to-blue-500', img: '/uploads/seed/cabin-hardshell.jpg' },
+  { name: 'Accessories', icon: 'watch', to: '/shop/accessories', color: 'from-amber-500 to-orange-500', img: '/uploads/seed/wallet-onyx.jpg' },
+  { name: 'Backpacks', icon: 'backpack', to: '/shop/backpacks', color: 'from-indigo-500 to-blue-500', img: '/uploads/seed/catalog/trekpack-sun.jpg' },
+  { name: 'Handbags', icon: 'shopping_bag', to: '/shop/handbags-and-totes', color: 'from-pink-500 to-rose-500', img: '/uploads/seed/tote-teal.jpg' },
   { name: 'New Drops', icon: 'new_releases', to: '/shop?newArrival=true', color: 'from-fuchsia-500 to-rose-500' },
 ];
 
@@ -452,12 +452,14 @@ function MobileDealOfTheDay({ products }) {
   );
 }
 
-// ── 7. Visual 3-Column Department Showcase (3 in 1 Row) ──
+// ── 7. Visual Curated Departments Showcase (Men, Women, Universal, Travel, Accessories) ──
 function Mobile3DepartmentRow() {
   const departments = [
-    { name: 'Backpacks', tag: 'From ₹1,299', image: '/uploads/seed/catalog/trekpack-sun.jpg', to: '/shop/backpacks' },
-    { name: 'Cabin Trolley', tag: 'Flat 30% Off', image: '/uploads/seed/catalog/cabin-emerald-teal.jpg', to: '/shop/cabin-and-check-in-luggage' },
-    { name: 'Leather Totes', tag: '100% Genuine', image: '/uploads/seed/tote-teal.jpg', to: '/shop/handbags-and-totes' },
+    { name: 'Men', tag: 'Masculine Craft', image: '/uploads/seed/duffle-tan.jpg', to: '/men' },
+    { name: 'Women', tag: 'Sculptural Luxury', image: '/uploads/seed/tote-teal.jpg', to: '/women' },
+    { name: 'Universal', tag: 'For Everyone', image: '/uploads/seed/apex-navy.jpg', to: '/universal' },
+    { name: 'Travel & Utility', tag: 'Flight Ready', image: '/uploads/seed/cabin-hardshell.jpg', to: '/shop/travel-utility' },
+    { name: 'Accessories', tag: 'Everyday Carry', image: '/uploads/seed/wallet-onyx.jpg', to: '/shop/accessories' },
   ];
 
   return (
@@ -465,26 +467,26 @@ function Mobile3DepartmentRow() {
       <div className="rounded-2xl bg-surface-container-lowest border border-outline-variant/30 p-2 shadow-xs">
         <div className="flex items-center justify-between px-1 mb-2">
           <h3 className="text-[13px] font-black text-on-surface tracking-tight uppercase">
-            Top Departments
+            Curated Departments
           </h3>
           <Link to="/shop" className="text-[10.5px] font-bold text-secondary flex items-center gap-0.5">
-            Explore <Icon name="chevron_right" className="text-[14px]" />
+            Explore All <Icon name="chevron_right" className="text-[14px]" />
           </Link>
         </div>
 
-        {/* 3 Department Cards in 1 Row */}
-        <div className="grid grid-cols-3 gap-1.5">
+        {/* 5 Departments in a Smooth Scrolling Snap Strip */}
+        <div className="flex gap-2 overflow-x-auto snap-x scrollbar-none pb-1">
           {departments.map((dept, idx) => (
             <Link
               key={idx}
               to={dept.to}
-              className="relative rounded-xl overflow-hidden aspect-[3/4] border border-outline-variant/20 group active:scale-[0.97] transition-transform"
+              className="relative rounded-xl overflow-hidden aspect-[3/4] w-[105px] shrink-0 snap-start border border-outline-variant/20 group active:scale-[0.97] transition-transform"
             >
-              <Img src={dept.image} alt={dept.name} w={200} className="w-full h-full object-cover" />
+              <Img src={dept.image} alt={dept.name} w={240} className="w-full h-full object-cover" />
               <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent" />
               <div className="absolute bottom-1.5 left-1.5 right-1.5 text-white">
-                <span className="text-[10px] font-bold line-clamp-1 leading-tight">{dept.name}</span>
-                <span className="text-[8.5px] font-semibold text-amber-300 block leading-tight mt-0.5">{dept.tag}</span>
+                <span className="text-[10.5px] font-bold line-clamp-1 leading-tight">{dept.name}</span>
+                <span className="text-[8.5px] font-semibold text-amber-300 block leading-tight mt-0.5 truncate">{dept.tag}</span>
               </div>
             </Link>
           ))}
@@ -498,20 +500,22 @@ function Mobile3DepartmentRow() {
 function MobileInteractiveTabShowcase({ allProducts }) {
   const [activeTab, setActiveTab] = useState('All');
 
-  const tabs = ['All', 'Backpacks', 'Handbags', 'Luggage', 'Wallets'];
+  const tabs = ['All', 'Universal', 'Travel & Utility', 'Accessories', 'Backpacks', 'Handbags'];
 
   const filtered = useMemo(() => {
     if (!allProducts || !allProducts.length) return [];
     if (activeTab === 'All') return allProducts.slice(0, 6);
     const slugMap = {
+      Universal: 'unisex',
+      'Travel & Utility': 'travel',
+      Accessories: 'accessories',
       Backpacks: 'backpack',
       Handbags: 'tote',
-      Luggage: 'cabin',
-      Wallets: 'wallet',
     };
     const key = slugMap[activeTab] || activeTab.toLowerCase();
     const matches = allProducts.filter(
       (p) =>
+        (p.gender === 'unisex' && key === 'unisex') ||
         (p.category?.name && p.category.name.toLowerCase().includes(key)) ||
         (p.category?.slug && p.category.slug.toLowerCase().includes(key)) ||
         p.name.toLowerCase().includes(key)
@@ -665,6 +669,16 @@ export default function MobileFlipkartHome() {
     queryFn: api.collections,
     staleTime: 5 * 60 * 1000,
   });
+  const { data: travelData } = useQuery({
+    queryKey: ['products', 'mobile-travel-rail'],
+    queryFn: () => api.products({ category: 'travel-utility', limit: 6 }),
+    staleTime: 5 * 60 * 1000,
+  });
+  const { data: accessoriesData } = useQuery({
+    queryKey: ['products', 'mobile-accessories-rail'],
+    queryFn: () => api.products({ category: 'accessories', limit: 6 }),
+    staleTime: 5 * 60 * 1000,
+  });
 
   return (
     <div className="w-full max-w-full overflow-x-clip flex flex-col pb-36 bg-surface">
@@ -683,7 +697,7 @@ export default function MobileFlipkartHome() {
       {/* 5. Deal of the Day (3 Items Per Row + Live Timer) */}
       <MobileDealOfTheDay products={collections?.featured} />
 
-      {/* 6. Top 3 Departments (3 in 1 Row) */}
+      {/* 6. Curated Departments Showcase (Men, Women, Universal, Travel, Accessories) */}
       <Mobile3DepartmentRow />
 
       {/* 7. Interactive Filter Chip Switcher (3 Items Per Row) */}
@@ -697,7 +711,23 @@ export default function MobileFlipkartHome() {
         products={collections?.bestSellers}
       />
 
-      {/* 9. Just Landed • New Drops (3 Items Per Row) */}
+      {/* 9. Travel & Utility Section (3 Items Per Row) */}
+      <Mobile3ColSection
+        title="Travel & Utility • Transit Ready"
+        subtitle="Hardshell spinners, duffles & wash kits"
+        link="/shop/travel-utility"
+        products={travelData?.items}
+      />
+
+      {/* 10. Accessories Section (3 Items Per Row) */}
+      <Mobile3ColSection
+        title="Accessories • Everyday Accents"
+        subtitle="Leather wallets, RFID cardholders & cable folios"
+        link="/shop/accessories"
+        products={accessoriesData?.items}
+      />
+
+      {/* 11. Just Landed • New Drops (3 Items Per Row) */}
       <Mobile3ColSection
         title="Just Landed • New In"
         subtitle="Engineered for your journeys"
@@ -705,7 +735,7 @@ export default function MobileFlipkartHome() {
         products={collections?.newArrivals}
       />
 
-      {/* 10. Complete Store Catalog (3 Items Per Row) */}
+      {/* 12. Complete Store Catalog (3 Items Per Row) */}
       <MobileEntireStoreSection />
 
       {/* 11. Flipkart Assured Guarantee Banner */}

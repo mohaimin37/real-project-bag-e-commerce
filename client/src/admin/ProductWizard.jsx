@@ -480,7 +480,7 @@ export default function ProductWizard() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-space-md">
                     <Field label="Made for">
                       <div className="flex gap-1.5">
-                        {[['men', 'Men'], ['women', 'Women'], ['unisex', 'Unisex']].map(([v, l]) => (
+                        {[['men', 'Men'], ['women', 'Women'], ['unisex', 'Universal']].map(([v, l]) => (
                           <Pick key={v} icon={null} active={p.gender === v} onClick={() => set({ gender: v })}>{l}</Pick>
                         ))}
                       </div>
@@ -831,7 +831,7 @@ function ProductPagePreview({ p, preview, catName, subName, onEdit }) {
   const specs = p.specifications.filter((x) => x.label && x.value);
   const faqs = (p.faqs || []).filter((x) => x.question && x.answer);
   const stock = toNum(variant?.stock);
-  const audience = { unisex: 'Unisex', women: 'Women', men: 'Men' }[p.gender];
+  const audience = { unisex: 'Universal', women: 'Women', men: 'Men' }[p.gender];
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-space-lg">

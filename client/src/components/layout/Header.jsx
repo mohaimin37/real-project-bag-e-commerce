@@ -23,7 +23,9 @@ export const MAIN_NAV = [
   ['/', 'Home', true],
   ['/men', 'Men'],
   ['/women', 'Women'],
-  ['/unisex', 'Unisex'],
+  ['/universal', 'Universal'],
+  ['/shop/travel-utility', 'Travel & Utility'],
+  ['/shop/accessories', 'Accessories'],
   ['/shop', 'Shop'],
   ['/about', 'About Us'],
 ];
@@ -31,7 +33,9 @@ export const MAIN_NAV = [
 const SHOP_EDITS = [
   ['/men', 'man', 'Men'],
   ['/women', 'woman', 'Women'],
-  ['/unisex', 'wc', 'Unisex'],
+  ['/universal', 'public', 'Universal'],
+  ['/shop/travel-utility', 'flight_takeoff', 'Travel & Utility'],
+  ['/shop/accessories', 'watch', 'Accessories'],
   ['/shop?newArrival=true&sort=newest', 'new_releases', 'New arrivals'],
   ['/shop?bestseller=true&sort=bestseller', 'local_fire_department', 'Best sellers'],
   ['/offers', 'sell', 'Offers'],
@@ -437,7 +441,7 @@ export default function Header() {
   const { data: categories } = useCategories();
   const { count } = useCart();
   const { count: wishCount } = useWishlist();
-  const isMobileCustomHeader = pathname === '/' || pathname.startsWith('/shop') || ['/men', '/women', '/unisex', '/offers'].includes(pathname);
+  const isMobileCustomHeader = pathname === '/' || pathname.startsWith('/shop') || ['/men', '/women', '/universal', '/unisex', '/offers'].includes(pathname);
 
   useEffect(() => {
     const fn = (e) => {

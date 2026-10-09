@@ -14,7 +14,9 @@ const COLUMNS = [
     links: [
       ['/men', 'Men'],
       ['/women', 'Women'],
-      ['/unisex', 'Unisex'],
+      ['/universal', 'Universal'],
+      ['/shop/travel-utility', 'Travel & Utility'],
+      ['/shop/accessories', 'Accessories'],
       ['/shop?newArrival=true&sort=newest', 'New Arrivals'],
       ['/shop?bestseller=true&sort=bestseller', 'Best Sellers'],
       ['/offers', 'Offers'],

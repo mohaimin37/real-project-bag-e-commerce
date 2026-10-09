@@ -27,7 +27,7 @@ const LIST_KEYS = ['materials', 'colors', 'features', 'size', 'purpose'];
 const FILTER_KEYS = [...LIST_KEYS, 'minPrice', 'maxPrice', 'inStock', 'rating', 'onSale', 'gender'];
 
 // Plain-language filter options (values match the API).
-const WHO = [['', 'All'], ['men', 'Men'], ['women', 'Women'], ['unisex', 'Unisex']];
+const WHO = [['', 'All'], ['men', 'Men'], ['women', 'Women'], ['unisex', 'Universal']];
 const USES = [
   ['work', 'Work & office'],
   ['travel', 'Travel'],
@@ -139,10 +139,29 @@ const GENDER_PAGES = {
       { label: '4.6★ Loved Across India', icon: 'star' },
     ],
   },
+  universal: {
+    title: 'Universal',
+    seoTitle: 'Universal Bags — Backpacks, Luggage & Travel Gear for Everyone',
+    description: 'Shop universal bags at WILDTANE: backpacks, cabin luggage, duffles, slings and travel accessories designed for everyone.',
+    tagline: 'Aerospace-inspired backpacks, 360° spinner cabin luggage, and travel gear designed for everyone.',
+    image: '/uploads/seed/apex-navy.jpg',
+    eyebrow: 'UNIVERSAL ERGONOMICS • BACKPACKS & LUGGAGE FOR ALL',
+    gradientTitle: 'Travel Gear For Everyone',
+    tag: '100% Recycled Ocean Linings',
+    gradientBg: 'from-emerald-500/15 via-teal-500/10 to-cyan-500/15',
+    borderGlow: 'border-emerald-500/30',
+    accentText: 'text-emerald-600 dark:text-emerald-400',
+    stats: [
+      { label: '180° Airport Clamshell', icon: 'flight_takeoff' },
+      { label: '100% Recycled Linings', icon: 'eco' },
+      { label: 'Silent 360° Hinomoto Wheels', icon: 'radio_button_checked' },
+      { label: 'TSA Carry-On Compliant', icon: 'verified' },
+    ],
+  },
   unisex: {
-    title: 'Unisex',
-    seoTitle: 'Unisex Bags — Backpacks, Luggage & Travel Gear for Everyone',
-    description: 'Shop unisex bags at WILDTANE: backpacks, cabin luggage, duffles, slings and travel accessories designed for everyone.',
+    title: 'Universal',
+    seoTitle: 'Universal Bags — Backpacks, Luggage & Travel Gear for Everyone',
+    description: 'Shop universal bags at WILDTANE: backpacks, cabin luggage, duffles, slings and travel accessories designed for everyone.',
     tagline: 'Aerospace-inspired backpacks, 360° spinner cabin luggage, and travel gear designed for everyone.',
     image: '/uploads/seed/apex-navy.jpg',
     eyebrow: 'UNIVERSAL ERGONOMICS • BACKPACKS & LUGGAGE FOR ALL',
@@ -204,7 +223,9 @@ const DEPARTMENT_NAV = [
   { key: 'shop', label: 'All Products', to: '/shop' },
   { key: 'men', label: 'Men', to: '/men' },
   { key: 'women', label: 'Women', to: '/women' },
-  { key: 'unisex', label: 'Unisex', to: '/unisex' },
+  { key: 'universal', label: 'Universal', to: '/universal' },
+  { key: 'travel', label: 'Travel & Utility', to: '/shop/travel-utility' },
+  { key: 'accessories', label: 'Accessories', to: '/shop/accessories' },
   { key: 'offers', label: 'Offers', to: '/offers' },
 ];
 
@@ -435,10 +456,10 @@ function Filters({ facets, state, categoryTree, activeCategory, lockedGender }) 
 /** Round category shortcuts, Flipkart style. Scrolls sideways on phones. */
 function CategoryRail({ tree, activeSlug, preset }) {
   const items = [
-    { key: 'all', label: 'All', to: '/', icon: 'apps', on: preset === 'home' || (!activeSlug && !['offers', 'men', 'women', 'unisex'].includes(preset)) },
+    { key: 'all', label: 'All', to: '/', icon: 'apps', on: preset === 'home' || (!activeSlug && !['offers', 'men', 'women', 'universal', 'unisex'].includes(preset)) },
     { key: 'men', label: 'Men', to: '/men', icon: 'man', on: preset === 'men' },
     { key: 'women', label: 'Women', to: '/women', icon: 'woman', on: preset === 'women' },
-    { key: 'unisex', label: 'Unisex', to: '/unisex', icon: 'wc', on: preset === 'unisex' },
+    { key: 'universal', label: 'Universal', to: '/universal', icon: 'public', on: preset === 'universal' || preset === 'unisex' },
     ...(tree || []).map((c) => ({
       key: c._id,
       label: c.name,
@@ -476,7 +497,7 @@ function ActiveFilters({ state, onClear }) {
   const { get, getList, update, toggleIn } = state;
   const chips = [];
   LIST_KEYS.forEach((k) => getList(k).forEach((v) => chips.push([`${k}:${v}`, v, () => toggleIn(k, v)])));
-  if (get('gender')) chips.push(['gender', { women: 'Women', men: 'Men', unisex: 'Unisex' }[get('gender')] || get('gender'), () => update({ gender: '' })]);
+  if (get('gender')) chips.push(['gender', { women: 'Women', men: 'Men', unisex: 'Universal', universal: 'Universal' }[get('gender')] || get('gender'), () => update({ gender: '' })]);
   if (get('minPrice') || get('maxPrice')) chips.push(['price', `₹${get('minPrice') || 0} – ${get('maxPrice') ? `₹${get('maxPrice')}` : 'any'}`, () => update({ minPrice: '', maxPrice: '' })]);
   if (get('inStock')) chips.push(['stock', 'In stock', () => update({ inStock: '' })]);
   if (get('rating')) chips.push(['rating', '4★ & above', () => update({ rating: '' })]);
@@ -530,19 +551,20 @@ export default function Shop({ preset }) {
   const Heading = isHome ? 'h2' : 'h1';
 
   const flat = useMemo(() => (tree || []).flatMap((c) => [c, ...c.children]), [tree]);
-  const activeCategory = flat.find((c) => c.slug === categorySlug);
+  const effectiveCategory = categorySlug === 'travel-and-utility' ? 'travel-utility' : categorySlug;
+  const activeCategory = flat.find((c) => c.slug === effectiveCategory);
   const parent = activeCategory?.parent ? flat.find((c) => c._id === activeCategory.parent) : null;
 
   const query = useMemo(() => {
     const q = Object.fromEntries(params.entries());
     delete q.page;
-    if (categorySlug) q.category = categorySlug;
+    if (effectiveCategory) q.category = effectiveCategory;
     if (preset === 'offers') q.onSale = 'true';
-    if (genderPage) q.gender = preset;
+    if (genderPage) q.gender = preset === 'universal' ? 'unisex' : preset;
     q.sort = q.sort || 'featured';
     q.limit = PAGE_SIZE;
     return q;
-  }, [params, categorySlug, preset, genderPage]);
+  }, [params, effectiveCategory, preset, genderPage]);
 
   const products = useInfiniteQuery({
     queryKey: ['products', 'list', query],
@@ -552,10 +574,10 @@ export default function Shop({ preset }) {
     placeholderData: keepPreviousData,
     staleTime: 60 * 1000,
   });
-  const gender = genderPage ? preset : get('gender');
+  const gender = genderPage ? (preset === 'universal' ? 'unisex' : preset) : (get('gender') === 'universal' ? 'unisex' : get('gender'));
   const facets = useQuery({
-    queryKey: ['facets', categorySlug, get('q'), gender],
-    queryFn: () => api.facets({ category: categorySlug, q: get('q'), gender }),
+    queryKey: ['facets', effectiveCategory, get('q'), gender],
+    queryFn: () => api.facets({ category: effectiveCategory, q: get('q'), gender }),
     select: (d) => d.facets,
     staleTime: 5 * 60 * 1000,
   });
@@ -572,7 +594,7 @@ export default function Shop({ preset }) {
       ? 'Offers'
       : genderPage?.title ||
         activeCategory?.name ||
-        (get('q') ? `Results for “${get('q')}”` : get('gender') === 'women' ? 'Women' : get('gender') === 'men' ? 'Men' : get('gender') === 'unisex' ? 'Unisex' : get('featured') ? 'Featured' : get('bestseller') ? 'Best sellers' : get('newArrival') ? 'New arrivals' : 'All products');
+        (get('q') ? `Results for “${get('q')}”` : get('gender') === 'women' ? 'Women' : get('gender') === 'men' ? 'Men' : get('gender') === 'unisex' || get('gender') === 'universal' ? 'Universal' : get('featured') ? 'Featured' : get('bestseller') ? 'Best sellers' : get('newArrival') ? 'New arrivals' : 'All products');
   const description = activeCategory?.tagline || 'Modern bags, backpacks and travel gear with tracked delivery and 7-day returns.';
   const setSort = (v) => update({ sort: v === 'featured' ? '' : v });
 
@@ -580,7 +602,7 @@ export default function Shop({ preset }) {
   if (!genderPage) crumbs.push({ label: 'Shop', to: '/shop' });
   if (parent) crumbs.push({ label: parent.name, to: `/shop/${parent.slug}` });
   crumbs.push({ label: title });
-  const canonical = isHome ? '/' : categorySlug ? `/shop/${categorySlug}` : genderPage ? `/${preset}` : preset === 'offers' ? '/offers' : '/shop';
+  const canonical = isHome ? '/' : categorySlug ? `/shop/${categorySlug}` : genderPage ? (preset === 'unisex' ? '/universal' : `/${preset}`) : preset === 'offers' ? '/offers' : '/shop';
   const filtered = [...FILTER_KEYS, 'q', 'sort'].some((k) => get(k));
   const listLd = items.length && !filtered ? [itemListLd(items.slice(0, 24))] : [];
 

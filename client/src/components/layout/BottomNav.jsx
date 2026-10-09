@@ -30,7 +30,7 @@ export default function BottomNav() {
   if (pathname.startsWith('/product/')) return null;
 
   const tabs = [
-    { to: '/', label: 'Home', icon: 'home', active: pathname === '/' || pathname.startsWith('/shop') || ['/offers', '/men', '/women', '/unisex'].includes(pathname) },
+    { to: '/', label: 'Home', icon: 'home', active: pathname === '/' || pathname.startsWith('/shop') || ['/offers', '/men', '/women', '/universal', '/unisex'].includes(pathname) },
     { to: '/wishlist', label: 'Wishlist', icon: 'favorite', active: pathname === '/wishlist', badge: wishCount },
     { to: user ? '/account' : '/login', label: user ? 'Account' : 'Sign in', icon: 'person', active: pathname.startsWith('/account') || pathname === '/login' },
   ];

@@ -35,7 +35,7 @@ const editable = (p) => ({
   isFeatured: Boolean(p.isFeatured),
 });
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
-const AUDIENCE = { men: 'Men', women: 'Women', unisex: 'Unisex' };
+const AUDIENCE = { men: 'Men', women: 'Women', unisex: 'Universal' };
 const offPct = (price, sale) => (sale && price && Number(sale) < Number(price) ? Math.round((1 - Number(sale) / Number(price)) * 100) : 0);
 
 function ListingSelect({ value, onChange, tree, className, placeholder }) {
