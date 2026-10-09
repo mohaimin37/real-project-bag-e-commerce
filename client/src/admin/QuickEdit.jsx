@@ -35,6 +35,7 @@ const editable = (p) => ({
   isFeatured: Boolean(p.isFeatured),
 });
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+const AUDIENCE = { men: 'Men', women: 'Women', unisex: 'Unisex' };
 const offPct = (price, sale) => (sale && price && Number(sale) < Number(price) ? Math.round((1 - Number(sale) / Number(price)) * 100) : 0);
 
 function ListingSelect({ value, onChange, tree, className, placeholder }) {
@@ -188,7 +189,7 @@ function ProductsTab({ tree }) {
   const bulkRun = useMutation({
     mutationFn: (body) => adminApi.bulkUpdateProducts({ ids: selected, ...body }),
     onSuccess: (res, body) => {
-      const labels = { sale: `put on sale at ${body.percent}% off`, endSale: 'taken off sale', move: 'moved', show: 'shown in the store', hide: 'hidden from the store', feature: 'featured', unfeature: 'unfeatured' };
+      const labels = { sale: `put on sale at ${body.percent}% off`, endSale: 'taken off sale', move: 'moved', show: 'shown in the store', hide: 'hidden from the store', feature: 'featured', unfeature: 'unfeatured', gender: `set to ${AUDIENCE[body.gender]}` };
       toast.success(`${res.updated} product${res.updated === 1 ? '' : 's'} ${labels[body.action]}`);
       setSelected([]);
       setDrafts({});
@@ -244,6 +245,18 @@ function ProductsTab({ tree }) {
             <Button size="sm" variant="tonal" icon="visibility" onClick={() => bulkRun.mutate({ action: 'show' })}>Show</Button>
             <Button size="sm" variant="tonal" icon="visibility_off" onClick={() => bulkRun.mutate({ action: 'hide' })}>Hide</Button>
             <Button size="sm" variant="tonal" icon="star" onClick={() => bulkRun.mutate({ action: 'feature' })}>Feature</Button>
+            {/* Decides which section lists the products: /men, /women or /unisex. */}
+            <label className="flex items-center gap-1">
+              <span className="sr-only">Set audience</span>
+              <select
+                className="input h-9 w-auto pr-8"
+                value=""
+                onChange={(e) => e.target.value && bulkRun.mutate({ action: 'gender', gender: e.target.value })}
+              >
+                <option value="">Set audience…</option>
+                {Object.entries(AUDIENCE).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+              </select>
+            </label>
             <button type="button" className="text-label-md text-on-surface-variant hover:underline ml-auto px-2" onClick={() => setSelected([])}>Clear selection</button>
           </>
         )}

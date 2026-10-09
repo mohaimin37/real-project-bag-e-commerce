@@ -9,6 +9,7 @@ import { nextSequence } from '../models/Counter.js';
 import ApiError from '../utils/ApiError.js';
 import { resolveLines, computeTotals } from './cart.service.js';
 import { redeemCoupon, releaseCoupon } from './coupon.service.js';
+import { moveCoins, reverseOrderCoins } from './coin.service.js';
 import { getProvider } from './payment.service.js';
 import { notifyAdminOfOrder } from './whatsapp.service.js';
 import { sendEmail } from './email.service.js';
@@ -61,6 +62,8 @@ export async function placeOrder(userId, payload) {
     shippingCode: payload.shippingMethod,
     settings,
     strictCoupon: true,
+    coinBalance: user.coins || 0,
+    useCoins: cart.useCoins,
   });
 
   const provider = getProvider(payload.paymentMethod);
@@ -138,6 +141,9 @@ export async function placeOrder(userId, payload) {
             grandTotal: totals.grandTotal,
             currency: totals.currency,
             coupon: totals.coupon ? { code: totals.coupon.code, type: totals.coupon.type, value: totals.coupon.value } : undefined,
+            coinsRedeemed: totals.coins.used,
+            coinDiscount: totals.coins.discount,
+            coinsEarned: totals.coins.willEarn,
             shippingMethod: { code: totals.shippingMethod.code, label: totals.shippingMethod.label, eta: totals.shippingMethod.eta },
             paymentMethod: provider.code,
             paymentStatus: 'Pending',
@@ -149,7 +155,11 @@ export async function placeOrder(userId, payload) {
         { session }
       );
 
-      await Cart.updateOne({ user: userId }, { $set: { items: [], couponCode: null } }, { session });
+      // Loyalty coins: spend first (fails if the balance no longer covers it), then credit what this order earns.
+      if (totals.coins.used > 0) await moveCoins(userId, -totals.coins.used, { type: 'redeemed', order, session, note: `Used on order ${order.orderId}` });
+      if (totals.coins.willEarn > 0) await moveCoins(userId, totals.coins.willEarn, { type: 'earned', order, session, note: `Earned on order ${order.orderId}` });
+
+      await Cart.updateOne({ user: userId }, { $set: { items: [], couponCode: null, useCoins: false } }, { session });
     });
   } finally {
     await session.endSession();
@@ -182,6 +192,7 @@ async function restoreInventory(order) {
   }
   order.inventoryRestored = true;
   if (order.coupon?.code) await releaseCoupon(order.coupon.code, order._id);
+  await reverseOrderCoins(order);
 }
 
 export async function changeOrderStatus(order, { status, note, trackingNumber, courier, at, notifyCustomer = false }, changedBy) {
@@ -257,7 +268,13 @@ ${note ? `<tr><td style="padding:4px 12px 4px 0;color:#666">Note</td><td>${esc(n
   });
 }
 
+// Cancellation policy: within 24 hours of placing the order, and never once it has shipped.
+export const CANCEL_WINDOW_MS = 24 * 60 * 60 * 1000;
+
 export async function cancelByCustomer(order, userId, reason) {
+  if (Date.now() - new Date(order.createdAt).getTime() > CANCEL_WINDOW_MS) {
+    throw ApiError.badRequest('Orders can only be cancelled within 24 hours of being placed. Please contact info@wildtane.com for help.');
+  }
   if (!CUSTOMER_CANCELLABLE.includes(order.orderStatus)) {
     throw ApiError.badRequest('This order is already being prepared and can no longer be cancelled online. Please contact support.');
   }

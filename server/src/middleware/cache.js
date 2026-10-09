@@ -17,7 +17,7 @@ const store = new Map(); // key -> { body, etag, expires }
 const inflight = new Map(); // key -> Promise<entry|null>
 
 // Paths (under /api) whose GET responses are identical for every visitor.
-const CACHEABLE = /^\/(products(\/(facets|collections|suggest|by-ids|[a-z0-9-]+))?|categories(\/[a-z0-9-]+)?|config|banners|blogs|updates|coupons)$/;
+const CACHEABLE = /^\/(products(\/(facets|collections|suggest|by-ids|[a-z0-9-]+))?|categories(\/[a-z0-9-]+)?|config|banners|blogs|updates|coupons|reviews\/featured)$/;
 // Writes that change what those reads return.
 const INVALIDATES = /^\/(admin\/|orders|reviews)/;
 

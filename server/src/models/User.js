@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
+import { forgetUser, forgetAllUsers } from '../utils/userCache.js';
 
 const phoneSchema = new mongoose.Schema(
   {
@@ -37,6 +38,7 @@ const userSchema = new mongoose.Schema(
     avatar: { url: String, publicId: String },
     role: { type: String, enum: ['customer', 'admin'], default: 'customer', index: true },
     isActive: { type: Boolean, default: true },
+    coins: { type: Number, default: 0, min: 0 }, // loyalty coin balance (history in CoinTransaction)
     addresses: [addressSchema],
     recentlyViewed: [
       {
@@ -49,6 +51,8 @@ const userSchema = new mongoose.Schema(
     tokenVersion: { type: Number, default: 0, select: false },
     passwordResetToken: { type: String, select: false },
     passwordResetExpires: { type: Date, select: false },
+    passwordResetOtp: { type: String, select: false },
+    passwordResetOtpExpires: { type: Date, select: false },
     // Brute-force protection: consecutive failed sign-ins and the lock they trigger.
     failedLoginCount: { type: Number, default: 0, select: false },
     lockUntil: { type: Date, select: false },
@@ -72,9 +76,20 @@ userSchema.methods.toJSON = function toJSON() {
   delete obj.tokenVersion;
   delete obj.passwordResetToken;
   delete obj.passwordResetExpires;
+  delete obj.passwordResetOtp;
+  delete obj.passwordResetOtpExpires;
   delete obj.failedLoginCount;
   delete obj.lockUntil;
   return obj;
 };
+
+// A changed user must not be served from the sign-in cache.
+userSchema.post('save', (doc) => forgetUser(doc._id));
+userSchema.post(['findOneAndUpdate', 'updateOne', 'findOneAndDelete', 'deleteOne'], { document: false, query: true }, function forget() {
+  const id = this.getQuery()?._id;
+  if (mongoose.isValidObjectId(id)) forgetUser(id);
+  else forgetAllUsers();
+});
+userSchema.post(['updateMany', 'deleteMany', 'bulkWrite'], () => forgetAllUsers());
 
 export default mongoose.model('User', userSchema);

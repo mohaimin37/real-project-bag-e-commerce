@@ -14,7 +14,8 @@ async function start() {
     console.log(`WILDTANE API listening on ${env.serverUrl}${WORKERS > 1 ? ` (${WORKERS} workers)` : ''}`);
     console.log(
       `Integrations — WhatsApp: ${env.whatsapp.enabled ? 'Cloud API' : 'dev log'}, ` +
-        `uploads: ${env.cloudinary.enabled ? 'Cloudinary' : 'local disk'}, email: ${env.smtp.enabled ? 'SMTP' : 'dev log'}`
+        `uploads: ${env.cloudinary.enabled ? 'Cloudinary' : 'local disk'}, email: ${env.smtp.enabled ? 'SMTP' : 'dev log'}, ` +
+        `AI writer: ${env.gemini.enabled ? `Gemini (${env.gemini.model})` : 'off (set GEMINI_API_KEY)'}`
     );
   });
   // Slightly above typical load-balancer idle timeouts, so kept-alive connections aren't cut mid-request.

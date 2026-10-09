@@ -7,6 +7,9 @@ import { useCategories } from '../hooks/useStore';
 import { Badge, EmptyState, Icon, Img, Pagination, Toggle, useConfirm } from '../components/ui';
 import { DataTable, FilterSelect, PageHeader, SearchBox, Toolbar, useListParams } from './kit';
 
+// Audience decides where a product is listed: /men, /women or /unisex.
+const GENDER_LABEL = { men: 'Men', women: 'Women', unisex: 'Unisex' };
+
 export function StockPill({ product }) {
   const s = product.stock;
   return (
@@ -53,6 +56,11 @@ export default function Products() {
       ),
     },
     { key: 'category', header: 'Category', render: (r) => <span className="text-on-surface-variant whitespace-nowrap">{r.subcategory?.name || r.category?.name}</span> },
+    {
+      key: 'gender',
+      header: 'For',
+      render: (r) => <Badge tone={r.gender === 'men' ? 'dark' : r.gender === 'women' ? 'amber' : 'neutral'}>{GENDER_LABEL[r.gender] || 'Unisex'}</Badge>,
+    },
     {
       key: 'price',
       header: 'Price',
@@ -116,6 +124,7 @@ export default function Products() {
       <Toolbar>
         <SearchBox value={p.q} onChange={(q) => set({ q })} placeholder="Search name or SKU…" />
         <FilterSelect label="Category" value={p.category} onChange={(v) => set({ category: v })} options={catOptions} />
+        <FilterSelect label="For" value={p.gender} onChange={(v) => set({ gender: v })} options={[['', 'All audiences'], ['men', 'Men'], ['women', 'Women'], ['unisex', 'Unisex']]} />
         <FilterSelect label="Visibility" value={p.visibility} onChange={(v) => set({ visibility: v })} options={[['', 'Any visibility'], ['visible', 'Visible'], ['hidden', 'Hidden']]} />
         <FilterSelect label="Stock" value={p.stockStatus} onChange={(v) => set({ stockStatus: v })} options={[['', 'Any stock'], ['low', 'Low stock'], ['out', 'Out of stock']]} />
         <FilterSelect label="Sort" value={p.sort} onChange={(v) => set({ sort: v })} options={[['', 'Newest first'], ['name', 'Name A–Z'], ['bestseller', 'Best selling'], ['price-high', 'Price high–low'], ['stock-low', 'Stock low–high']]} />

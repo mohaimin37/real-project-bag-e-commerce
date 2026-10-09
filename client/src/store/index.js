@@ -1,5 +1,7 @@
 import { configureStore, createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { api } from '../lib/api';
+import { applyTheme, applyVision, STORAGE } from '../theme/engine';
+import { ALL_THEME_IDS, CUSTOM_DEFAULTS, DEFAULT_MODE, DEFAULT_THEME, enabledThemeIds, VISION_DEFAULTS } from '../theme/themes';
 
 const read = (key, fallback) => {
   try {
@@ -17,30 +19,74 @@ const write = (key, value) => {
   }
 };
 
-// ── Auth ─────────────────────────────────────────────────────
+// ── Auth (persisted across browser/page close until explicit logout) ──
 
-export const fetchMe = createAsyncThunk('auth/me', async () => (await api.me()).user);
+const savedUser = read('wt-user', null);
+const savedToken = typeof localStorage !== 'undefined' ? localStorage.getItem('wt-token') : null;
+
+export const fetchMe = createAsyncThunk('auth/me', async (_, { rejectWithValue }) => {
+  try {
+    const res = await api.me();
+    return res.user;
+  } catch (err) {
+    return rejectWithValue(err);
+  }
+});
 
 const authSlice = createSlice({
   name: 'auth',
-  initialState: { user: null, status: 'loading' },
+  initialState: {
+    user: savedUser,
+    token: savedToken,
+    status: savedUser ? 'ready' : 'loading',
+  },
   reducers: {
     setUser(state, { payload }) {
-      state.user = payload;
+      const user = payload?.user !== undefined ? payload.user : payload;
+      const token = payload?.token || state.token;
+      state.user = user;
+      state.token = token;
       state.status = 'ready';
+      if (user) write('wt-user', user);
+      if (payload?.token) {
+        try {
+          localStorage.setItem('wt-token', payload.token);
+        } catch {}
+      }
     },
     clearUser(state) {
       state.user = null;
+      state.token = null;
       state.status = 'ready';
+      try {
+        localStorage.removeItem('wt-user');
+        localStorage.removeItem('wt-token');
+      } catch {}
     },
   },
   extraReducers: (b) => {
     b.addCase(fetchMe.fulfilled, (s, { payload }) => {
       s.user = payload;
       s.status = 'ready';
+      if (payload) {
+        write('wt-user', payload);
+      } else {
+        s.token = null;
+        try {
+          localStorage.removeItem('wt-user');
+          localStorage.removeItem('wt-token');
+        } catch {}
+      }
     });
-    b.addCase(fetchMe.rejected, (s) => {
-      s.user = null;
+    b.addCase(fetchMe.rejected, (s, action) => {
+      if (action.payload?.status === 401) {
+        s.user = null;
+        s.token = null;
+        try {
+          localStorage.removeItem('wt-user');
+          localStorage.removeItem('wt-token');
+        } catch {}
+      }
       s.status = 'ready';
     });
   },
@@ -102,6 +148,24 @@ const guestListsSlice = createSlice({
 
 // ── UI ───────────────────────────────────────────────────────
 
+const readRaw = (key) => {
+  try {
+    return localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+};
+const DARK_QUERY = '(prefers-color-scheme: dark)';
+const systemMode = () => (typeof matchMedia !== 'undefined' && matchMedia(DARK_QUERY).matches ? 'dark' : 'light');
+const SITE_APPEARANCE_FALLBACK ={ defaultTheme: DEFAULT_THEME, defaultMode: DEFAULT_MODE, enabledThemes: ALL_THEME_IDS };
+
+/** The theme actually shown: the shopper's pick if the store allows it, else the store default. */
+export function effectiveTheme(ui) {
+  const enabled = enabledThemeIds(ui.site);
+  if (ui.palette && enabled.includes(ui.palette)) return ui.palette;
+  return enabled.includes(ui.site.defaultTheme) ? ui.site.defaultTheme : DEFAULT_THEME;
+}
+
 const uiSlice = createSlice({
   name: 'ui',
   initialState: {
@@ -109,9 +173,20 @@ const uiSlice = createSlice({
     searchOpen: false,
     mobileNavOpen: false,
     quickView: null, // product slug
+    adminEdit: null, // product id being edited in place on the storefront (admins only)
     currency: read('wt-currency', 'INR'),
-    theme: typeof document !== 'undefined' && document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light',
+    // Appearance mode ('light' | 'dark'). public/theme.js has already applied it before first paint.
+    theme: typeof document !== 'undefined' && document.documentElement.dataset.theme === 'light' ? 'light' : 'dark',
+    modeChosen: Boolean(readRaw(STORAGE.mode)), // false = follow the store's default appearance
+    followSystem: readRaw(STORAGE.mode) === 'system', // true = track the device's light/dark setting
     contrast: typeof document !== 'undefined' && document.documentElement.dataset.contrast === 'high' ? 'high' : 'normal',
+    // Colour theme picked by the shopper (null = store default). Independent of light/dark.
+    palette: readRaw(STORAGE.theme),
+    customColors: { ...CUSTOM_DEFAULTS, ...read(STORAGE.custom, {}) },
+    site: { ...SITE_APPEARANCE_FALLBACK, ...read(STORAGE.site, {}) },
+    // Text size, readable font, link underlines, reduced motion (public/theme.js applies them before first paint).
+    vision: { ...VISION_DEFAULTS, ...read(STORAGE.vision, {}) },
+    themeOpen: false,
   },
   reducers: {
     setCartOpen: (s, { payload }) => void (s.cartOpen = payload),
@@ -119,12 +194,52 @@ const uiSlice = createSlice({
     setMobileNavOpen: (s, { payload }) => void (s.mobileNavOpen = payload),
     openQuickView: (s, { payload }) => void (s.quickView = payload),
     closeQuickView: (s) => void (s.quickView = null),
+    setAdminEdit: (s, { payload }) => void (s.adminEdit = payload),
     setCurrency: (s, { payload }) => void (s.currency = payload),
     toggleTheme(s) {
       s.theme = s.theme === 'dark' ? 'light' : 'dark';
+      s.modeChosen = true;
+      s.followSystem = false;
+    },
+    /** 'light' | 'dark' | 'system' */
+    setMode(s, { payload }) {
+      s.followSystem = payload === 'system';
+      s.theme = s.followSystem ? systemMode() : payload === 'dark' ? 'dark' : 'light';
+      s.modeChosen = true;
+    },
+    /** The device switched light/dark; only applies while following the system. */
+    systemModeChanged(s, { payload }) {
+      if (s.followSystem) s.theme = payload;
+    },
+    setPalette: (s, { payload }) => void (s.palette = payload),
+    setCustomColors(s, { payload }) {
+      s.customColors = { ...CUSTOM_DEFAULTS, ...payload };
+    },
+    resetCustomColors(s) {
+      s.customColors = { ...CUSTOM_DEFAULTS };
+    },
+    setThemeOpen: (s, { payload }) => void (s.themeOpen = payload),
+    /** Forget the shopper's picks and follow the store defaults again (custom colours are kept). */
+    resetAppearance(s) {
+      s.palette = null;
+      s.modeChosen = false;
+      s.followSystem = false;
+      s.theme = s.site.defaultMode === 'light' ? 'light' : 'dark';
+    },
+    /** Store defaults from Admin → Settings → Appearance (via the public config). */
+    setSiteAppearance(s, { payload }) {
+      s.site = { ...SITE_APPEARANCE_FALLBACK, ...payload };
+      if (!s.modeChosen) s.theme = s.site.defaultMode === 'light' ? 'light' : 'dark';
     },
     toggleContrast(s) {
       s.contrast = s.contrast === 'high' ? 'normal' : 'high';
+    },
+    setVision(s, { payload }) {
+      s.vision = { ...s.vision, ...payload };
+    },
+    resetVision(s) {
+      s.vision = { ...VISION_DEFAULTS };
+      s.contrast = 'normal';
     },
   },
 });
@@ -138,9 +253,20 @@ export const {
   setMobileNavOpen,
   openQuickView,
   closeQuickView,
+  setAdminEdit,
   setCurrency,
   toggleTheme,
   toggleContrast,
+  setVision,
+  resetVision,
+  setMode,
+  systemModeChanged,
+  setPalette,
+  setCustomColors,
+  resetCustomColors,
+  setThemeOpen,
+  setSiteAppearance,
+  resetAppearance,
 } = uiSlice.actions;
 
 export const store = configureStore({
@@ -152,22 +278,48 @@ export const store = configureStore({
   },
 });
 
-// Persist the bits that should survive reloads, and reflect theme on <html>.
+// Persist the bits that should survive reloads, and reflect appearance + theme on <html>.
+let appliedTheme = null;
+const applyCurrentTheme = (animate) => {
+  const { ui } = store.getState();
+  const themeId = effectiveTheme(ui);
+  const key = JSON.stringify([themeId, ui.theme, themeId === 'custom' ? ui.customColors : null]);
+  if (key === appliedTheme) return;
+  appliedTheme = key;
+  applyTheme({ themeId, mode: ui.theme, custom: ui.customColors, animate });
+};
+applyCurrentTheme(false);
+let appliedVision = store.getState().ui.vision;
+applyVision(appliedVision);
+if (typeof matchMedia !== 'undefined') {
+  matchMedia(DARK_QUERY).addEventListener?.('change', (e) => store.dispatch(systemModeChanged(e.matches ? 'dark' : 'light')));
+}
+
 store.subscribe(() => {
   const s = store.getState();
   write('wt-guest-cart', s.guestCart.items);
   write('wt-guest-wishlist', s.guestLists.wishlist);
   write('wt-recent', s.guestLists.recent);
   write('wt-currency', s.ui.currency);
+  write(STORAGE.custom, s.ui.customColors);
+  write(STORAGE.site, s.ui.site);
+  write(STORAGE.vision, s.ui.vision);
   try {
-    localStorage.setItem('wt-theme', s.ui.theme);
+    // Mode and theme are saved only once the shopper picks them, so store defaults still apply until then.
+    if (s.ui.modeChosen) localStorage.setItem(STORAGE.mode, s.ui.followSystem ? 'system' : s.ui.theme);
+    else localStorage.removeItem(STORAGE.mode);
+    if (s.ui.palette) localStorage.setItem(STORAGE.theme, s.ui.palette);
+    else localStorage.removeItem(STORAGE.theme);
     localStorage.setItem('wt-contrast', s.ui.contrast);
   } catch {
     /* ignore */
   }
   const root = document.documentElement;
-  if (s.ui.theme === 'dark') root.dataset.theme = 'dark';
-  else delete root.dataset.theme;
   if (s.ui.contrast === 'high') root.dataset.contrast = 'high';
   else delete root.dataset.contrast;
+  if (s.ui.vision !== appliedVision) {
+    appliedVision = s.ui.vision;
+    applyVision(appliedVision);
+  }
+  applyCurrentTheme(true);
 });

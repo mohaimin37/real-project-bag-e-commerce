@@ -1,0 +1,298 @@
+{
+  "settings": [
+    {
+      "_id": "6abe81c17583fc36b88c05f7",
+      "announcement": "Complimentary carbon-neutral express shipping on orders over ₹10,000",
+      "shippingMethods": [
+        {
+          "code": "standard",
+          "label": "Carbon-Neutral Standard",
+          "description": "Tracked ground & sea freight, offset at source",
+          "eta": "5–7 business days",
+          "price": 199,
+          "freeEligible": true
+        },
+        {
+          "code": "express",
+          "label": "Priority Express",
+          "description": "Air express with live tracking and signature",
+          "eta": "1–3 business days",
+          "price": 599,
+          "freeEligible": false
+        }
+      ]
+    }
+  ],
+  "banners": [
+    {
+      "_id": "6abe81c07583fc36b88c05f2",
+      "subtitle": "Use code LAUNCH15 at checkout on orders above ₹15,000. Complimentary carbon-neutral express shipping on all carts over ₹10,000."
+    },
+    {
+      "_id": "6abe81c07583fc36b88c05f3",
+      "subtitle": "Architectural utility reimagined with recycled 1000D ballistic nylon, vegetable-tanned Italian leather and modular magnetic mechanics. Calibrated for creators, executives and modern nomads."
+    }
+  ],
+  "products": [
+    {
+      "_id": "6abe81bc7583fc36b88c0587",
+      "name": "The Apex Commuter 24L",
+      "faqs": [
+        {
+          "question": "Will this pack fit under commercial airplane seats?",
+          "answer": "Yes. At 48cm × 31cm × 18cm, The Apex Commuter meets standard under-seat personal item rules for IndiGo, Air India, Emirates, British Airways, Lufthansa and most major carriers."
+        },
+        {
+          "question": "How does the 16\" laptop cradle protect against drops?",
+          "answer": "The laptop bay has a false bottom suspended 2.5 cm above the backpack's floor, so the laptop never contacts the ground directly, even on hard impacts."
+        },
+        {
+          "question": "Is the backpack 100% waterproof or water resistant?",
+          "answer": "It is certified IPX6 weather-tight: 840D recycled ballistic nylon, laminated PU backing and YKK AquaGuard® zippers handle monsoon downpours. It is not designed for full submersion."
+        },
+        {
+          "question": "How does the lifetime repair warranty work?",
+          "answer": "If any hardware, seam or fastener fails, raise a claim from your account. We send a prepaid pickup and repair or replace the part free of charge."
+        }
+      ],
+      "badge": "Bestseller"
+    },
+    {
+      "_id": "6abe81bc7583fc36b88c058b",
+      "name": "Aura Structured Leather Tote",
+      "faqs": [
+        {
+          "question": "How should I care for the leather?",
+          "answer": "Wipe with a dry cloth and condition every 3–4 months with a neutral leather balm. Keep it away from prolonged direct sunlight."
+        },
+        {
+          "question": "Is the leather ethically sourced?",
+          "answer": "Yes. Our hides come from LWG Gold-rated tanneries using vegetable tanning agents from tree bark and mimosa extracts."
+        }
+      ],
+      "badge": "Calfskin Series"
+    },
+    {
+      "_id": "6abe81bc7583fc36b88c058f",
+      "name": "Nomad Grand Duffle 48L",
+      "faqs": [
+        {
+          "question": "How should I care for the leather?",
+          "answer": "Wipe with a dry cloth and condition every 3–4 months with a neutral leather balm. Keep it away from prolonged direct sunlight."
+        },
+        {
+          "question": "Is the leather ethically sourced?",
+          "answer": "Yes. Our hides come from LWG Gold-rated tanneries using vegetable tanning agents from tree bark and mimosa extracts."
+        }
+      ],
+      "badge": "Cabin Approved"
+    },
+    {
+      "_id": "6abe81bd7583fc36b88c05a2",
+      "name": "Vanguard Executive Laptop Folio 14\"",
+      "faqs": [
+        {
+          "question": "How should I care for the leather?",
+          "answer": "Wipe with a dry cloth and condition every 3–4 months with a neutral leather balm. Keep it away from prolonged direct sunlight."
+        },
+        {
+          "question": "Is the leather ethically sourced?",
+          "answer": "Yes. Our hides come from LWG Gold-rated tanneries using vegetable tanning agents from tree bark and mimosa extracts."
+        }
+      ],
+      "badge": "Handcrafted"
+    },
+    {
+      "_id": "6abe81bd7583fc36b88c05a5",
+      "name": "Meridian Structured Handbag",
+      "faqs": [
+        {
+          "question": "How should I care for the leather?",
+          "answer": "Wipe with a dry cloth and condition every 3–4 months with a neutral leather balm. Keep it away from prolonged direct sunlight."
+        },
+        {
+          "question": "Is the leather ethically sourced?",
+          "answer": "Yes. Our hides come from LWG Gold-rated tanneries using vegetable tanning agents from tree bark and mimosa extracts."
+        }
+      ],
+      "badge": "Signature Series"
+    },
+    {
+      "_id": "6abe9c536b50385d6a994e25",
+      "name": "Onyx Slim Bifold Wallet",
+      "faqs": [
+        {
+          "question": "How should I care for the leather?",
+          "answer": "Wipe with a dry cloth and condition every 3–4 months with a neutral leather balm. Keep it away from prolonged direct sunlight."
+        },
+        {
+          "question": "Is the leather ethically sourced?",
+          "answer": "Yes. Our hides come from LWG Gold-rated tanneries using vegetable tanning agents from tree bark and mimosa extracts."
+        }
+      ],
+      "badge": "RFID Shielded"
+    },
+    {
+      "_id": "6abe9c536b50385d6a994e28",
+      "name": "Soirée Leather Zip Clutch",
+      "faqs": [
+        {
+          "question": "How should I care for the leather?",
+          "answer": "Wipe with a dry cloth and condition every 3–4 months with a neutral leather balm. Keep it away from prolonged direct sunlight."
+        },
+        {
+          "question": "Is the leather ethically sourced?",
+          "answer": "Yes. Our hides come from LWG Gold-rated tanneries using vegetable tanning agents from tree bark and mimosa extracts."
+        }
+      ],
+      "badge": "New Season"
+    },
+    {
+      "_id": "6abe9c546b50385d6a994e2e",
+      "name": "Alto Aluminium Cabin Trunk",
+      "faqs": [],
+      "badge": "Lifetime Shell"
+    },
+    {
+      "_id": "6abe9c546b50385d6a994e37",
+      "name": "Heritage Waxed Canvas Rucksack",
+      "faqs": [
+        {
+          "question": "How should I care for the leather?",
+          "answer": "Wipe with a dry cloth and condition every 3–4 months with a neutral leather balm. Keep it away from prolonged direct sunlight."
+        },
+        {
+          "question": "Is the leather ethically sourced?",
+          "answer": "Yes. Our hides come from LWG Gold-rated tanneries using vegetable tanning agents from tree bark and mimosa extracts."
+        }
+      ],
+      "badge": "Handcrafted"
+    },
+    {
+      "_id": "6abe9c546b50385d6a994e3a",
+      "name": "Ranger Leather Messenger",
+      "faqs": [
+        {
+          "question": "How should I care for the leather?",
+          "answer": "Wipe with a dry cloth and condition every 3–4 months with a neutral leather balm. Keep it away from prolonged direct sunlight."
+        },
+        {
+          "question": "Is the leather ethically sourced?",
+          "answer": "Yes. Our hides come from LWG Gold-rated tanneries using vegetable tanning agents from tree bark and mimosa extracts."
+        }
+      ],
+      "badge": "Full-Grain"
+    },
+    {
+      "_id": "6abe9c546b50385d6a994e3d",
+      "name": "Cognac Heritage Briefcase",
+      "faqs": [
+        {
+          "question": "How should I care for the leather?",
+          "answer": "Wipe with a dry cloth and condition every 3–4 months with a neutral leather balm. Keep it away from prolonged direct sunlight."
+        },
+        {
+          "question": "Is the leather ethically sourced?",
+          "answer": "Yes. Our hides come from LWG Gold-rated tanneries using vegetable tanning agents from tree bark and mimosa extracts."
+        }
+      ],
+      "badge": "Calfskin Series"
+    },
+    {
+      "_id": "6abea979f45a1e987e571709",
+      "name": "Sienna Leather Doctor Handbag",
+      "faqs": [
+        {
+          "question": "How should I care for the leather?",
+          "answer": "Wipe with a dry cloth and condition every 3–4 months with a neutral leather balm. Keep it away from prolonged direct sunlight."
+        },
+        {
+          "question": "Is the leather ethically sourced?",
+          "answer": "Yes. Our hides come from LWG Gold-rated tanneries using vegetable tanning agents from tree bark and mimosa extracts."
+        }
+      ],
+      "badge": "Polished Leather"
+    },
+    {
+      "_id": "6abea97af45a1e987e57171c",
+      "name": "Ochre Leather Shopper Tote",
+      "faqs": [
+        {
+          "question": "How should I care for the leather?",
+          "answer": "Wipe with a dry cloth and condition every 3–4 months with a neutral leather balm. Keep it away from prolonged direct sunlight."
+        },
+        {
+          "question": "Is the leather ethically sourced?",
+          "answer": "Yes. Our hides come from LWG Gold-rated tanneries using vegetable tanning agents from tree bark and mimosa extracts."
+        }
+      ],
+      "badge": ""
+    },
+    {
+      "_id": "6abea97af45a1e987e571725",
+      "name": "Oxford Twin-Buckle Briefcase",
+      "faqs": [
+        {
+          "question": "How should I care for the leather?",
+          "answer": "Wipe with a dry cloth and condition every 3–4 months with a neutral leather balm. Keep it away from prolonged direct sunlight."
+        },
+        {
+          "question": "Is the leather ethically sourced?",
+          "answer": "Yes. Our hides come from LWG Gold-rated tanneries using vegetable tanning agents from tree bark and mimosa extracts."
+        }
+      ],
+      "badge": "Full-Grain"
+    },
+    {
+      "_id": "6abea97af45a1e987e57172c",
+      "name": "Terracotta Leather Backpack",
+      "faqs": [
+        {
+          "question": "How should I care for the leather?",
+          "answer": "Wipe with a dry cloth and condition every 3–4 months with a neutral leather balm. Keep it away from prolonged direct sunlight."
+        },
+        {
+          "question": "Is the leather ethically sourced?",
+          "answer": "Yes. Our hides come from LWG Gold-rated tanneries using vegetable tanning agents from tree bark and mimosa extracts."
+        }
+      ],
+      "badge": ""
+    },
+    {
+      "_id": "6abea97af45a1e987e571733",
+      "name": "Tan Leather Card Holder",
+      "faqs": [
+        {
+          "question": "How should I care for the leather?",
+          "answer": "Wipe with a dry cloth and condition every 3–4 months with a neutral leather balm. Keep it away from prolonged direct sunlight."
+        },
+        {
+          "question": "Is the leather ethically sourced?",
+          "answer": "Yes. Our hides come from LWG Gold-rated tanneries using vegetable tanning agents from tree bark and mimosa extracts."
+        }
+      ],
+      "badge": "Gift Idea"
+    },
+    {
+      "_id": "6abf423ac59ab9d07eadb214",
+      "name": "Meridian Aluminium Check-In 65L",
+      "faqs": [],
+      "badge": "Lifetime Shell"
+    }
+  ],
+  "blogs": [
+    {
+      "_id": "6abe81c07583fc36b88c05f6",
+      "title": "Built for Decades, Not Seasons: Inside Our Repair Programme",
+      "status": "published",
+      "publishedAt": "2026-10-01T15:52:32.951Z"
+    }
+  ],
+  "liveupdates": [
+    {
+      "_id": "6abe9c556b50385d6a994e46",
+      "title": "Repair pop-up at our Mumbai studio this Saturday",
+      "isPublished": true
+    }
+  ]
+}

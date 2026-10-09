@@ -95,15 +95,23 @@ export const quickProductSchema = z
     images: z.array(image).min(1, 'Keep at least one photo').max(15).optional(),
     isVisible: z.boolean().optional(),
     isFeatured: z.boolean().optional(),
+    isBestseller: z.boolean().optional(),
+    isNewArrival: z.boolean().optional(),
+    gender: z.enum(['unisex', 'women', 'men']).optional(),
+    name: z.string().trim().min(2, 'Enter a product name').max(120).optional(),
+    tagline: z.string().trim().max(80).optional(),
+    badge: z.string().trim().max(30).optional(),
   })
   .refine((d) => Object.keys(d).length > 0, 'Nothing to update');
 
 export const bulkProductSchema = z
   .object({
     ids: z.array(objectId).min(1, 'Select at least one product').max(500),
-    action: z.enum(['sale', 'endSale', 'move', 'show', 'hide', 'feature', 'unfeature']),
+    action: z.enum(['sale', 'endSale', 'move', 'show', 'hide', 'feature', 'unfeature', 'gender']),
     percent: z.coerce.number().min(1).max(90).optional(),
     listing: objectId.optional(),
+    gender: z.enum(['unisex', 'women', 'men']).optional(),
   })
+  .refine((d) => d.action !== 'gender' || d.gender, { message: 'Choose who it is for', path: ['gender'] })
   .refine((d) => d.action !== 'sale' || d.percent, { message: 'Enter the % off', path: ['percent'] })
   .refine((d) => d.action !== 'move' || d.listing, { message: 'Choose where to move them', path: ['listing'] });

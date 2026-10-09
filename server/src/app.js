@@ -11,7 +11,7 @@ import env from './config/env.js';
 import sanitize from './middleware/sanitize.js';
 import { apiLimiter } from './middleware/rateLimit.js';
 import { notFound, errorHandler } from './middleware/error.js';
-import { UPLOAD_DIR } from './services/upload.service.js';
+import { UPLOAD_DIR, readBlob } from './services/upload.service.js';
 import * as routes from './routes/public.routes.js';
 import adminRoutes from './routes/admin.routes.js';
 import seoRoutes from './routes/seo.routes.js';
@@ -63,6 +63,17 @@ app.use(sanitize);
 if (!env.isProd) app.use(morgan('dev'));
 
 // /uploads/x.jpg?w=480 → resized (WebP when supported), generated once and kept on disk.
+// Photos uploaded on the live site (Netlify Blobs). File names are unique, so they never change.
+app.get('/uploads/blob/:folder/:file', async (req, res, next) => {
+  try {
+    const file = await readBlob(`${req.params.folder}/${req.params.file}`);
+    if (!file) return res.status(404).end();
+    res.set({ 'Content-Type': file.type, 'Cache-Control': 'public, max-age=31536000, immutable' });
+    res.send(Buffer.from(file.data));
+  } catch (err) {
+    next(err);
+  }
+});
 app.use('/uploads', resizedImages(UPLOAD_DIR));
 app.use('/uploads', express.static(UPLOAD_DIR, { maxAge: '7d', index: false }));
 
@@ -88,6 +99,7 @@ api.use('/track', routes.trackRoutes);
 api.use('/contact', routes.contactRoutes);
 api.use('/corporate', routes.corporateRoutes);
 api.use('/newsletter', routes.newsletterRoutes);
+api.use('/comments', routes.commentRoutes);
 api.use('/config', routes.configRoutes);
 api.use('/banners', routes.bannerRoutes);
 api.use('/admin', adminRoutes);

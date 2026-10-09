@@ -71,6 +71,17 @@ export const corporateSchema = z.object({
   message: z.string().trim().max(2000).optional().default(''),
 });
 
+// Homepage customer comments (anyone, moderated) and the admin's "add a customer's comment".
+export const commentSchema = z.object({
+  name: z.string().trim().min(2, 'Enter your name').max(60),
+  city: z.string().trim().max(60).optional().default(''),
+  rating: z.coerce.number().min(1, 'Choose a star rating').max(5),
+  message: z.string().trim().min(10, 'Write at least a few words (10+ characters)').max(600),
+});
+export const adminCommentSchema = commentSchema.extend({
+  sourceNote: z.string().trim().min(2, 'Say where this comment came from (e.g. WhatsApp)').max(120),
+});
+
 export const enquiryUpdateSchema = z.object({
   status: z.string().trim().max(20).optional(),
   adminNotes: z.string().trim().max(2000).optional(),
@@ -78,11 +89,23 @@ export const enquiryUpdateSchema = z.object({
 
 export const subscribeSchema = z.object({ email });
 
+// Must match the theme ids in client/src/theme/themes.js.
+const THEME_IDS = ['default', 'luxury', 'modern', 'ocean', 'rose', 'emerald', 'mono', 'reference', 'clear', 'custom'];
+
 export const settingsSchema = z.object({
   storeName: z.string().trim().min(2).max(60).optional(),
   supportEmail: email.optional(),
   supportPhone: z.string().trim().max(30).optional(),
   businessAddress: z.string().trim().max(300).optional(),
+  supportHours: z.string().trim().max(120).optional(),
+  grievanceOfficer: z
+    .object({
+      name: z.string().trim().max(80).optional().default(''),
+      designation: z.string().trim().max(80).optional().default(''),
+      email: z.union([email, z.literal('')]).optional().default(''),
+      phone: z.string().trim().max(30).optional().default(''),
+    })
+    .optional(),
   gstin: z
     .string()
     .trim()
@@ -96,6 +119,14 @@ export const settingsSchema = z.object({
   freeShippingThreshold: z.coerce.number().min(0).optional(),
   codEnabled: z.boolean().optional(),
   codMaxOrder: z.coerce.number().min(0).optional(),
+  loyalty: z
+    .object({
+      enabled: z.boolean(),
+      coinsPer100: z.coerce.number().min(0, 'Use 0 or more').max(100),
+      rupeesPerCoin: z.coerce.number().min(0.01, 'A coin must be worth at least ₹0.01').max(100),
+      maxRedeemPercent: z.coerce.number().int().min(1).max(100),
+    })
+    .optional(),
   shippingMethods: z
     .array(
       z.object({
@@ -119,6 +150,14 @@ export const settingsSchema = z.object({
       })
     )
     .min(1)
+    .optional(),
+  appearance: z
+    .object({
+      defaultTheme: z.enum(THEME_IDS),
+      defaultMode: z.enum(['light', 'dark']),
+      enabledThemes: z.array(z.enum(THEME_IDS)).min(1, 'Keep at least one theme switched on'),
+    })
+    .refine((a) => a.enabledThemes.includes(a.defaultTheme), { message: 'The default theme must be switched on', path: ['defaultTheme'] })
     .optional(),
   social: z
     .object({

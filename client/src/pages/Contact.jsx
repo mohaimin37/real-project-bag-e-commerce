@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -17,7 +18,44 @@ const schema = z.object({
   message: z.string().trim().min(10, 'Tell us a little more (10+ characters)').max(3000),
 });
 
-const TOPICS = ['Order status & delivery', 'Returns & exchanges', 'Lifetime repair claim', 'Product question', 'Partnerships & press', 'Something else'];
+const TOPICS = ['Order status & delivery', 'Returns & exchanges', 'Damaged or defective item', 'Product question', 'Partnerships & press', 'Something else'];
+
+/**
+ * Registered office and Grievance Officer, as the Consumer Protection (E-Commerce) Rules, 2020 require.
+ * Filled from Admin → Settings → Store details; each card stays hidden until its details are set.
+ */
+function OfficeCards({ config }) {
+  const address = config?.businessAddress?.trim();
+  const officer = config?.grievanceOfficer;
+  if (!address && !officer?.name) return null;
+  return (
+    <div className="grid gap-3">
+      {address && (
+        <section aria-labelledby="office-title" className="card p-space-md flex flex-col gap-2">
+          <h2 id="office-title" className="flex items-center gap-2 text-label-lg uppercase tracking-wider text-outline">
+            <Icon name="apartment" className="text-[20px] text-secondary" /> Registered office
+          </h2>
+          <p className="text-body-md font-semibold">WILDTANE Private Limited</p>
+          <address className="not-italic text-body-md whitespace-pre-line">{address}</address>
+          <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`} target="_blank" rel="noreferrer" className="btn-tonal btn-sm self-start">
+            <Icon name="map" className="text-[18px]" /> Open in Maps
+          </a>
+        </section>
+      )}
+      {officer?.name && (
+        <section aria-labelledby="grievance-title" className="card p-space-md flex flex-col gap-1.5">
+          <h2 id="grievance-title" className="flex items-center gap-2 text-label-lg uppercase tracking-wider text-outline">
+            <Icon name="gavel" className="text-[20px] text-secondary" /> Grievance Officer
+          </h2>
+          <p className="text-body-md font-semibold">{officer.name}{officer.designation ? <span className="font-normal text-on-surface-variant">, {officer.designation}</span> : null}</p>
+          {officer.email && <a href={`mailto:${officer.email}`} className="text-body-md hover:text-secondary inline-flex items-center gap-1.5 w-fit"><Icon name="mail" className="text-[18px]" /> {officer.email}</a>}
+          {officer.phone && <a href={`tel:${officer.phone.replace(/\s/g, '')}`} className="text-body-md hover:text-secondary inline-flex items-center gap-1.5 w-fit"><Icon name="call" className="text-[18px]" /> {officer.phone}</a>}
+          <p className="text-body-sm text-on-surface-variant">Complaints are acknowledged within 48 hours and resolved within 7 working days.</p>
+        </section>
+      )}
+    </div>
+  );
+}
 
 export default function Contact() {
   const user = useUser();
@@ -40,20 +78,25 @@ export default function Contact() {
 
   return (
     <div className="container-x py-space-xl">
-      <Seo title="Contact Customer Care" description="Questions about an order, a repair or a WILDTANE product? Email, call or message our care team — we reply within one business day." canonical="/contact" />
+      <Seo title="Contact Customer Care" description="Questions about an order, a return or a WILDTANE product? Email, call or message our care team — we usually reply within 24–48 working hours." canonical="/contact" />
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-gutter-lg">
         <div className="lg:col-span-5 flex flex-col gap-space-lg">
           <div className="flex flex-col gap-1">
             <span className="eyebrow">Customer care</span>
             <h1 className="text-headline-xl-mobile md:text-headline-xl">We're here to help.</h1>
-            <p className="text-body-md text-on-surface-variant">Questions about an order, a repair or a product? Our team replies within one business day.</p>
+            <p className="text-body-md text-on-surface-variant">Questions about an order, a return or a product? Our team usually replies within 24–48 working hours.</p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Link to="/help" className="btn-tonal btn-sm"><Icon name="help" className="text-[18px]" /> Help Centre</Link>
+            <Link to="/faq" className="btn-tonal btn-sm"><Icon name="quiz" className="text-[18px]" /> FAQs</Link>
           </div>
           {[
             ['mail', 'Email', config?.supportEmail, config?.supportEmail && `mailto:${config.supportEmail}`],
             ['call', 'Phone', config?.supportPhone, config?.supportPhone && `tel:${config.supportPhone.replace(/\s/g, '')}`],
-            ['schedule', 'Hours', 'Mon–Sat, 10:00–19:00 IST'],
-            ['handyman', 'Repairs', 'Lifetime repair claims are free — choose "Lifetime repair claim" below.'],
-          ].map(([icon, k, v, href]) => (
+            config?.supportHours && ['support_agent', 'Customer care hours', config.supportHours],
+            ['schedule', 'Response time', '24–48 working hours. Please share your Order ID, registered email or mobile number, and a clear description of the issue.'],
+            ['inventory_2', 'Damaged item?', 'Record an unboxing video and tell us within 24 hours of delivery — choose "Damaged or defective item" below.'],
+          ].filter(Boolean).map(([icon, k, v, href]) => (
             <div key={k} className="flex items-start gap-3">
               <span className="w-11 h-11 rounded-xl bg-secondary-container text-on-secondary-fixed flex items-center justify-center shrink-0"><Icon name={icon} /></span>
               <div>
@@ -62,6 +105,7 @@ export default function Contact() {
               </div>
             </div>
           ))}
+          <OfficeCards config={config} />
         </div>
         <div className="lg:col-span-7">
           {done ? (

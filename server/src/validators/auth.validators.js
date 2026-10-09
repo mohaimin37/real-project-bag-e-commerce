@@ -17,6 +17,17 @@ export const loginSchema = z.object({
 
 export const forgotSchema = z.object({ email });
 
+export const verifyOtpSchema = z.object({
+  email,
+  otp: z.string().trim().regex(/^\d{6}$/, 'Enter a 6-digit verification code'),
+});
+
+export const resetPasswordOtpSchema = z.object({
+  email,
+  otp: z.string().trim().regex(/^\d{6}$/, 'Enter a 6-digit verification code'),
+  password,
+});
+
 export const resetSchema = z.object({
   token: z.string().min(20).max(200),
   password,

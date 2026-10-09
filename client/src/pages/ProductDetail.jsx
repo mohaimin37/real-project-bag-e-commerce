@@ -16,6 +16,7 @@ import { ProductCard, Swatches, WishlistButton, firstAvailable } from '../compon
 import { Badge, Breadcrumbs, Button, CountrySelect, EmptyState, ErrorState, Field, Icon, Img, Input, Modal, Pagination, QuantityStepper, Skeleton, StarInput, Stars, Textarea } from '../components/ui';
 import NotFound from './NotFound';
 import Seo, { breadcrumbLd, productLd } from '../components/Seo';
+import { EarnCoins } from '../components/coins';
 
 const FEATURE_ICON = { 'IPX5 Waterproof': 'water_drop', 'Laptop 16" Sleeve': 'laptop_mac', 'Laptop 14" Sleeve': 'laptop_mac', 'Trolley Pass-Through': 'luggage', 'RFID Blocking Pocket': 'security', 'Fidlock® Magnetic Fasteners': 'adjust', 'Shoe Compartment': 'steps' };
 
@@ -26,37 +27,74 @@ function Gallery({ product, variant }) {
   useEffect(() => setActive(0), [variant?._id]);
   const current = images[active] || images[0];
   return (
-    <div className="flex flex-col gap-space-md">
-      <div className="relative aspect-square rounded-2xl overflow-hidden bg-surface-container-low shadow-card group">
-        <Img src={current?.url} alt={current?.alt || product.name} className="absolute inset-0" loading="eager" fetchPriority="high" w={640} />
-        <div className="absolute top-4 left-4 flex flex-col gap-1">
-          {product.badge && <Badge tone="dark">{product.badge}</Badge>}
-          {discountPercent(product) > 0 && <Badge tone="mint">Save {discountPercent(product)}%</Badge>}
+    <div className="flex flex-col gap-2.5 sm:gap-space-md">
+      <div className="relative aspect-[4/3] sm:aspect-square max-h-[300px] sm:max-h-[460px] lg:max-h-none lg:aspect-square rounded-xl overflow-hidden bg-surface-container-lowest group">
+        <Img
+          src={current?.url}
+          alt={current?.alt || product.name}
+          className="absolute inset-0"
+          imgClassName="w-full h-full object-contain p-2 md:p-0 md:object-cover"
+          loading="eager"
+          fetchPriority="high"
+          w={640}
+        />
+        <div className="absolute top-2.5 left-2.5 sm:top-4 sm:left-4 flex flex-col gap-1 z-10">
+          {product.badge && <Badge tone="dark" className="text-[10px] sm:text-label-sm">{product.badge}</Badge>}
+          {discountPercent(product) > 0 && <span className="px-1.5 py-0.5 rounded bg-success text-on-success text-[10px] font-bold">{discountPercent(product)}% OFF</span>}
         </div>
-        <button type="button" onClick={() => setZoom(true)} aria-label="Zoom image" className="absolute top-4 right-4 w-10 h-10 rounded-full bg-surface-container-lowest/85 backdrop-blur flex items-center justify-center shadow-sm hover:scale-110 transition-transform">
-          <Icon name="zoom_in" />
+        <button
+          type="button"
+          onClick={() => setZoom(true)}
+          aria-label="Zoom image"
+          className="absolute top-2.5 right-2.5 sm:top-4 sm:right-4 w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-surface-container-lowest/90 flex items-center justify-center shadow-sm hover:scale-110 transition-transform"
+        >
+          <Icon name="zoom_in" className="text-[18px] sm:text-[22px]" />
         </button>
         {images.length > 1 && (
           <>
-            <button type="button" aria-label="Previous image" onClick={() => setActive((active - 1 + images.length) % images.length)} className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-surface-container-lowest/85 backdrop-blur flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-              <Icon name="chevron_left" />
+            <button
+              type="button"
+              aria-label="Previous image"
+              onClick={() => setActive((active - 1 + images.length) % images.length)}
+              className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-surface-container-lowest/90 flex items-center justify-center opacity-75 sm:opacity-0 group-hover:opacity-100 transition-opacity z-10 shadow-sm"
+            >
+              <Icon name="chevron_left" className="text-[18px] sm:text-[22px]" />
             </button>
-            <button type="button" aria-label="Next image" onClick={() => setActive((active + 1) % images.length)} className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-surface-container-lowest/85 backdrop-blur flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-              <Icon name="chevron_right" />
+            <button
+              type="button"
+              aria-label="Next image"
+              onClick={() => setActive((active + 1) % images.length)}
+              className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-surface-container-lowest/90 flex items-center justify-center opacity-75 sm:opacity-0 group-hover:opacity-100 transition-opacity z-10 shadow-sm"
+            >
+              <Icon name="chevron_right" className="text-[18px] sm:text-[22px]" />
             </button>
           </>
         )}
         {product.capacity && (
-          <div className="absolute bottom-4 left-4 px-3 py-1.5 rounded-full bg-ink/80 backdrop-blur text-on-ink text-label-sm flex items-center gap-1">
-            <Icon name="straighten" className="text-[14px] text-secondary-fixed" /> {product.capacity} capacity
+          <div className="absolute bottom-2.5 left-2.5 sm:bottom-4 sm:left-4 px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-full bg-black/60 text-white text-[10px] sm:text-label-sm flex items-center gap-1 z-10">
+            <Icon name="straighten" className="text-[12px] sm:text-[14px] text-secondary-fixed" /> {product.capacity} capacity
+          </div>
+        )}
+        {images.length > 1 && (
+          <div className="sm:hidden absolute bottom-2.5 right-2.5 px-2 py-0.5 rounded-full bg-black/60 text-white text-[10px] font-semibold z-10">
+            {active + 1} / {images.length}
           </div>
         )}
       </div>
       {images.length > 1 && (
-        <div className="grid grid-cols-4 sm:grid-cols-6 gap-space-sm">
+        <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none sm:grid sm:grid-cols-6 sm:gap-space-sm">
           {images.map((img, i) => (
-            <button key={img.url} type="button" onClick={() => setActive(i)} aria-label={`Show image ${i + 1}`} className={cn('aspect-square rounded-lg overflow-hidden ring-2 transition-all', i === active ? 'ring-secondary' : 'ring-transparent opacity-70 hover:opacity-100')}>
-              <Img src={img.url} alt="" className="w-full h-full" w={160} />
+            <button
+              key={img.url}
+              type="button"
+              onClick={() => setActive(i)}
+              aria-label={`Show image ${i + 1}`}
+              className={cn(
+                'w-14 h-14 sm:w-auto sm:aspect-square shrink-0 rounded-lg overflow-hidden ring-2 transition-all',
+                i === active ? 'ring-secondary' : 'ring-transparent opacity-70 hover:opacity-100'
+              )}
+            >
+              <Img src={img.url} alt="" className="w-full h-full" imgClassName="object-contain sm:object-cover" w={160} />
             </button>
           ))}
         </div>
@@ -142,21 +180,19 @@ function ReviewForm({ product, eligibility, onDone }) {
   const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm({ resolver: zodResolver(reviewSchema), defaultValues: { rating: 0, title: '', comment: '' } });
   const mutation = useMutation({
     mutationFn: (values) => api.createReview(product._id, values),
-    onSuccess: () => {
-      toast.success('Thanks! Your review is live.');
+    onSuccess: (res) => {
+      // New reviews are checked by the team before they appear.
+      toast.success(res.message || 'Thanks! Your review will appear once it has been checked.');
       qc.invalidateQueries({ queryKey: ['reviews', product._id] });
       qc.invalidateQueries({ queryKey: ['review-eligibility', product._id] });
-      qc.invalidateQueries({ queryKey: ['product', product.slug] });
       onDone();
     },
     onError: (e) => toast.error(e.message),
   });
   return (
     <form onSubmit={handleSubmit((v) => mutation.mutate(v))} className="flex flex-col gap-space-md">
-      {eligibility?.verifiedPurchase ? (
-        <p className="flex items-center gap-2 text-label-md text-secondary"><Icon name="verified" className="text-[18px]" /> Your review will be marked as a verified purchase.</p>
-      ) : (
-        <p className="text-body-sm text-on-surface-variant">We couldn't find a delivered order for this item, so your review won't carry the verified badge.</p>
+      {eligibility?.verifiedPurchase && (
+        <p className="flex items-center gap-2 text-label-md text-secondary"><Icon name="verified" className="text-[18px]" /> You bought this item, so your review will show a Verified Buyer badge.</p>
       )}
       <Field label="Your rating" error={errors.rating?.message} required>
         <StarInput value={watch('rating')} onChange={(v) => setValue('rating', v, { shouldValidate: true })} />
@@ -190,7 +226,13 @@ function Reviews({ product, breakdown }) {
       return;
     }
     if (eligibility.data && !eligibility.data.canReview) {
-      toast('You have already reviewed this product.');
+      toast(
+        eligibility.data.reason === 'not-purchased'
+          ? 'Only customers who have received this product can review it.'
+          : eligibility.data.existingReview?.status === 'approved'
+            ? 'You have already reviewed this product.'
+            : 'Thanks, your review is waiting to be checked by our team.'
+      );
       return;
     }
     setWriting(true);
@@ -199,8 +241,8 @@ function Reviews({ product, breakdown }) {
   return (
     <section id="reviews" className="container-x py-space-xl scroll-mt-32">
       <div className="flex flex-col gap-1 mb-space-lg">
-        <span className="eyebrow">Verified community</span>
-        <h2 className="text-headline-xl-mobile md:text-headline-xl">Ratings & Reviews</h2>
+        
+        <h2 className="text-headline-md">Ratings & Reviews</h2>
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-gutter-lg">
         <div className="lg:col-span-4 flex flex-col gap-space-md">
@@ -220,7 +262,9 @@ function Reviews({ product, breakdown }) {
               ))}
             </div>
             <Button className="w-full mt-space-md" icon="rate_review" onClick={startReview}>Write a review</Button>
-            {!user && <p className="text-label-sm font-normal text-outline">Sign in to share your experience.</p>}
+            <p className="text-label-sm font-normal text-outline">
+              {!user ? 'Sign in to share your experience. ' : ''}Reviews come from customers who received this product and are checked before they appear.
+            </p>
           </div>
         </div>
         <div className="lg:col-span-8 flex flex-col gap-space-md">
@@ -250,7 +294,7 @@ function Reviews({ product, breakdown }) {
                       <p className="text-label-sm font-normal text-outline">{r.user?.country ? `${countryName(r.user.country)} · ` : ''}{timeAgo(r.createdAt)}</p>
                     </div>
                   </div>
-                  {r.isVerifiedPurchase && <Badge tone="mint"><Icon name="verified" className="text-[12px]" /> Verified</Badge>}
+                  {r.isVerifiedPurchase && <Badge tone="mint"><Icon name="verified" className="text-[12px]" /> Verified Buyer</Badge>}
                 </div>
                 <Stars value={r.rating} />
                 {r.title && <h4 className="text-headline-sm">{r.title}</h4>}
@@ -277,8 +321,7 @@ function Faq({ faqs }) {
   return (
     <section className="max-w-4xl mx-auto px-margin-sm md:px-margin py-space-xl w-full">
       <div className="flex flex-col gap-space-xs text-center mb-space-lg">
-        <span className="eyebrow">Questions & answers</span>
-        <h2 className="text-headline-lg">Frequently Asked Questions</h2>
+        <h2 className="text-headline-md">Frequently Asked Questions</h2>
       </div>
       <div className="flex flex-col gap-space-sm">
         {faqs.map((f, i) => (
@@ -331,8 +374,8 @@ export default function ProductDetail() {
   if (isLoading || !product || !variant) {
     return (
       <div className="container-x py-space-xl grid grid-cols-1 lg:grid-cols-12 gap-gutter-lg">
-        <Skeleton className="lg:col-span-7 aspect-square" />
-        <div className="lg:col-span-5 flex flex-col gap-4">
+        <Skeleton className="lg:col-span-5 aspect-square" />
+        <div className="lg:col-span-7 flex flex-col gap-4">
           <Skeleton className="h-4 w-1/3" />
           <Skeleton className="h-10 w-4/5" />
           <Skeleton className="h-24" />
@@ -357,7 +400,7 @@ export default function ProductDetail() {
     <>
       <Seo
         title={`${product.name}${product.subcategory ? ` — ${product.subcategory.name}` : ''}`}
-        description={`${product.shortDescription || product.description} ${product.ratingCount ? `Rated ${product.ratingAverage.toFixed(1)}/5. ` : ''}Free shipping, lifetime repairs.`}
+        description={`${product.shortDescription || product.description} ${product.ratingCount ? `Rated ${product.ratingAverage.toFixed(1)}/5. ` : ''}Tracked delivery and 7-day returns.`}
         image={product.images?.[0]?.url}
         type="product"
         canonical={`/product/${product.slug}`}
@@ -365,27 +408,27 @@ export default function ProductDetail() {
       />
       <div className="container-x pt-space-md"><Breadcrumbs items={crumbs} /></div>
       <section className="container-x py-space-lg grid grid-cols-1 lg:grid-cols-12 gap-gutter-lg items-start">
-        <div className="lg:col-span-7">
+        <div className="lg:col-span-5">
           <Gallery product={product} variant={variant} />
           {product.features?.length > 0 && (
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-space-sm mt-space-md">
+            <div className="flex flex-wrap gap-1.5 mt-3">
               {product.features.slice(0, 4).map((f) => (
-                <div key={f} className="p-space-sm rounded-xl bg-surface-container-low flex flex-col items-center text-center gap-1">
-                  <Icon name={FEATURE_ICON[f] || 'verified'} className="text-secondary" />
-                  <span className="text-label-md">{f}</span>
+                <div key={f} className="inline-flex items-center gap-1 h-7 px-2.5 rounded-full bg-surface-container text-[12px]">
+                  <Icon name={FEATURE_ICON[f] || 'verified'} className="text-[15px] text-secondary" />
+                  {f}
                 </div>
               ))}
             </div>
           )}
         </div>
 
-        <div className="lg:col-span-5 flex flex-col gap-space-md lg:sticky lg:top-32">
+        <div className="lg:col-span-7 flex flex-col gap-space-md lg:sticky lg:top-20">
           <div className="flex flex-col gap-space-xs">
             <div className="flex items-center justify-between">
-              <span className="text-label-sm uppercase tracking-widest text-secondary">WILDTANE // {product.tagline || product.subcategory?.name}</span>
+              <span className="text-[12px] text-outline">{product.tagline || product.subcategory?.name}</span>
               <span className="px-2 py-0.5 rounded bg-surface-container-high text-on-surface-variant text-label-sm font-normal">SKU {variant.sku}</span>
             </div>
-            <h1 className="text-headline-xl-mobile md:text-headline-lg">{product.name}</h1>
+            <h1 className="text-[24px] leading-tight md:text-[32px]">{product.name}</h1>
             {product.ratingCount > 0 && (
               <a href="#reviews" className="flex items-center gap-space-sm pt-1 text-label-md hover:text-secondary">
                 <Stars value={product.ratingAverage} size={18} />
@@ -394,13 +437,13 @@ export default function ProductDetail() {
             )}
           </div>
 
-          <div className="p-space-md rounded-2xl bg-surface-container-lowest shadow-card flex flex-col gap-space-xs">
+          <div className="flex flex-col gap-space-xs">
             <div className="flex items-baseline gap-space-md flex-wrap">
               <span className="text-price-xl">{money(product.finalPrice)}</span>
               {discountPercent(product) > 0 && (
                 <>
                   <span className="text-price-md text-outline line-through">{money(product.price)}</span>
-                  <span className="px-2 py-0.5 rounded bg-secondary-container text-on-secondary-fixed text-label-sm">Save {discountPercent(product)}% ({money(product.price - product.finalPrice)} off)</span>
+                  <span className="text-label-lg text-success">{discountPercent(product)}% off</span>
                 </>
               )}
             </div>
@@ -411,11 +454,12 @@ export default function ProductDetail() {
               </p>
             )}
             {config?.pricesIncludeTax && <p className="text-label-sm font-normal text-outline">Inclusive of {config.taxLabel}. Charged in INR at checkout.</p>}
+            <EarnCoins amount={product.finalPrice * qty} className="mt-1" />
           </div>
 
           <div className="flex flex-col gap-space-sm pt-space-xs">
             <div className="flex items-center justify-between">
-              <span className="text-label-lg">1. Pick a colour</span>
+              <span className="text-label-lg">Colour: <span className="font-normal text-on-surface-variant">{variant.name}</span></span>
               {product.isBestseller && <span className="text-label-sm text-secondary">Best seller</span>}
             </div>
             <Swatches variants={product.variants} selected={variant} onSelect={(v) => { setVariant(v); setQty(1); }} withNames />
@@ -425,37 +469,36 @@ export default function ProductDetail() {
             <div className="flex flex-wrap gap-space-xs">
               {product.materials.map((m) => (
                 <span key={m} className="px-2.5 py-1.5 rounded-lg bg-surface-container-low text-label-md flex items-center gap-1.5">
-                  <Icon name="recycling" className="text-[16px] text-secondary" /> {m}
+                  <Icon name="texture" className="text-[16px] text-secondary" /> {m}
                 </span>
               ))}
             </div>
           )}
 
-          <span className="text-label-lg -mb-2">2. How many?</span>
+          <span className="text-label-lg -mb-2">Quantity</span>
           <div className="flex items-center justify-between gap-3 flex-wrap">
             <QuantityStepper value={qty} onChange={setQty} max={max} disabled={soldOut} />
             <div className="flex items-center gap-2">
               <span className="relative flex h-2.5 w-2.5">
-                {!soldOut && <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-secondary opacity-75" />}
+                
                 <span className={cn('relative inline-flex rounded-full h-2.5 w-2.5', soldOut ? 'bg-error' : variant.stock <= 5 ? 'bg-on-tertiary-container' : 'bg-secondary')} />
               </span>
               <span className="text-label-md">
                 {soldOut ? 'Sold out in this colour' : variant.stock <= 5 ? `Only ${variant.stock} left` : 'In stock'}
-                {!soldOut && <span className="font-normal text-on-surface-variant"> — dispatches within 24h</span>}
+                {!soldOut && <span className="font-normal text-on-surface-variant"> — usually dispatches in 1–2 business days</span>}
               </span>
             </div>
           </div>
 
           <div ref={ctaRef} className="flex flex-col gap-space-sm pt-space-xs">
-            <span className="text-label-lg">3. Add it to your bag</span>
             <div className="flex items-center gap-space-sm">
-              <Button variant="secondary" icon="shopping_bag" className="flex-1 h-14 text-body-md" disabled={soldOut} loading={add.isPending && !add.variables?.silent} onClick={() => addToBag()}>
+              <Button variant="primary" icon="shopping_bag" className="flex-1 h-12" disabled={soldOut} loading={add.isPending && !add.variables?.silent} onClick={() => addToBag()}>
                 {soldOut ? 'Sold out' : `Add to Bag — ${money(product.finalPrice * qty)}`}
               </Button>
-              <WishlistButton product={product} className="w-14 h-14 rounded-lg shadow-card" />
+              <WishlistButton product={product} className="w-12 h-12 rounded-lg border border-surface-container-high" />
             </div>
-            <Button variant="tonal" icon="bolt" className="w-full h-14 text-body-md !bg-inverse-surface !text-inverse-on-surface hover:!bg-primary hover:!text-on-primary" disabled={soldOut} onClick={() => addToBag(() => navigate('/checkout'))}>
-              Buy now (go straight to checkout)
+            <Button variant="secondary" icon="bolt" className="w-full h-12" disabled={soldOut} onClick={() => addToBag(() => navigate('/checkout'))}>
+              Buy now
             </Button>
           </div>
 
@@ -463,9 +506,9 @@ export default function ProductDetail() {
 
           <div className="grid grid-cols-3 gap-space-xs text-center text-label-sm font-normal text-on-surface-variant">
             {[
-              ['verified_user', 'Lifetime Warranty', '/pages/warranty'],
-              ['published_with_changes', '30-Day Free Returns', '/pages/returns'],
-              ['co2', 'Carbon Neutral', '/sustainability'],
+              ['local_shipping', 'Tracked Delivery', '/shipping-policy'],
+              ['published_with_changes', '7-Day Returns', '/return-policy'],
+              ['lock', 'Secure Checkout', '/privacy-policy'],
             ].map(([icon, label, to]) => (
               <Link key={label} to={to} className="p-2 rounded-lg bg-surface-container-lowest shadow-card flex flex-col items-center gap-1 hover:text-secondary">
                 <Icon name={icon} className="text-[20px] text-secondary" />
@@ -476,11 +519,11 @@ export default function ProductDetail() {
         </div>
       </section>
 
-      <section className="w-full bg-surface-container-lowest py-space-xl my-space-lg">
+      <section className="w-full bg-surface-container-lowest py-8 my-4">
         <div className="container-x">
           <div className="flex flex-col gap-space-xs max-w-3xl mb-space-lg">
-            <span className="eyebrow">Engineering dossier</span>
-            <h2 className="text-headline-xl-mobile md:text-headline-xl">Architectural Utility. Zero Compromise.</h2>
+            
+            <h2 className="text-headline-md">Product details</h2>
             <p className="text-body-md text-on-surface-variant whitespace-pre-line">{product.description}</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-gutter">
@@ -502,24 +545,22 @@ export default function ProductDetail() {
             </div>
             <div className="p-space-lg rounded-2xl bg-surface-container-low flex flex-col gap-space-md">
               <div className="flex items-center justify-between">
-                <span className="text-headline-sm">Material provenance</span>
-                <Icon name="eco" className="text-secondary" />
+                <span className="text-headline-sm">Materials</span>
+                <Icon name="texture" className="text-secondary" />
               </div>
               <ul className="flex flex-col gap-2">
                 {product.materials.map((m) => (
                   <li key={m} className="flex items-start gap-2 text-body-sm"><Icon name="check_circle" className="text-[18px] text-secondary" /> {m}</li>
                 ))}
               </ul>
-              <p className="text-body-sm text-on-surface-variant">Every material is traceable to certified mills and LWG Gold-rated tanneries.</p>
-              <Link to="/sustainability" className="mt-auto text-label-md text-secondary flex items-center gap-1">Our material standards <Icon name="arrow_forward" className="text-[14px]" /></Link>
             </div>
             <div className="p-space-lg rounded-2xl bg-ink text-on-ink flex flex-col gap-space-md">
               <div className="flex items-center justify-between">
-                <span className="text-headline-sm">Lifetime guarantee</span>
-                <Icon name="handyman" className="text-secondary-fixed" />
+                <span className="text-headline-sm">Returns & exchange</span>
+                <Icon name="published_with_changes" className="text-secondary-fixed" />
               </div>
-              <p className="text-body-sm text-on-ink/75">If any hardware, seam or fastener fails — in year one or year fifteen — we repair or replace it free, including prepaid pickup.</p>
-              <Link to="/pages/warranty" className="mt-auto btn bg-white/10 hover:bg-white/20 text-on-ink w-fit">How repairs work</Link>
+              <p className="text-body-sm text-on-ink/75">Defective, damaged, wrong or not as described? Raise a return within 7 days of delivery. One exchange per order, subject to availability. For damage claims, record an unboxing video and tell us within 24 hours.</p>
+              <Link to="/return-policy" className="mt-auto btn bg-white/10 hover:bg-white/20 text-on-ink w-fit">Return, refund & exchange policy</Link>
             </div>
           </div>
         </div>
@@ -529,18 +570,18 @@ export default function ProductDetail() {
       <Faq faqs={product.faqs} />
 
       {data.related?.length > 0 && (
-        <section className="w-full bg-surface-container-low py-space-xl">
+        <section className="w-full py-6">
           <div className="container-x flex flex-col gap-space-lg">
             <div className="flex items-end justify-between gap-4">
               <div>
-                <span className="eyebrow">Modular ecosystem</span>
-                <h3 className="text-headline-lg">Pair With {product.name.split(' ').slice(0, 3).join(' ')}</h3>
+                
+                <h3 className="text-headline-md">You may also like</h3>
               </div>
               <Link to={`/shop/${product.category?.slug || ''}`} className="text-label-md text-secondary hover:underline flex items-center gap-1 shrink-0">
                 Explore all <Icon name="arrow_forward" className="text-[16px]" />
               </Link>
             </div>
-            <div className="grid grid-cols-1 min-[420px]:grid-cols-2 lg:grid-cols-4 gap-gutter">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">
               {data.related.map((p) => <ProductCard key={p._id} product={p} />)}
             </div>
           </div>
@@ -548,21 +589,35 @@ export default function ProductDetail() {
       )}
       <p className="sr-only">Last updated {formatDate(product.updatedAt)}</p>
 
-      {/* Mobile: sticky purchase bar once the main button scrolls away. */}
+      {/* Spacer to prevent mobile/tablet sticky buy bar from covering page/footer content */}
+      <div className="h-16 lg:hidden" aria-hidden="true" />
+
+      {/* Mobile: Flipkart-style sticky dual action bar */}
       <div
-        className={cn(
-          'lg:hidden fixed inset-x-0 bottom-0 z-40 bg-surface-container-lowest/95 backdrop-blur-xl border-t border-surface-container-high px-margin-sm pt-3 pb-safe flex items-center gap-3 transition-transform duration-300',
-          showBar ? 'translate-y-0' : 'translate-y-full'
-        )}
-        aria-hidden={!showBar}
+        className="lg:hidden fixed inset-x-0 bottom-0 z-50 bg-surface-container-lowest border-t border-surface-container-high px-3 py-2 pb-safe flex items-center gap-2"
       >
-        <Img src={productImage(product, variant)} alt="" className="w-11 h-11 rounded-lg shrink-0" w={160} />
-        <div className="flex-1 min-w-0">
-          <p className="text-label-lg truncate">{product.name}</p>
-          <p className="text-label-md font-normal text-on-surface-variant">{money(product.finalPrice)} · {variant.name}</p>
-        </div>
-        <Button variant="secondary" icon="shopping_bag" className="shrink-0" disabled={soldOut} tabIndex={showBar ? 0 : -1} onClick={() => addToBag()}>
-          {soldOut ? 'Sold out' : 'Add'}
+        <Link to="/" aria-label="Go to home" className="w-11 h-11 rounded-lg shrink-0 border border-surface-container-high flex flex-col items-center justify-center text-on-surface-variant">
+          <Icon name="home" className="text-[20px]" />
+          <span className="text-[9px] font-semibold leading-none">Home</span>
+        </Link>
+        <WishlistButton product={product} className="w-11 h-11 rounded-lg shrink-0 border border-surface-container-high" />
+        <Button
+          variant="tonal"
+          className="flex-1 h-11 px-2 whitespace-nowrap text-xs min-[380px]:text-label-md font-semibold bg-surface-container-low hover:bg-surface-container text-on-surface"
+          disabled={soldOut}
+          loading={add.isPending && !add.variables?.silent}
+          onClick={() => addToBag()}
+        >
+          {soldOut ? 'Sold out' : 'Add to Bag'}
+        </Button>
+        <Button
+          variant="primary"
+          icon="bolt"
+          className="flex-1 h-11 text-xs min-[380px]:text-label-md font-semibold"
+          disabled={soldOut}
+          onClick={() => addToBag(() => navigate('/checkout'))}
+        >
+          {soldOut ? 'Unavailable' : 'Buy Now'}
         </Button>
       </div>
     </>

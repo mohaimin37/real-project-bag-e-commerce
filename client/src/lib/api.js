@@ -4,6 +4,17 @@ const baseURL = `${import.meta.env.VITE_API_URL || ''}/api`;
 
 export const http = axios.create({ baseURL, withCredentials: true, timeout: 30000 });
 
+// Automatically attach stored session token as Bearer header for cross-browser session persistence
+http.interceptors.request.use((config) => {
+  try {
+    const token = localStorage.getItem('wt-token');
+    if (token && !config.headers.Authorization) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+  } catch {}
+  return config;
+});
+
 // Normalise errors to { message, status, details } so UI code can show them directly.
 http.interceptors.response.use(
   (res) => res.data,
@@ -41,14 +52,17 @@ export const api = {
   logout: () => http.post('/auth/logout'),
   logoutAll: () => http.post('/auth/logout-all'),
   forgotPassword: (body) => http.post('/auth/forgot-password', body),
+  verifyResetOtp: (body) => http.post('/auth/verify-otp', body),
+  resetPasswordOtp: (body) => http.post('/auth/reset-password-otp', body),
   resetPassword: (body) => http.post('/auth/reset-password', body),
 
   // account
   updateProfile: (body) => http.patch('/users/me', body),
-  uploadAvatar: (file) => {
+  // onProgress(0–1) drives the upload progress bar.
+  uploadAvatar: (file, onProgress) => {
     const fd = new FormData();
     fd.append('avatar', file);
-    return http.post('/users/me/avatar', fd);
+    return http.post('/users/me/avatar', fd, { onUploadProgress: (e) => e.total && onProgress?.(e.loaded / e.total) });
   },
   changePassword: (body) => http.patch('/users/me/password', body),
   addresses: () => http.get('/users/me/addresses'),
@@ -86,6 +100,8 @@ export const api = {
   removeCoupon: () => http.delete('/cart/coupon'),
   setShipping: (code) => http.put('/cart/shipping', { code }),
   paymentMethods: () => http.get('/cart/payment-methods'),
+  setUseCoins: (use) => http.put('/cart/coins', { use }),
+  myCoins: () => http.get('/users/me/coins'),
   publicCoupons: () => http.get('/coupons'),
 
   // wishlist
@@ -102,6 +118,7 @@ export const api = {
 
   // reviews
   reviews: (productId, params) => http.get(`/reviews/product/${productId}${qs(params)}`),
+  featuredReviews: (limit) => http.get(`/reviews/featured${qs({ limit })}`),
   reviewEligibility: (productId) => http.get(`/reviews/product/${productId}/eligibility`),
   createReview: (productId, body) => http.post(`/reviews/product/${productId}`, body),
   updateReview: (id, body) => http.patch(`/reviews/${id}`, body),
@@ -113,8 +130,10 @@ export const api = {
   blog: (slug) => http.get(`/blogs/${slug}`),
   liveUpdates: (limit) => http.get(`/updates${qs({ limit })}`),
   contact: (body) => http.post('/contact', body),
-  corporate: (formData) => http.post('/corporate', formData),
+  corporate: (formData, onProgress) => http.post('/corporate', formData, { onUploadProgress: (e) => e.total && onProgress?.(e.loaded / e.total) }),
   subscribe: (email) => http.post('/newsletter', { email }),
+  comments: (limit) => http.get(`/comments${qs({ limit })}`),
+  submitComment: (body) => http.post('/comments', body),
 };
 
 export const adminApi = {
@@ -125,6 +144,9 @@ export const adminApi = {
   products: (params) => http.get(`/admin/products${qs(params)}`),
   product: (id) => http.get(`/admin/products/${id}`),
   createProduct: (body) => http.post('/admin/products', body),
+  suggestProduct: (name) => http.get(`/admin/products/suggest${qs({ name })}`),
+  aiStatus: () => http.get('/admin/products/ai-status'),
+  aiWriteProduct: (body) => http.post('/admin/products/ai-write', body, { timeout: 60000 }), // looking at photos takes a while
   updateProduct: (id, body) => http.put(`/admin/products/${id}`, body),
   deleteProduct: (id) => http.delete(`/admin/products/${id}`),
   quickUpdateProduct: (id, body) => http.patch(`/admin/products/${id}/quick`, body),
@@ -151,6 +173,8 @@ export const adminApi = {
   notifications: (params) => http.get(`/admin/notifications${qs(params)}`),
 
   customers: (params) => http.get(`/admin/customers${qs(params)}`),
+  customerBoard: (params) => http.get(`/admin/customers/board${qs(params)}`),
+  adjustCoins: (id, body) => http.post(`/admin/customers/${id}/coins`, body),
   customer: (id) => http.get(`/admin/customers/${id}`),
   updateCustomer: (id, body) => http.patch(`/admin/customers/${id}`, body),
 
@@ -162,7 +186,14 @@ export const adminApi = {
 
   reviews: (params) => http.get(`/admin/reviews${qs(params)}`),
   reviewStatus: (id, status) => http.patch(`/admin/reviews/${id}`, { status }),
+  // body: { status?, showOnHome? }
+  updateReview: (id, body) => http.patch(`/admin/reviews/${id}`, body),
   deleteReview: (id) => http.delete(`/admin/reviews/${id}`),
+
+  comments: (params) => http.get(`/admin/comments${qs(params)}`),
+  createComment: (body) => http.post('/admin/comments', body),
+  commentStatus: (id, status) => http.patch(`/admin/comments/${id}`, { status }),
+  deleteComment: (id) => http.delete(`/admin/comments/${id}`),
 
   enquiries: (kind, params) => http.get(`/admin/enquiries/${kind}${qs(params)}`),
   updateEnquiry: (kind, id, body) => http.patch(`/admin/enquiries/${kind}/${id}`, body),

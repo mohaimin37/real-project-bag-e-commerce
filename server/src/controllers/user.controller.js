@@ -9,6 +9,9 @@ import asyncHandler from '../utils/asyncHandler.js';
 import { issueAuthCookie } from '../middleware/auth.js';
 import { uploadFile, deleteFile } from '../services/upload.service.js';
 import { PUBLIC_PRODUCT_FIELDS } from '../services/product.service.js';
+import CoinTransaction from '../models/CoinTransaction.js';
+import Setting from '../models/Setting.js';
+import { loyaltyRules } from '../services/coin.service.js';
 
 const MAX_ADDRESSES = 10;
 const MAX_RECENT = 12;
@@ -164,4 +167,16 @@ export const overview = asyncHandler(async (req, res) => {
     activeOrders: active,
     recentOrders: recent,
   });
+});
+
+/** Loyalty coins: balance, the store's rules and the latest history. */
+export const myCoins = asyncHandler(async (req, res) => {
+  const [user, settings, history] = await Promise.all([
+    User.findById(req.user._id).select('coins').lean(),
+    Setting.get(),
+    CoinTransaction.find({ user: req.user._id }).sort({ createdAt: -1 }).limit(100).select('-by').lean(),
+  ]);
+  const rules = loyaltyRules(settings);
+  const balance = user?.coins || 0;
+  res.json({ success: true, coins: { balance, worth: Math.round(balance * rules.rupeesPerCoin * 100) / 100, rules, history } });
 });

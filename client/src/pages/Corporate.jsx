@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -7,6 +7,7 @@ import { useUser } from '../hooks/useStore';
 import { Button, CountrySelect, Field, Icon, Img, Input, Select, Textarea } from '../components/ui';
 import { applyServerErrors } from './Auth';
 import Seo from '../components/Seo';
+import ImageDrop from '../components/ImageDrop';
 
 const schema = z.object({
   company: z.string().trim().min(2, 'Enter the company name'),
@@ -25,8 +26,8 @@ const TYPES = ['Backpacks', 'Laptop Bags', 'Office Bags & Briefcases', 'Travel &
 
 export default function Corporate() {
   const user = useUser();
-  const fileRef = useRef(null);
   const [logo, setLogo] = useState(null);
+  const [progress, setProgress] = useState(null);
   const [done, setDone] = useState(null);
   const { register, handleSubmit, reset, setError, formState: { errors, isSubmitting } } = useForm({
     resolver: zodResolver(schema),
@@ -38,13 +39,15 @@ export default function Corporate() {
     Object.entries(values).forEach(([k, v]) => v !== undefined && fd.append(k, String(v)));
     if (logo) fd.append('logo', logo);
     try {
-      const res = await api.corporate(fd);
+      const res = await api.corporate(fd, setProgress);
       setDone(res.message);
       reset();
       setLogo(null);
     } catch (err) {
       applyServerErrors(err, setError);
       setError('root', { message: err.message });
+    } finally {
+      setProgress(null);
     }
   };
 
@@ -100,29 +103,16 @@ export default function Corporate() {
               </Field>
               <Field label="Quantity" error={errors.quantity?.message} required><Input type="number" min={10} error={errors.quantity} {...register('quantity')} /></Field>
               <Field label="Customisation requirements" className="md:col-span-2"><Textarea rows={3} placeholder="Debossed logo on front panel, custom lining colour…" {...register('customization')} /></Field>
-              <Field label="Logo (optional)" hint="PNG, JPG, SVG or PDF up to 5 MB" className="md:col-span-2">
-                <div className="flex items-center gap-3">
-                  <Button type="button" variant="tonal" icon="upload" onClick={() => fileRef.current?.click()}>{logo ? 'Change file' : 'Upload logo'}</Button>
-                  {logo && (
-                    <span className="flex items-center gap-2 text-body-sm">
-                      <Icon name="attach_file" className="text-[18px]" /> {logo.name}
-                      <button type="button" className="text-error" onClick={() => setLogo(null)} aria-label="Remove file"><Icon name="close" className="text-[18px]" /></button>
-                    </span>
-                  )}
-                  <input
-                    ref={fileRef}
-                    type="file"
-                    hidden
-                    accept="image/png,image/jpeg,image/webp,image/svg+xml,application/pdf"
-                    onChange={(e) => {
-                      const f = e.target.files[0];
-                      if (f && f.size > 5 * 1024 * 1024) setError('root', { message: 'Logo must be under 5 MB' });
-                      else setLogo(f || null);
-                      e.target.value = '';
-                    }}
-                  />
-                </div>
-              </Field>
+              <Field label="Logo (optional)" className="md:col-span-2">
+                <ImageDrop
+                  value={logo}
+                  onChange={setLogo}
+                  accept="image/png,image/jpeg,image/webp,image/svg+xml,application/pdf"
+                  label="Add your logo"
+                  hint="PNG, JPG, SVG or PDF up to 5 MB · big images are resized automatically"
+                  busy={isSubmitting && Boolean(logo)}
+                  progress={progress}
+                />              </Field>
               <Field label="Message" className="md:col-span-2"><Textarea rows={4} {...register('message')} /></Field>
               <Button type="submit" loading={isSubmitting} icon="send" className="md:col-span-2 md:justify-self-end">Submit enquiry</Button>
             </form>

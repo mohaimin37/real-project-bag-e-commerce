@@ -6,6 +6,7 @@ import { adminApi } from '../lib/api';
 import { cn, compact, formatINR, timeAgo } from '../lib/format';
 import { ErrorState, Icon, Img, Skeleton, StatusBadge } from '../components/ui';
 import { PageHeader, Panel, StatCard, STAT_TONES, useChartColors } from './kit';
+import { QuickActions } from './Guide';
 
 const RANGES = [7, 30, 90];
 
@@ -59,6 +60,15 @@ export default function Dashboard() {
         }
       />
 
+      {/* Shortcuts for everyday jobs, plus the guide. */}
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center justify-between">
+          <span className="text-[12px] font-semibold uppercase tracking-wider text-outline">Quick actions</span>
+          <Link to="/admin/guide" className="text-[12px] font-semibold text-secondary flex items-center gap-1"><Icon name="help" className="text-[16px]" /> How do I…? Start here</Link>
+        </div>
+        <QuickActions />
+      </div>
+
       {/* Alerts */}
       {data && (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-space-md">
@@ -68,7 +78,7 @@ export default function Dashboard() {
             ['mail', 'Unread messages', data.alerts.newContact, '/admin/enquiries/contact?status=new', 'navy'],
             ['notifications_active', 'Failed alerts', data.alerts.failedNotifications, '/admin/notifications?status=failed', 'red'],
           ].map(([icon, label, n, to, tone]) => (
-            <Link key={label} to={to} className={cn('group flex items-center gap-3 p-space-md rounded-2xl border transition-all hover:-translate-y-0.5 hover:shadow-card', n ? 'bg-surface-container-lowest border-transparent shadow-card' : 'border-surface-container-high')}>
+            <Link key={label} to={to} className={cn('group flex items-center gap-3 p-space-md rounded-2xl border transition-all surface-card hover:-translate-y-0.5 hover:shadow-card', n ? 'bg-surface-container-lowest border-outline-variant/60 shadow-card' : 'border-surface-container-high bg-surface-container-low/40')}>
               <span className={cn('w-10 h-10 rounded-xl flex items-center justify-center', tone === 'amber' && 'bg-tertiary-fixed text-tertiary-container', tone === 'teal' && 'bg-secondary-container text-on-secondary-fixed', tone === 'navy' && 'bg-primary-fixed text-primary-container', tone === 'red' && 'bg-error-container text-on-error-container')}>
                 <Icon name={icon} />
               </span>
@@ -110,8 +120,8 @@ export default function Dashboard() {
                 <ComposedChart data={data.series} margin={{ top: 10, right: 0, left: -10, bottom: 0 }}>
                   <defs>
                     <linearGradient id="rev" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#006b5d" stopOpacity={0.35} />
-                      <stop offset="100%" stopColor="#006b5d" stopOpacity={0} />
+                      <stop offset="0%" stopColor="#96582c" stopOpacity={0.35} />
+                      <stop offset="100%" stopColor="#96582c" stopOpacity={0} />
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={cc.grid} />
@@ -120,7 +130,7 @@ export default function Dashboard() {
                   <YAxis yAxisId="o" orientation="right" hide />
                   <Tooltip content={<ChartTooltip />} cursor={{ stroke: cc.cursor }} />
                   <Bar yAxisId="o" dataKey="orders" fill={cc.muted} radius={[4, 4, 0, 0]} maxBarSize={14} />
-                  <Area yAxisId="r" type="monotone" dataKey="revenue" stroke="#006b5d" strokeWidth={2.5} fill="url(#rev)" />
+                  <Area yAxisId="r" type="monotone" dataKey="revenue" stroke="#96582c" strokeWidth={2.5} fill="url(#rev)" />
                 </ComposedChart>
               </ResponsiveContainer>
             </div>

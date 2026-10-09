@@ -17,11 +17,12 @@ import * as reviews from '../controllers/review.controller.js';
 import * as coupons from '../controllers/coupon.controller.js';
 import * as content from '../controllers/content.controller.js';
 import * as enquiries from '../controllers/enquiry.controller.js';
+import * as comments from '../controllers/comment.controller.js';
 
 import * as av from '../validators/auth.validators.js';
 import * as cv from '../validators/commerce.validators.js';
 import { reviewSchema } from '../validators/catalog.validators.js';
-import { contactSchema, corporateSchema, subscribeSchema } from '../validators/content.validators.js';
+import { commentSchema, contactSchema, corporateSchema, subscribeSchema } from '../validators/content.validators.js';
 
 // ── /api/auth ────────────────────────────────────────────────
 export const authRoutes = Router()
@@ -32,6 +33,8 @@ export const authRoutes = Router()
   .post('/logout-all', protect, auth.logoutAll)
   .get('/me', optionalAuth, auth.me)
   .post('/forgot-password', authLimiter, validate(av.forgotSchema), auth.forgotPassword)
+  .post('/verify-otp', authLimiter, validate(av.verifyOtpSchema), auth.verifyResetOtp)
+  .post('/reset-password-otp', authLimiter, validate(av.resetPasswordOtpSchema), auth.resetPasswordWithOtp)
   .post('/reset-password', authLimiter, validate(av.resetSchema), auth.resetPassword);
 
 // ── /api/users ───────────────────────────────────────────────
@@ -46,6 +49,7 @@ export const userRoutes = Router()
   .delete('/me/addresses/:id', users.deleteAddress)
   .patch('/me/addresses/:id/default', users.setDefaultAddress)
   .get('/me/overview', users.overview)
+  .get('/me/coins', users.myCoins)
   .get('/me/recently-viewed', users.getRecentlyViewed)
   .post('/me/recently-viewed/:productId', users.trackRecentlyViewed)
   .get('/me/reviews', reviews.myReviews);
@@ -78,6 +82,7 @@ export const cartRoutes = Router()
   .post('/coupon', validate(cv.couponApplySchema), cart.applyCoupon)
   .delete('/coupon', cart.removeCoupon)
   .put('/shipping', validate(cv.shippingMethodSchema), cart.setShippingMethod)
+  .put('/coins', validate(cv.useCoinsSchema), cart.setUseCoins)
   .get('/payment-methods', cart.paymentMethods);
 
 // ── /api/wishlist ────────────────────────────────────────────
@@ -98,6 +103,7 @@ export const orderRoutes = Router()
 
 // ── /api/reviews ─────────────────────────────────────────────
 export const reviewRoutes = Router()
+  .get('/featured', reviews.featuredReviews)
   .get('/product/:productId', reviews.productReviews)
   .get('/product/:productId/eligibility', protect, reviews.reviewEligibility)
   .post('/product/:productId', protect, validate(reviewSchema), reviews.createReview)
@@ -128,7 +134,12 @@ export const corporateRoutes = Router().post(
   enquiries.submitCorporate
 );
 
-export const newsletterRoutes = Router().post('/', formLimiter, validate(subscribeSchema), enquiries.subscribe);
+// ── /api/comments (homepage customer comments; shown only once an admin approves them) ──
+export const commentRoutes = Router()
+  .get('/', comments.listComments)
+  .post('/', formLimiter, optionalAuth, validate(commentSchema), comments.submitComment);
+
+export const newsletterRoutes =Router().post('/', formLimiter, validate(subscribeSchema), enquiries.subscribe);
 
 // ── /api/config, /api/banners ────────────────────────────────
 export const configRoutes = Router().get('/', content.publicConfig);

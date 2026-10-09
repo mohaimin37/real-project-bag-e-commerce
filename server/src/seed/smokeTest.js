@@ -160,19 +160,21 @@ async function run() {
   check('invalid coupon rejected', badCoupon.status === 400);
   cart = await user.req('POST', '/api/cart/coupon', { code: 'WELCOME10' });
   check('coupon applied', cart.cart?.summary?.discount > 0);
-  cart = await user.req('PUT', '/api/cart/shipping', { code: 'express' });
+  const express = await user.req('PUT', '/api/cart/shipping', { code: 'express' });
+  check('express delivery no longer offered', express.status >= 400 || express.cart?.shippingMethod !== 'express');
+  cart = await user.req('PUT', '/api/cart/shipping', { code: 'standard' });
   const s = cart.cart.summary;
-  check('express shipping priced', s.shipping === 599);
+  check('standard delivery free above the threshold', s.shippingMethods?.length === 1 && s.shipping === 0);
   check('totals add up', Math.abs(s.subtotal - s.discount + s.shipping + (s.taxIncluded ? 0 : s.tax) - s.grandTotal) < 0.01);
   const pm = await user.req('GET', '/api/cart/payment-methods');
   check('payment methods', pm.methods?.find((m) => m.code === 'cod')?.available && !pm.methods.find((m) => m.code === 'card').available);
-  const badPay = await user.req('POST', '/api/orders', { customer: customer(user.email), addressId: addr.address._id, shippingMethod: 'express', paymentMethod: 'card' });
+  const badPay = await user.req('POST', '/api/orders', { customer: customer(user.email), addressId: addr.address._id, shippingMethod: 'standard', paymentMethod: 'card' });
   check('unavailable payment rejected', badPay.status === 400);
 
   const placed = await user.req('POST', '/api/orders', {
     customer: customer(user.email),
     addressId: addr.address._id,
-    shippingMethod: 'express',
+    shippingMethod: 'standard',
     paymentMethod: 'cod',
   });
   check('order placed', placed.status === 201 && /^WT\d{2}-\d{6}$/.test(placed.order?.orderId), JSON.stringify(placed).slice(0, 300));
@@ -210,6 +212,9 @@ async function run() {
   const fac = await new Client().req('GET', '/api/products/facets');
   check('facets include size, price bands, on sale', fac.facets?.sizes?.small > 0 && fac.facets.priceBands && typeof fac.facets.onSale === 'number');
 
+  const sections = await Promise.all(['men', 'women', 'unisex'].map((g) => new Client().req('GET', `/api/products?gender=${g}&limit=48`)));
+  check('men / women / unisex sections list only their own products', sections.every((r, i) => r.items?.length > 0 && r.items.every((p) => p.gender === ['men', 'women', 'unisex'][i])));
+
   console.log('\nConcurrency');
   const raceProduct = await Product.findOne({ slug: 'technical-cable-organizer' });
   const raceVariant = raceProduct.variants[0];
@@ -233,9 +238,19 @@ async function run() {
 
   console.log('\nReviews');
   const rev = await user.req('POST', `/api/reviews/product/${pd.product._id}`, { rating: 5, title: 'Smoke', comment: 'Smoke test review content here.' });
-  check('authenticated review (unverified)', rev.status === 201 && rev.review.isVerifiedPurchase === false);
+  check('review blocked before the product is delivered', rev.status === 403);
+  const elig = await user.req('GET', `/api/reviews/product/${pd.product._id}/eligibility`);
+  check('eligibility says not purchased', elig.canReview === false && elig.reason === 'not-purchased');
   const anonRev = await new Client().req('POST', `/api/reviews/product/${pd.product._id}`, { rating: 5, comment: 'Should not be allowed' });
   check('anonymous review blocked', anonRev.status === 401);
+  // The race winner's order is marked delivered, which makes them a verified buyer.
+  const winnerIdx = results.findIndex((r) => r.status === 201);
+  const reviewer = buyers[winnerIdx]?.c;
+  await Order.updateOne({ _id: results[winnerIdx]?.order?._id }, { orderStatus: 'Delivered' });
+  const vrev = await reviewer.req('POST', `/api/reviews/product/${raceProduct._id}`, { rating: 5, title: 'Smoke', comment: 'Smoke test review from a verified buyer.', isVerifiedPurchase: false, status: 'approved' });
+  check('verified buyer review saved as pending (client fields ignored)', vrev.status === 201 && vrev.review.isVerifiedPurchase === true && vrev.review.status === 'pending' && String(vrev.review.order) === String(results[winnerIdx].order._id));
+  const publicBefore = await new Client().req('GET', `/api/reviews/product/${raceProduct._id}?limit=30`);
+  check('pending review not public', !publicBefore.items?.some((r) => r._id === vrev.review?._id));
 
   console.log('\nForms');
   const contact = await new Client().req('POST', '/api/contact', { name: 'Smoke', email: 'smoke@test.wildtane.dev', subject: 'Test', message: 'Hello from the smoke test <script>alert(1)</script>' });
@@ -260,6 +275,18 @@ async function run() {
   check('admin can use the single store sign-in', adminAtStore.user?.role === 'admin');
   const al = await admin.req('POST', '/api/auth/admin/login', { email: env.admin.email, password: env.admin.password });
   check('admin portal login', al.user?.role === 'admin');
+
+  const homeTry = await admin.req('PATCH', `/api/admin/reviews/${vrev.review?._id}`, { showOnHome: true });
+  check('pending review cannot go on the homepage', homeTry.status === 400);
+  const approve = await admin.req('PATCH', `/api/admin/reviews/${vrev.review?._id}`, { status: 'approved', showOnHome: true });
+  check('admin approves + features review', approve.review?.status === 'approved' && approve.review.showOnHome === true);
+  const featured = await new Client().req('GET', '/api/reviews/featured?limit=12');
+  const feat = featured.reviews?.find((r) => r._id === vrev.review?._id);
+  check('featured review public, verified, no email', feat?.isVerifiedPurchase && feat.author?.name && !JSON.stringify(featured).includes(reviewer.email));
+  const reject = await admin.req('PATCH', `/api/admin/reviews/${vrev.review?._id}`, { status: 'rejected' });
+  check('rejecting removes it from the homepage', reject.review?.status === 'rejected' && reject.review.showOnHome === false);
+  const custModerate = await user.req('PATCH', `/api/admin/reviews/${vrev.review?._id}`, { status: 'approved' });
+  check('customer cannot moderate reviews', custModerate.status === 403);
 
   const lockEmail = `smoke-${rand()}@test.wildtane.dev`;
   created.emails.push(lockEmail);

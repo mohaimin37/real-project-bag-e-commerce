@@ -1,4 +1,5 @@
 import { extraProducts } from './catalogExtra.js';
+import { moreAccessoryCategories, moreProducts } from './catalogMore.js';
 // Catalog content taken from the Stitch "Wildtane Luxury Bags E-Commerce" design, priced in INR.
 const img = (name, alt = '') => ({ url: `/uploads/seed/${name}.jpg`, alt });
 
@@ -36,6 +37,7 @@ export const categories = [
     children: [
       { name: 'Travel Organisers', tagline: 'Packing cubes and cable pouches', image: 'packing-cube' },
       { name: 'Hydration', tagline: 'Insulated bottles and flasks', image: 'flask' },
+      ...moreAccessoryCategories,
     ],
   },
 ];
@@ -1046,7 +1048,7 @@ export const products = [
 ];
 
 // Range expansion 3 lives in catalogExtra.js (65 products).
-products.push(...extraProducts);
+products.push(...extraProducts, ...moreProducts);
 
 /** Starter posts for the live updates feed. `minutesAgo` staggers their timestamps. */
 export const liveUpdates = [

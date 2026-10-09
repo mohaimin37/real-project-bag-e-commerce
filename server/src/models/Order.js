@@ -66,6 +66,11 @@ const orderSchema = new mongoose.Schema(
       type: { type: String },
       value: Number,
     },
+    // Loyalty coins: spent on this order (and the ₹ they took off) and earned by it.
+    coinsRedeemed: { type: Number, default: 0, min: 0 },
+    coinDiscount: { type: Number, default: 0, min: 0 },
+    coinsEarned: { type: Number, default: 0, min: 0 },
+    coinsReversed: { type: Boolean, default: false },
     shippingMethod: { code: String, label: String, eta: String },
     paymentMethod: { type: String, required: true },
     paymentStatus: { type: String, enum: PAYMENT_STATUSES, default: 'Pending', index: true },

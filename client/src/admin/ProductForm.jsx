@@ -11,6 +11,7 @@ import { useCategories } from '../hooks/useStore';
 import { Button, ErrorState, Field, Icon, Input, PageLoader, Select, Textarea, Toggle, useConfirm } from '../components/ui';
 import { applyServerErrors } from '../pages/Auth';
 import { ChipInput, ImageUploader, KeyValueEditor, Panel } from './kit';
+import AskAI from './AskAI';
 
 const MATERIALS = ['Recycled Cordura® 840D', 'Waterproof Ballistic Nylon', 'Full-Grain Italian Calfskin', 'Vegetable-Tanned Leather', 'Waxed Organic Canvas', 'Bio-Based Vegan Polyurethane', 'Stainless Steel'];
 const FEATURES = ['Laptop 16" Sleeve', 'Laptop 14" Sleeve', 'IPX5 Waterproof', 'Trolley Pass-Through', 'RFID Blocking Pocket', 'Fidlock® Magnetic Fasteners', 'Shoe Compartment'];
@@ -115,6 +116,16 @@ export default function ProductForm() {
   const sale = Number(watch('salePrice')) || 0;
   const totalStock = (watch('variants') || []).reduce((s, v) => s + (Number(v.stock) || 0), 0);
 
+  // Pasted ChatGPT/Gemini answer → form. Colours are left alone here: variants carry SKUs and stock.
+  const applyAI = (f) => {
+    const opts = { shouldDirty: true };
+    ['tagline', 'shortDescription', 'description'].forEach((k) => f[k] && setValue(k, f[k], opts));
+    if (f.price && !price) setValue('price', f.price, opts);
+    setLists((cur) => ({ ...cur, ...Object.fromEntries(['materials', 'features', 'purposes', 'tags'].filter((k) => f[k]).map((k) => [k, f[k]])) }));
+    if (f.specifications) setSpecs(f.specifications);
+    if (f.faqs) setFaqs(f.faqs);
+  };
+
   const save = useMutation({
     mutationFn: (body) => (isNew ? adminApi.createProduct(body) : adminApi.updateProduct(id, body)),
     onSuccess: (res) => {
@@ -183,6 +194,19 @@ export default function ProductForm() {
         </div>
       </div>
 
+      {isNew && (
+        <div className="mb-space-md p-3 rounded-xl bg-secondary/10 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[12px]">
+          <Icon name="near_me" className="text-[18px] text-secondary" />
+          <b>4 steps:</b>
+          {['Name & SKU (Basics)', 'Photos (Images)', 'Colours & stock (Variants)', 'Price & category (right side)'].map((s, i) => (
+            <span key={s} className="inline-flex items-center gap-1.5">
+              <span className="w-4 h-4 rounded-full bg-secondary text-on-secondary text-[10px] font-bold flex items-center justify-center">{i + 1}</span>
+              {s}
+            </span>
+          ))}
+          <span className="text-on-surface-variant">→ then press <b>Create product</b>. It shows in the store right away.</span>
+        </div>
+      )}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-space-md items-start">
         <div className="xl:col-span-2 flex flex-col gap-space-md">
           <Panel title="Basics">
@@ -194,6 +218,13 @@ export default function ProductForm() {
               <Field label="Badge" hint="Bestseller, Cabin Approved…"><Input {...register('badge')} /></Field>
               <Field label="Short description" className="md:col-span-2"><Textarea rows={2} maxLength={300} {...register('shortDescription')} /></Field>
               <Field label="Full description" className="md:col-span-2"><Textarea rows={6} {...register('description')} /></Field>
+              <div className="md:col-span-2">
+                <AskAI
+                  compact
+                  context={{ name: watch('name'), category: cats?.find((c) => c._id === category)?.name, subcategory: subOptions.find((c) => c._id === watch('subcategory'))?.name, price: price || null }}
+                  onApply={applyAI}
+                />
+              </div>
             </div>
           </Panel>
 
@@ -209,7 +240,7 @@ export default function ProductForm() {
                 variant="tonal"
                 size="sm"
                 icon="add"
-                onClick={() => variants.append({ name: '', colorHex: '#006b5d', colorFamily: '', size: '', sku: `${(watch('sku') || 'SKU').toUpperCase()}-${String(variants.fields.length + 1).padStart(2, '0')}`, stock: 0, images: [] })}
+                onClick={() => variants.append({ name: '', colorHex: '#96582c', colorFamily: '', size: '', sku: `${(watch('sku') || 'SKU').toUpperCase()}-${String(variants.fields.length + 1).padStart(2, '0')}`, stock: 0, images: [] })}
               >
                 Add variant
               </Button>
@@ -315,7 +346,7 @@ export default function ProductForm() {
                   {subOptions.map((c) => <option key={c._id} value={c._id}>{c.name}</option>)}
                 </Select>
               </Field>
-              <Field label="Audience">
+              <Field label="Audience" hint="Listed on /men, /women or /unisex">
                 <Select {...register('gender')}>
                   <option value="unisex">Unisex</option>
                   <option value="women">Women</option>
@@ -330,7 +361,7 @@ export default function ProductForm() {
             <div className="flex flex-col gap-space-md">
               <Field label="Materials"><ChipInput value={lists.materials} onChange={(v) => setLists({ ...lists, materials: v })} suggestions={MATERIALS} /></Field>
               <Field label="Technical features"><ChipInput value={lists.features} onChange={(v) => setLists({ ...lists, features: v })} suggestions={FEATURES} /></Field>
-              <Field label="Purposes" hint="Powers the homepage purpose tiles">
+              <Field label="Purposes" hint="Powers the “Use” filter in the store">
                 <div className="flex flex-wrap gap-1.5">
                   {PURPOSES.map((p) => {
                     const on = lists.purposes.includes(p);

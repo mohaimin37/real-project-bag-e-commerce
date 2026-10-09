@@ -8,6 +8,7 @@ import { useMoney, useUser } from '../hooks/useStore';
 import { useConfirm, Button, EmptyState, Icon, Skeleton } from '../components/ui';
 import { CartLine, FreeShippingMeter } from '../components/layout/CartDrawer';
 import Seo from '../components/Seo';
+import { CoinIcon, EarnLine } from '../components/coins';
 
 export function CouponBox() {
   const user = useUser();
@@ -75,6 +76,9 @@ export function SummaryRows({ summary }) {
     <div className="flex flex-col gap-2 text-body-sm">
       <div className="flex justify-between"><span className="text-on-surface-variant">Subtotal ({summary.itemCount} item{summary.itemCount === 1 ? '' : 's'})</span><span>{money(summary.subtotal)}</span></div>
       {summary.discount > 0 && <div className="flex justify-between text-secondary"><span>Discount{summary.coupon ? ` (${summary.coupon.code})` : ''}</span><span>−{money(summary.discount)}</span></div>}
+      {summary.coins?.used > 0 && (
+        <div className="flex justify-between text-success"><span className="flex items-center gap-1"><CoinIcon className="w-3.5 h-3.5" /> Coins ({summary.coins.used})</span><span>−{money(summary.coins.discount)}</span></div>
+      )}
       <div className="flex justify-between"><span className="text-on-surface-variant">Shipping · {summary.shippingMethod?.label}</span><span>{summary.shipping ? money(summary.shipping) : <span className="text-secondary">Free</span>}</span></div>
       <div className="flex justify-between"><span className="text-on-surface-variant">{summary.taxLabel}{summary.taxIncluded ? ' (included)' : ''}</span><span>{money(summary.tax)}</span></div>
       <div className="h-px bg-surface-container-high my-1" />
@@ -83,6 +87,7 @@ export function SummaryRows({ summary }) {
         <span className="text-price-xl">{money(summary.grandTotal)}</span>
       </div>
       {money.isConverted && <p className="text-label-sm font-normal text-outline text-right">Charged as {money.inr(summary.grandTotal)}</p>}
+      <EarnLine summary={summary} className="mt-1" />
     </div>
   );
 }
@@ -153,7 +158,7 @@ export default function Cart() {
             <Button className="w-full h-12" disabled={hasIssues} iconRight="lock" onClick={() => navigate('/checkout')}>Proceed to Secure Checkout</Button>
             <div className="flex items-center justify-center gap-3 text-label-sm font-normal text-outline">
               <span className="flex items-center gap-1"><Icon name="lock" className="text-[14px]" /> Encrypted</span>
-              <span className="flex items-center gap-1"><Icon name="published_with_changes" className="text-[14px]" /> 30-day returns</span>
+              <span className="flex items-center gap-1"><Icon name="published_with_changes" className="text-[14px]" /> 7-day returns</span>
             </div>
           </aside>
         </div>

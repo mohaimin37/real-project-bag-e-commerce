@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import { Link, NavLink, Route, Routes, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
@@ -6,12 +6,14 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import toast from 'react-hot-toast';
 import { api } from '../../lib/api';
-import { cn, formatDate, formatDateTime, imgUrl, initials, PAYMENT_LABELS } from '../../lib/format';
+import { cn, formatDate, formatDateTime, PAYMENT_LABELS } from '../../lib/format';
 import { countryName } from '../../lib/countries';
 import { useMoney, useUser } from '../../hooks/useStore';
 import { useAuthActions } from '../../hooks/useAuth';
 import { AddressCard, AddressForm, emptyAddress } from '../../components/AddressForm';
 import OrderTimeline from '../../components/OrderTimeline';
+import ImageDrop from '../../components/ImageDrop';
+import Coins, { CoinBalanceCard, useMyCoins } from './Coins';
 import { ProductGrid, useProductsByIds } from '../../components/product';
 import { Button, CountrySelect, EmptyState, ErrorState, Field, Icon, Img, Input, Modal, Pagination, PhoneInput, Skeleton, Stars, StatusBadge, Textarea, useConfirm } from '../../components/ui';
 import { applyServerErrors } from '../Auth';
@@ -21,6 +23,7 @@ import Seo from '../../components/Seo';
 const NAV = [
   ['', 'space_dashboard', 'Overview'],
   ['orders', 'receipt_long', 'My orders'],
+  ['coins', 'savings', 'My coins'],
   ['profile', 'person', 'Profile'],
   ['addresses', 'location_on', 'Addresses'],
   ['reviews', 'reviews', 'My reviews'],
@@ -31,7 +34,6 @@ const NAV = [
 function Profile() {
   const user = useUser();
   const { refreshUser } = useAuthActions();
-  const fileRef = useRef(null);
   const { register, handleSubmit, setError, formState: { errors, isSubmitting, isDirty }, reset } = useForm({
     resolver: zodResolver(
       z.object({
@@ -43,13 +45,15 @@ function Profile() {
     ),
     defaultValues: { name: user.name, phone: { dialCode: user.phone?.dialCode || '+91', number: user.phone?.number || '' }, country: user.country, nationality: user.nationality },
   });
+  const [progress, setProgress] = useState(null);
   const avatar = useMutation({
-    mutationFn: api.uploadAvatar,
+    mutationFn: (file) => api.uploadAvatar(file, setProgress),
     onSuccess: (res) => {
       refreshUser(res.user);
       toast.success('Photo updated');
     },
     onError: (e) => toast.error(e.message),
+    onSettled: () => setProgress(null),
   });
   const onSubmit = async (values) => {
     try {
@@ -65,21 +69,22 @@ function Profile() {
   return (
     <div className="flex flex-col gap-space-lg">
       <div className="card p-space-lg flex items-center gap-space-md">
-        <div className="relative">
-          {user.avatar?.url ? (
-            <img src={imgUrl(user.avatar.url)} alt="" className="w-20 h-20 rounded-full object-cover" />
-          ) : (
-            <span className="w-20 h-20 rounded-full bg-secondary text-on-secondary text-headline-md flex items-center justify-center">{initials(user.name)}</span>
-          )}
-          <button type="button" onClick={() => fileRef.current?.click()} className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-primary text-on-primary flex items-center justify-center shadow-lift" aria-label="Change photo">
-            {avatar.isPending ? <span className="w-3 h-3 border-2 border-current border-r-transparent rounded-full animate-spin" /> : <Icon name="photo_camera" className="text-[16px]" />}
-          </button>
-          <input ref={fileRef} type="file" accept="image/*" hidden onChange={(e) => e.target.files[0] && avatar.mutate(e.target.files[0])} />
-        </div>
-        <div>
+        <ImageDrop
+          shape="circle"
+          label="Change profile photo"
+          value={user.avatar?.url ? user.avatar : null}
+          onChange={(file) => file && avatar.mutate(file)}
+          busy={avatar.isPending}
+          progress={progress}
+        />
+        <div className="min-w-0">
           <h2 className="text-headline-md">{user.name}</h2>
           <p className="text-body-sm text-on-surface-variant">{user.email}</p>
           <p className="text-label-sm font-normal text-outline">Member since {formatDate(user.createdAt)}</p>
+          <p className="mt-1.5 text-[12px] text-on-surface-variant flex items-center gap-1">
+            <Icon name="photo_camera" className="text-[15px] text-secondary" />
+            {avatar.isPending ? 'Uploading your photo…' : 'Tap your photo, drag one onto it or paste to change it.'}
+          </p>
         </div>
       </div>
       <form onSubmit={handleSubmit(onSubmit)} className="card p-space-lg grid grid-cols-1 md:grid-cols-2 gap-space-md" noValidate>
@@ -139,6 +144,7 @@ function Overview() {
   const user = useUser();
   const money = useMoney();
   const { data, isLoading, isError, error, refetch } = useQuery({ queryKey: ['orders', 'overview'], queryFn: api.myOverview, refetchInterval: 60 * 1000 });
+  const coins = useMyCoins();
   if (isLoading) return <div className="grid grid-cols-2 md:grid-cols-3 gap-space-md">{[1, 2, 3, 4, 5, 6].map((i) => <Skeleton key={i} className="h-24" />)}</div>;
   if (isError) return <ErrorState error={error} onRetry={refetch} />;
   const s = data.stats;
@@ -152,6 +158,7 @@ function Overview() {
   ];
   return (
     <div className="flex flex-col gap-space-lg">
+      {coins.data && <CoinBalanceCard coins={coins.data} />}
       <div className="grid grid-cols-2 md:grid-cols-3 gap-space-md">
         {tiles.map(([icon, label, value, to]) => (
           <Link key={label} to={to} className="card p-space-md flex items-center gap-3 hover:shadow-lift transition-shadow">
@@ -323,13 +330,15 @@ function OrderDetail() {
       setCancelOpen(false);
       qc.invalidateQueries({ queryKey: ['order', id] });
       qc.invalidateQueries({ queryKey: ['orders'] });
+      qc.invalidateQueries({ queryKey: ['my-coins'] }); // spent coins come back, earned ones are removed
     },
     onError: (e) => toast.error(e.message),
   });
   if (isLoading) return <Skeleton className="h-96" />;
   if (isError) return <ErrorState error={error} onRetry={refetch} />;
   const a = o.shippingAddress;
-  const canCancel = ['Pending', 'Confirmed'].includes(o.orderStatus);
+  // Cancellation policy: within 24 hours of ordering and before it ships (the server checks too).
+  const canCancel = ['Pending', 'Confirmed'].includes(o.orderStatus) && Date.now() - new Date(o.createdAt).getTime() < 24 * 60 * 60 * 1000;
   return (
     <div className="flex flex-col gap-space-lg">
       <Link to="/account/orders" className="text-label-md text-secondary flex items-center gap-1 w-fit"><Icon name="arrow_back" className="text-[16px]" /> All orders</Link>
@@ -363,10 +372,12 @@ function OrderDetail() {
           <div className="flex flex-col gap-1 text-body-sm">
             <div className="flex justify-between"><span className="text-on-surface-variant">Subtotal</span><span>{money(o.subtotal)}</span></div>
             {o.discount > 0 && <div className="flex justify-between text-secondary"><span>Discount {o.coupon?.code && `(${o.coupon.code})`}</span><span>−{money(o.discount)}</span></div>}
+            {o.coinDiscount > 0 && <div className="flex justify-between text-success"><span>Coins used ({o.coinsRedeemed})</span><span>−{money(o.coinDiscount)}</span></div>}
             <div className="flex justify-between"><span className="text-on-surface-variant">Shipping ({o.shippingMethod?.label})</span><span>{o.shipping ? money(o.shipping) : 'Free'}</span></div>
             <div className="flex justify-between"><span className="text-on-surface-variant">Tax</span><span>{money(o.tax)}</span></div>
             <div className="flex justify-between text-headline-sm pt-1"><span>Total</span><span>{money(o.grandTotal)}</span></div>
             <p className="text-label-sm font-normal text-outline">Paid via {PAYMENT_LABELS[o.paymentMethod] || o.paymentMethod}</p>
+            {o.coinsEarned > 0 && <p className="mt-1 text-[12px] px-2.5 py-2 rounded-lg bg-[#c08a2e]/10 text-on-surface">{o.orderStatus === 'Cancelled' || o.orderStatus === 'Returned' ? `The ${o.coinsEarned} coins from this order were removed.` : <>This order earned you <b>{o.coinsEarned} WILDTANE Coins</b> — use them on your next order.</>}</p>}
           </div>
           <div className="grid sm:grid-cols-2 gap-space-md pt-space-sm">
             <div>
@@ -594,6 +605,7 @@ export default function Account() {
             <Route path="profile" element={<Profile />} />
             <Route path="orders" element={<Orders />} />
             <Route path="orders/:id" element={<OrderDetail />} />
+            <Route path="coins" element={<Coins />} />
             <Route path="addresses" element={<Addresses />} />
             <Route path="reviews" element={<MyReviews />} />
             <Route path="recent" element={<Recent />} />

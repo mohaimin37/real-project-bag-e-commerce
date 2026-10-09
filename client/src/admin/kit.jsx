@@ -11,9 +11,9 @@ export function PageHeader({ title, subtitle, actions, eyebrow }) {
   return (
     <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-space-md mb-space-lg">
       <div>
-        {eyebrow && <span className="eyebrow">{eyebrow}</span>}
-        <h1 className="text-headline-lg">{title}</h1>
-        {subtitle && <p className="text-body-sm text-on-surface-variant mt-0.5">{subtitle}</p>}
+        {eyebrow && <span className="eyebrow block mb-1">{eyebrow}</span>}
+        <h1 className="text-headline-lg font-display tracking-tight">{title}</h1>
+        {subtitle && <p className="text-body-sm text-on-surface-variant mt-1">{subtitle}</p>}
       </div>
       {actions && <div className="flex flex-wrap items-center gap-space-sm">{actions}</div>}
     </div>
@@ -22,10 +22,10 @@ export function PageHeader({ title, subtitle, actions, eyebrow }) {
 
 export function Panel({ title, action, children, className, bodyClassName }) {
   return (
-    <section className={cn('card flex flex-col', className)}>
+    <section className={cn('card surface-card border border-outline-variant/60 flex flex-col', className)}>
       {(title || action) && (
-        <div className="flex items-center justify-between gap-2 px-space-lg pt-space-md pb-space-sm">
-          {typeof title === 'string' ? <h2 className="text-label-lg uppercase tracking-wider text-on-surface-variant">{title}</h2> : title}
+        <div className="flex items-center justify-between gap-2 px-space-lg pt-space-md pb-space-sm border-b border-surface-container-high/60">
+          {typeof title === 'string' ? <h2 className="text-label-lg uppercase tracking-wider text-secondary font-bold font-sans">{title}</h2> : title}
           {action}
         </div>
       )}
@@ -38,7 +38,7 @@ export function Delta({ value }) {
   if (value === undefined || value === null) return null;
   const up = value >= 0;
   return (
-    <span className={cn('inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-label-sm', up ? 'bg-secondary-container/60 text-on-secondary-container' : 'bg-error-container text-on-error-container')}>
+    <span className={cn('inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-label-sm font-semibold', up ? 'bg-secondary-container text-on-secondary-fixed' : 'bg-error-container text-on-error-container')}>
       <Icon name={up ? 'trending_up' : 'trending_down'} className="text-[14px]" />
       {Math.abs(value).toFixed(1)}%
     </span>
@@ -46,20 +46,20 @@ export function Delta({ value }) {
 }
 
 export function StatCard({ icon, label, value, change, series, dataKey, tone = 'teal', hint }) {
-  const color = tone === 'teal' ? '#006b5d' : tone === 'amber' ? '#ad7b00' : tone === 'navy' ? '#3f4759' : '#ba1a1a';
+  const color = tone === 'teal' ? '#8a4b1f' : tone === 'amber' ? '#b45309' : tone === 'navy' ? '#42403c' : '#b42318';
   const id = `g-${label.replace(/\W/g, '')}`;
   return (
-    <div className="card p-space-lg flex flex-col gap-space-sm relative overflow-hidden">
+    <div className="card surface-card border border-outline-variant/60 p-space-lg flex flex-col gap-space-sm relative overflow-hidden transition-all duration-200">
       <div className="flex items-center justify-between">
-        <span className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: `${color}1a`, color }}>
-          <Icon name={icon} />
+        <span className="w-10 h-10 rounded-xl flex items-center justify-center bg-secondary/10 text-secondary">
+          <Icon name={icon} className="text-[22px]" />
         </span>
         <Delta value={change} />
       </div>
       <div>
-        <p className="text-label-sm uppercase tracking-wider text-outline">{label}</p>
-        <p className="text-headline-lg tabular-nums">{value}</p>
-        {hint && <p className="text-label-sm font-normal text-outline">{hint}</p>}
+        <p className="text-label-sm uppercase tracking-wider text-outline font-bold">{label}</p>
+        <p className="text-headline-lg tabular-nums font-display mt-0.5">{value}</p>
+        {hint && <p className="text-label-sm font-normal text-outline mt-0.5">{hint}</p>}
       </div>
       {series?.length > 1 && (
         <div className="h-12 -mx-space-lg -mb-space-lg mt-auto">
@@ -103,7 +103,7 @@ export function SearchBox({ value, onChange, placeholder = 'Search…' }) {
   return (
     <div className="relative w-full sm:w-72">
       <Icon name="search" className="absolute left-3 top-1/2 -translate-y-1/2 text-outline text-[20px]" />
-      <input type="search" value={v} onChange={(e) => setV(e.target.value)} placeholder={placeholder} className="input pl-10 h-10" aria-label={placeholder} />
+      <input type="search" value={v} onChange={(e) => setV(e.target.value)} placeholder={placeholder} className="input pl-10 h-10 bg-surface-container/60 focus:bg-surface-container-lowest" aria-label={placeholder} />
     </div>
   );
 }
@@ -111,7 +111,7 @@ export function SearchBox({ value, onChange, placeholder = 'Search…' }) {
 export function FilterSelect({ value, onChange, options, label }) {
   return (
     <div className="relative">
-      <select value={value || ''} onChange={(e) => onChange(e.target.value)} className="input h-10 pr-9 appearance-none cursor-pointer w-auto" aria-label={label}>
+      <select value={value || ''} onChange={(e) => onChange(e.target.value)} className="input h-10 pr-9 appearance-none cursor-pointer w-auto bg-surface-container/60 focus:bg-surface-container-lowest" aria-label={label}>
         {options.map(([v, l]) => (
           <option key={v} value={v}>{l}</option>
         ))}
@@ -126,13 +126,48 @@ export function Toolbar({ children }) {
 }
 
 /**
- * columns: [{ key, header, render(row), className, align }]
+ * columns: [{ key, header, render(row), className, align, mobile }]
+ * Phones and tablets get a card per row (two across on tablets) (first column as the title, the rest as label/value pairs) instead of a
+ * table that has to be scrolled sideways. `mobile: false` leaves a column out of the cards.
  */
 export function DataTable({ columns, rows, loading, error, onRetry, empty, onRowClick, rowKey = '_id' }) {
-  if (error) return <div className="card"><ErrorState error={error} onRetry={onRetry} /></div>;
+  if (error) return <div className="card surface-card border border-outline-variant/60"><ErrorState error={error} onRetry={onRetry} /></div>;
+  const [head, ...rest] = columns.filter((c) => c.mobile !== false);
+  const cell = (c, row) => (c.render ? c.render(row) : row[c.key]);
   return (
-    <div className="card overflow-hidden">
-      <div className="overflow-x-auto">
+    <div className="card surface-card border border-outline-variant/60 overflow-hidden">
+      <ul className="lg:hidden divide-y md:divide-y-0 divide-surface-container-high md:grid md:grid-cols-2 md:gap-px md:bg-surface-container-high">
+        {loading
+          ? Array.from({ length: 4 }, (_, i) => (
+              <li key={i} className="p-3 flex flex-col gap-2"><Skeleton className="h-4 w-2/3" /><Skeleton className="h-3 w-1/2" /></li>
+            ))
+          : rows.map((row) => (
+              <li
+                key={row[rowKey]}
+                onClick={onRowClick ? () => onRowClick(row) : undefined}
+                className={cn('p-3 flex flex-col gap-2 text-body-sm bg-surface-container-lowest', onRowClick && 'cursor-pointer active:bg-surface-container-low')}
+              >
+                <div className="min-w-0 flex items-start justify-between gap-2">
+                  <div className="min-w-0 flex-1">{head && cell(head, row)}</div>
+                  {onRowClick && <Icon name="chevron_right" className="text-[20px] text-outline shrink-0" />}
+                </div>
+                <dl className="grid grid-cols-2 gap-x-3 gap-y-1.5">
+                  {rest.map((c) =>
+                    c.header ? (
+                      <div key={c.key} className="min-w-0">
+                        <dt className="text-[10px] uppercase tracking-wider text-outline">{c.header}</dt>
+                        <dd className="min-w-0 break-words">{cell(c, row)}</dd>
+                      </div>
+                    ) : (
+                      // Header-less columns are usually row actions: give them the full width.
+                      <dd key={c.key} className="col-span-2 flex justify-end">{cell(c, row)}</dd>
+                    )
+                  )}
+                </dl>
+              </li>
+            ))}
+      </ul>
+      <div className="hidden lg:block overflow-x-auto">
         <table className="w-full text-body-sm">
           <thead>
             <tr className="bg-surface-container-low text-left">
@@ -324,4 +359,4 @@ export function useChartColors() {
   }, [theme]);
 }
 
-export const STAT_TONES = ['#006b5d', '#3f4759', '#ad7b00', '#65dac4', '#ba1a1a', '#7c8498', '#141b2c', '#80f3dd', '#fabc45'];
+export const STAT_TONES = ['#96582c', '#57534e', '#ad7b00', '#d6a06e', '#ba1a1a', '#8a8178', '#1c1917', '#e2be9c', '#fabc45'];

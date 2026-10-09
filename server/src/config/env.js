@@ -19,7 +19,7 @@ const env = {
   mongoUri: process.env.MONGODB_URI,
   jwt: {
     secret: process.env.JWT_SECRET,
-    expiresIn: process.env.JWT_EXPIRES_IN || '7d',
+    expiresIn: process.env.JWT_EXPIRES_IN || '30d',
     cookieName: process.env.COOKIE_NAME || 'wt_token',
   },
   admin: {
@@ -48,8 +48,15 @@ const env = {
   },
 };
 
-env.cloudinary.enabled = Boolean(env.cloudinary.cloudName && env.cloudinary.apiKey && env.cloudinary.apiSecret);
+// Free Google Gemini key (aistudio.google.com → Get API key) for "Write with AI" in the add-product wizard.
+env.gemini = {
+  apiKey: process.env.GEMINI_API_KEY,
+  model: process.env.GEMINI_MODEL || 'gemini-flash-lite-latest',
+  enabled: Boolean(process.env.GEMINI_API_KEY),
+};
+env.cloudinary.enabled =Boolean(env.cloudinary.cloudName && env.cloudinary.apiKey && env.cloudinary.apiSecret);
 env.whatsapp.enabled = Boolean(env.whatsapp.token && env.whatsapp.phoneNumberId && env.whatsapp.adminNumber);
-env.smtp.enabled = Boolean(env.smtp.host);
+// A login without its password (e.g. Gmail app password not added yet) counts as not configured.
+env.smtp.enabled = Boolean(env.smtp.host && (!env.smtp.user || env.smtp.pass));
 
 export default env;

@@ -123,8 +123,14 @@ export function useCart() {
     onError,
   });
 
+  // Loyalty coins: spend them on this order (signed-in shoppers only).
+  const setUseCoins = useMutation({
+    mutationFn: async (use) => setServerCart(await api.setUseCoins(use)),
+    onError,
+  });
+
   const count = cart.items.reduce((n, l) => n + (l.available ? l.quantity : 0), 0);
   const hasIssues = cart.items.some((l) => !l.available || l.issue);
 
-  return { cart, items: cart.items, summary: cart.summary, count, hasIssues, isLoading, add, updateQty, changeVariant, remove, clear, applyCoupon, removeCoupon, setShipping };
+  return { cart, items: cart.items, summary: cart.summary, count, hasIssues, isLoading, add, updateQty, changeVariant, remove, clear, applyCoupon, removeCoupon, setShipping, setUseCoins };
 }

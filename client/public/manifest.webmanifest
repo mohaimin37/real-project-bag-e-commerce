@@ -1,12 +1,33 @@
 {
   "name": "WILDTANE — Bags & Travel Gear",
   "short_name": "WILDTANE",
-  "description": "Architectural bags, backpacks and travel gear with a lifetime repair guarantee.",
+  "description": "Modern bags, backpacks and travel gear for men, women and everyone.",
+  "id": "/",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "orientation": "portrait",
-  "background_color": "#f8f9ff",
-  "theme_color": "#141b2c",
-  "icons": [{ "src": "/logo.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }]
+  "orientation": "any",
+  "background_color": "#0e0e0e",
+  "theme_color": "#0e0e0e",
+  "categories": ["shopping", "lifestyle"],
+  "icons": [
+    {
+      "src": "/logo-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/logo-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
 }

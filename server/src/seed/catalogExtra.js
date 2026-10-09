@@ -90,10 +90,22 @@ const BLURB = {
   'Beach & Straw Bags': ['A sunny-day straw bag', 'Lightweight, roomy and made for beaches, markets and holidays.'],
   'Travel Organisers': ['Packing made tidy', 'Keeps toiletries and small essentials sorted inside any bag.'],
   Clutches: ['An evening bag', 'Sized for the essentials, with a chain strap to wear on the shoulder or carry as a clutch.'],
+  'Passport Holders': ['A passport cover for every trip', 'Slots for your passport, boarding pass and a card, so travel papers stay together and scuff-free.'],
+  'Luggage Tags': ['A luggage tag that stands out', 'A privacy flap hides your address and the strap buckles securely to any handle.'],
+  'Toiletry Kits': ['A wash bag that packs flat', 'A wipe-clean lining and inner pockets keep toiletries upright and leaks contained.'],
+  'Belt Bags': ['A hands-free belt bag', 'Wear it round the waist or across the chest; room for a phone, cards and keys.'],
+  Keychains: ['A small leather key accessory', 'Keeps keys together and easy to find in any bag.'],
+  Pouches: ['A zip pouch for the small things', 'Holds chargers, pens, make-up or receipts and slips into any bag.'],
+  'Eyewear Cases': ['A case to protect your glasses', 'A soft lining stops scratches and the closure keeps frames from slipping out.'],
+  'Laptop Sleeves': ['A slim laptop sleeve', 'A soft lining and snug fit protect your laptop on its own or inside another bag.'],
+  'Travel Comfort': ['Comfort for long journeys', 'Supports your neck on flights, trains and road trips, and packs small.'],
+  Hydration: ['A reusable bottle', 'Double-wall steel keeps drinks cold for 24 hours or hot for 12.'],
 };
 
-let sku = 300;
-export const extraProducts = ROWS.map(([file, name, sub, price, salePrice, [colour, hex, family], capacity, o = {}]) => {
+/** Turns compact rows into full seed products. Each catalogue file passes its own SKU range. */
+export function buildProducts(rows, skuStart) {
+  let sku = skuStart;
+  return rows.map(([file, name, sub, price, salePrice, [colour, hex, family], capacity, o = {}]) => {
   sku += 1;
   const [lead, detail] = BLURB[sub] || ['A versatile bag', 'Made to be used every day.'];
   const materials = o.materials || [];
@@ -128,7 +140,10 @@ export const extraProducts = ROWS.map(([file, name, sub, price, salePrice, [colo
     soldCount: 40 + ((sku * 53) % 600),
     photoFolder: 'catalog',
   };
-});
+  });
+}
+
+export const extraProducts = buildProducts(ROWS, 300);
 
 // file name → Unsplash photo id (for credits and the photo download step)
 export const extraPhotoSources = {

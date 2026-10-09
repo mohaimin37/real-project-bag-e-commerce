@@ -2,98 +2,133 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Stitch tokens as RGB channels. Light values are the exact Stitch hex codes. */
+/* Colour tokens as RGB channels so Tailwind can apply opacity (bg-secondary/10 etc.). */
 @layer base {
-  :root {
-    --c-background: 248 249 255;
-    --c-on-background: 19 28 38;
-    --c-surface: 248 249 255;
-    --c-surface-bright: 248 249 255;
-    --c-surface-dim: 210 219 233;
-    --c-surface-tint: 86 94 113;
-    --c-surface-variant: 218 227 241;
-    --c-surface-container-lowest: 255 255 255;
-    --c-surface-container-low: 238 244 255;
-    --c-surface-container: 229 239 253;
-    --c-surface-container-high: 224 233 247;
-    --c-surface-container-highest: 218 227 241;
-    --c-on-surface: 19 28 38;
-    --c-on-surface-variant: 69 71 76;
-    --c-inverse-surface: 40 49 60;
-    --c-inverse-on-surface: 233 241 255;
-    --c-inverse-primary: 191 198 220;
-    --c-outline: 118 119 125;
-    --c-outline-variant: 198 198 205;
-    --c-primary: 0 0 0;
-    --c-on-primary: 255 255 255;
-    --c-primary-container: 20 27 44;
-    --c-on-primary-container: 124 132 152;
-    --c-primary-fixed: 219 226 249;
-    --c-primary-fixed-dim: 191 198 220;
-    --c-secondary: 0 107 93;
-    --c-on-secondary: 255 255 255;
-    --c-secondary-container: 128 243 221;
-    --c-on-secondary-container: 0 111 97;
-    --c-secondary-fixed: 131 246 224;
-    --c-secondary-fixed-dim: 101 218 196;
-    --c-on-secondary-fixed: 0 32 27;
-    --c-tertiary: 0 0 0;
-    --c-on-tertiary: 255 255 255;
-    --c-tertiary-container: 39 25 0;
-    --c-on-tertiary-container: 173 123 0;
-    --c-tertiary-fixed: 255 222 169;
-    --c-tertiary-fixed-dim: 250 188 69;
-    --c-error: 186 26 26;
-    --c-on-error: 255 255 255;
-    --c-error-container: 255 218 214;
-    --c-on-error-container: 147 0 10;
-    /* Always-dark band (announcement bar, feature sections, footer). */
-    --c-ink: 20 27 44;
-    --c-on-ink: 233 241 255;
-    color-scheme: light;
-  }
-
+  /* Default appearance: deep noir obsidian background, champagne gold highlights and clear hierarchy */
+  :root,
   [data-theme='dark'] {
-    --c-background: 11 16 24;
-    --c-on-background: 226 233 245;
-    --c-surface: 11 16 24;
-    --c-surface-bright: 40 48 60;
-    --c-surface-dim: 11 16 24;
-    --c-surface-tint: 191 198 220;
-    --c-surface-variant: 47 56 69;
-    --c-surface-container-lowest: 17 23 33;
-    --c-surface-container-low: 22 29 40;
-    --c-surface-container: 28 36 48;
-    --c-surface-container-high: 36 45 58;
-    --c-surface-container-highest: 46 56 70;
-    --c-on-surface: 226 233 245;
-    --c-on-surface-variant: 185 192 204;
-    --c-inverse-surface: 226 233 245;
-    --c-inverse-on-surface: 40 49 60;
-    --c-outline: 138 145 156;
-    --c-outline-variant: 60 67 80;
-    --c-primary: 255 255 255;
-    --c-on-primary: 0 0 0;
-    --c-primary-container: 20 27 44;
-    --c-on-primary-container: 154 163 184;
-    --c-secondary: 79 214 191;
-    --c-on-secondary: 0 56 47;
-    --c-secondary-container: 0 80 70;
-    --c-on-secondary-container: 128 243 221;
-    --c-tertiary: 255 255 255;
-    --c-on-tertiary: 0 0 0;
-    --c-on-tertiary-container: 250 188 69;
-    --c-error: 255 180 171;
-    --c-on-error: 105 0 5;
-    --c-error-container: 147 0 10;
-    --c-on-error-container: 255 218 214;
-    --c-ink: 6 10 17;
-    --c-on-ink: 226 233 245;
+    --c-background: 12 12 12;
+    --c-on-background: 245 245 243;
+    --c-surface: 12 12 12;
+    --c-surface-bright: 50 50 49;
+    --c-surface-dim: 12 12 12;
+    --c-surface-tint: 214 160 110;
+    --c-surface-variant: 40 40 39;
+    --c-surface-container-lowest: 22 22 22;
+    --c-surface-container-low: 28 28 28;
+    --c-surface-container: 35 35 34;
+    --c-surface-container-high: 45 45 44;
+    --c-surface-container-highest: 58 58 56;
+    --c-on-surface: 245 245 243;
+    --c-on-surface-variant: 204 202 196;
+    --c-inverse-surface: 245 245 243;
+    --c-inverse-on-surface: 38 34 31;
+    --c-inverse-primary: 122 72 36;
+    --c-outline: 150 148 142;
+    --c-outline-variant: 70 70 68;
+    --c-primary: 245 245 243;
+    --c-on-primary: 18 18 18;
+    --c-primary-container: 32 32 32;
+    --c-on-primary-container: 204 202 196;
+    --c-primary-fixed: 240 240 237;
+    --c-primary-fixed-dim: 216 216 211;
+    --c-secondary: 226 170 118;
+    --c-on-secondary: 43 24 8;
+    --c-secondary-container: 74 46 24;
+    --c-on-secondary-container: 246 220 192;
+    --c-secondary-fixed: 246 226 205;
+    --c-secondary-fixed-dim: 226 190 156;
+    --c-on-secondary-fixed: 58 30 10;
+    --c-tertiary: 245 245 243;
+    --c-on-tertiary: 22 22 22;
+    --c-tertiary-container: 232 196 120;
+    --c-on-tertiary-container: 232 196 120;
+    --c-tertiary-fixed: 250 232 196;
+    --c-tertiary-fixed-dim: 232 196 120;
+    --c-error: 255 176 164;
+    --c-on-error: 100 10 4;
+    --c-error-container: 120 16 8;
+    --c-on-error-container: 252 222 216;
+    --c-ink: 10 9 8;
+    --c-on-ink: 240 235 228;
+    --c-band: 14 14 14;
+    --c-on-band: 255 255 255;
+    --c-accent: 226 181 62;
+    --c-on-accent: 20 20 20;
+    --c-success: 52 211 153;
+    --c-on-success: 6 40 28;
+    --c-warning: 251 191 36;
+    --c-on-warning: 40 24 0;
+    --c-shadow: 0 0 0;
+    --font-sans: 'Plus Jakarta Sans', system-ui, sans-serif;
+    --font-display: 'DM Serif Display', Georgia, serif;
+    --display-weight: 400;
+    --display-tracking: -0.005em;
+    --band-image: none;
+    --radius-scale: 1;
+    --zoom: 1;
     color-scheme: dark;
   }
 
-  /* Accessibility mode: stronger secondary text and borders. */
-  [data-contrast='high'] {
+  /* Light appearance mode */
+  [data-theme='light'] {
+    --c-background: 250 250 249;
+    --c-on-background: 17 17 17;
+    --c-surface: 246 246 244;
+    --c-surface-bright: 252 252 251;
+    --c-surface-dim: 224 224 220;
+    --c-surface-tint: 138 75 31;
+    --c-surface-variant: 236 236 233;
+    --c-surface-container-lowest: 255 255 255;
+    --c-surface-container-low: 249 249 247;
+    --c-surface-container: 240 240 237;
+    --c-surface-container-high: 230 230 226;
+    --c-surface-container-highest: 216 216 211;
+    --c-on-surface: 17 17 17;
+    --c-on-surface-variant: 66 64 60;
+    --c-inverse-surface: 24 24 24;
+    --c-inverse-on-surface: 246 246 244;
+    --c-inverse-primary: 226 190 156;
+    --c-outline: 112 110 104;
+    --c-outline-variant: 214 212 206;
+    --c-primary: 17 17 17;
+    --c-on-primary: 255 255 255;
+    --c-primary-container: 32 32 32;
+    --c-on-primary-container: 210 210 205;
+    --c-primary-fixed: 240 240 237;
+    --c-primary-fixed-dim: 216 216 211;
+    --c-secondary: 138 75 31;
+    --c-on-secondary: 255 255 255;
+    --c-secondary-container: 246 232 218;
+    --c-on-secondary-container: 98 52 18;
+    --c-secondary-fixed: 246 226 205;
+    --c-secondary-fixed-dim: 226 190 156;
+    --c-on-secondary-fixed: 58 30 10;
+    --c-tertiary: 17 17 17;
+    --c-on-tertiary: 255 255 255;
+    --c-tertiary-container: 58 40 6;
+    --c-on-tertiary-container: 168 120 20;
+    --c-tertiary-fixed: 250 232 196;
+    --c-tertiary-fixed-dim: 232 196 120;
+    --c-error: 180 35 24;
+    --c-on-error: 255 255 255;
+    --c-error-container: 252 222 216;
+    --c-on-error-container: 120 16 8;
+    --c-ink: 17 17 17;
+    --c-on-ink: 245 242 237;
+    --c-band: 14 14 14;
+    --c-on-band: 255 255 255;
+    --c-accent: 226 181 62;
+    --c-on-accent: 20 20 20;
+    --c-success: 4 120 87;
+    --c-on-success: 255 255 255;
+    --c-warning: 180 83 9;
+    --c-on-warning: 255 255 255;
+    --c-shadow: 0 0 0;
+    color-scheme: light;
+  }
+  /* Accessibility mode: stronger secondary text and borders (outranks theme overrides). */
+  html:root[data-contrast='high'] {
     --c-on-surface-variant: var(--c-on-surface);
     --c-outline: var(--c-on-surface-variant);
     --c-outline-variant: 118 119 125;
@@ -103,23 +138,170 @@
     outline-offset: 2px;
   }
 
+  /* ── Theme designs (src/theme/themes.js DESIGNS; the engine sets data-design on <html>) ──
+     Variables rather than selectors, so the nearest [data-design] wins and theme previews show
+     their own design. Borders are drawn as spread shadows, so switching never shifts layout.
+     The defaults below reproduce the Classic look exactly. */
+  :root,
+  [data-design] {
+    --card-shadow: 0 0 0 1px rgb(var(--c-on-surface) / 0.05);
+    --card-shadow-hover: 0 0 0 1px rgb(var(--c-on-surface) / 0.05), 0 10px 30px -10px rgb(var(--c-shadow) / 0.18);
+    --card-hover: none;
+    --btn-radius: calc(0.5rem * var(--radius-scale));
+    --btn-transform: none;
+    --btn-tracking: normal;
+    --header-bg: rgb(var(--c-surface-container-lowest));
+    --header-blur: none;
+    --header-border: 1px solid rgb(var(--c-surface-container-high));
+    --header-shadow: none;
+  }
+  [data-design='luxe'] {
+    --card-shadow: 0 0 0 1px rgb(var(--c-outline-variant));
+    --card-shadow-hover: 0 0 0 1px rgb(var(--c-secondary) / 0.7), 0 16px 32px -22px rgb(var(--c-shadow) / 0.35);
+    --btn-radius: 2px;
+    --btn-transform: uppercase;
+    --btn-tracking: 0.1em;
+    --header-border: 1px solid rgb(var(--c-secondary) / 0.4);
+  }
+  [data-design='modern'] {
+    --card-shadow: 0 0 0 1px rgb(var(--c-on-surface) / 0.05), 0 4px 14px -8px rgb(var(--c-shadow) / 0.14);
+    --card-shadow-hover: 0 0 0 1px rgb(var(--c-secondary) / 0.25), 0 16px 32px -14px rgb(var(--c-shadow) / 0.22);
+    --card-hover: translateY(-2px);
+    --btn-radius: 9999px;
+    --header-bg: rgb(var(--c-surface-container-lowest) / 0.82);
+    --header-blur: saturate(1.5) blur(14px);
+    --header-border: 1px solid rgb(var(--c-on-surface) / 0.06);
+  }
+  [data-design='airy'] {
+    --card-shadow: 0 8px 26px -14px rgb(var(--c-shadow) / 0.22);
+    --card-shadow-hover: 0 20px 40px -18px rgb(var(--c-shadow) / 0.3);
+    --card-hover: translateY(-4px);
+    --btn-radius: 9999px;
+    --header-bg: rgb(var(--c-surface-container-lowest) / 0.88);
+    --header-blur: blur(10px);
+    --header-border: 0 solid transparent;
+    --header-shadow: 0 4px 18px -12px rgb(var(--c-shadow) / 0.3);
+  }
+  [data-design='soft'] {
+    --card-shadow: 0 0 0 1px rgb(var(--c-secondary) / 0.12);
+    --card-shadow-hover: 0 0 0 1px rgb(var(--c-secondary) / 0.25), 0 14px 30px -14px rgb(var(--c-secondary) / 0.35);
+    --card-hover: translateY(-2px);
+    --btn-radius: 9999px;
+    --header-border: 1px solid rgb(var(--c-secondary) / 0.15);
+  }
+  [data-design='natural'] {
+    --card-shadow: 0 0 0 1px rgb(var(--c-outline-variant));
+    --card-shadow-hover: 0 0 0 1px rgb(var(--c-secondary) / 0.5), 0 0 0 4px rgb(var(--c-secondary) / 0.1);
+    --btn-radius: calc(0.75rem * var(--radius-scale));
+    --header-bg: rgb(var(--c-surface));
+    --header-border: 1px solid rgb(var(--c-secondary) / 0.2);
+  }
+  [data-design='minimal'] {
+    --card-shadow: 0 0 0 1px rgb(var(--c-on-surface) / 0.18);
+    --card-shadow-hover: 0 0 0 1px rgb(var(--c-on-surface) / 0.7);
+    --btn-radius: 0;
+    --btn-tracking: 0.04em;
+    --header-border: 1px solid rgb(var(--c-on-surface) / 0.85);
+  }
+
+  /* ── Vision settings (Appearance → Vision; src/theme/engine.js applyVision) ── */
+  /* Text size: zooms the whole page (most sizes are in px), so layout reflows like browser zoom. */
+  html[data-text-size='small'] {
+    --zoom: 0.9;
+  }
+  html[data-text-size='large'] {
+    --zoom: 1.15;
+  }
+  html[data-text-size='xl'] {
+    --zoom: 1.3;
+  }
+  html[data-text-size] body {
+    zoom: var(--zoom);
+  }
+  /* Corner style (Appearance → Corners) outranks the theme's own --radius-scale. */
+  html[data-corners='sharp'] {
+    --radius-scale: 0.15 !important;
+  }
+  html[data-corners='soft'] {
+    --radius-scale: 1 !important;
+  }
+  html[data-corners='round'] {
+    --radius-scale: 1.75 !important;
+  }
+  /* Easy-to-read typeface for every heading and paragraph (outranks theme fonts). */
+  html:root[data-readable-font] {
+    --font-sans: 'Plus Jakarta Sans', system-ui, sans-serif;
+    --font-display: 'Plus Jakarta Sans', system-ui, sans-serif;
+    --display-weight: 700;
+    --display-tracking: 0;
+  }
+  html[data-readable-font] body {
+    letter-spacing: 0.01em;
+    word-spacing: 0.04em;
+  }
+  /* Underline text links so they don't rely on colour alone (cards, buttons and icon links excluded). */
+  html[data-underline-links] a:not([class*='btn']):not(:has(img, .material-symbols-outlined:only-child)) {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    text-decoration-thickness: 1.5px;
+  }
+  html[data-reduce-motion] {
+    scroll-behavior: auto !important;
+  }
+  html[data-reduce-motion] *,
+  html[data-reduce-motion] *::before,
+  html[data-reduce-motion] *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  /* Natural unslashed round zero across all elements and typography */
+  *,
+  *::before,
+  *::after {
+    font-variant-numeric: normal;
+    font-feature-settings: "zero" 0;
+  }
+
   html,
   body {
     @apply bg-surface text-on-surface font-sans antialiased;
+    font-variant-numeric: normal;
+    font-feature-settings: "zero" 0;
+    overflow-x: clip;
+    width: 100%;
+    max-width: 100%;
   }
   html {
     -webkit-text-size-adjust: 100%;
     text-size-adjust: 100%;
     /* Keeps anchored sections clear of the sticky header. */
-    scroll-padding-top: 8rem;
+    scroll-padding-top: 5rem;
   }
   body {
-    overscroll-behavior-y: none;
     -webkit-tap-highlight-color: transparent;
+    -webkit-overflow-scrolling: touch;
+  }
+  #root {
+    width: 100%;
+    max-width: 100%;
     overflow-x: clip;
   }
   img {
     -webkit-user-drag: none;
+  }
+  /* Page titles and the wordmark use the serif. It has one weight, so never fake-bold it. */
+  h1,
+  .wordmark {
+    font-family: theme('fontFamily.display');
+    font-weight: var(--display-weight) !important;
+    letter-spacing: var(--display-tracking);
+  }
+  .wordmark {
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    line-height: 1;
   }
   button,
   a,
@@ -143,6 +325,14 @@
   :focus-visible {
     outline: 2px solid rgb(var(--c-secondary));
     outline-offset: 2px;
+  }
+  /* Brief colour cross-fade while switching theme or appearance (src/theme/engine.js adds the class;
+     it is never added when the shopper prefers reduced motion). */
+  html.theme-transition,
+  html.theme-transition *,
+  html.theme-transition *::before,
+  html.theme-transition *::after {
+    transition: background-color 250ms ease, color 250ms ease, border-color 250ms ease, fill 250ms ease, box-shadow 250ms ease !important;
   }
   ::selection {
     @apply bg-secondary-container text-on-secondary-fixed;
@@ -169,7 +359,12 @@
   }
 
   .container-x {
-    @apply max-w-7xl mx-auto px-margin-sm md:px-margin;
+    @apply max-w-[1440px] mx-auto px-3 md:px-6;
+  }
+  /* Off-screen cards skip layout/paint until scrolled near: keeps long grids smooth. */
+  .cv-auto {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 320px;
   }
   .eyebrow {
     @apply text-label-sm uppercase tracking-wider text-secondary font-bold;
@@ -177,10 +372,26 @@
   .card {
     @apply bg-surface-container-lowest rounded-xl shadow-card;
   }
+  /* Storefront cards (products, reviews, brand values): border and hover follow the theme design. */
+  .surface-card {
+    box-shadow: var(--card-shadow);
+    transition: box-shadow 300ms ease, transform 300ms ease;
+  }
+  .surface-card:hover {
+    box-shadow: var(--card-shadow-hover);
+    transform: var(--card-hover);
+  }
+  .site-header {
+    background: var(--header-bg);
+    -webkit-backdrop-filter: var(--header-blur);
+    backdrop-filter: var(--header-blur);
+    border-bottom: var(--header-border);
+    box-shadow: var(--header-shadow);
+  }
 
   /* 16px on phones so iOS Safari doesn't zoom into focused fields. */
   .input {
-    @apply w-full h-11 px-space-md rounded-lg bg-surface-container-low text-on-surface text-body-md sm:text-body-sm
+    @apply w-full h-10 px-3 rounded-lg bg-surface-container text-on-surface text-[16px] sm:text-body-sm
       placeholder:text-outline border border-transparent transition-all
       focus:outline-none focus:bg-surface-container-lowest focus:border-secondary focus:ring-2 focus:ring-secondary/20
       disabled:opacity-60 disabled:cursor-not-allowed;
@@ -191,16 +402,28 @@
   textarea.input {
     @apply h-auto py-space-sm;
   }
+  /* Browser autofill keeps the theme's field colours instead of its own blue/yellow. */
+  .input:-webkit-autofill,
+  .input:-webkit-autofill:hover,
+  .input:-webkit-autofill:focus {
+    -webkit-text-fill-color: rgb(var(--c-on-surface));
+    -webkit-box-shadow: 0 0 0 1000px rgb(var(--c-surface-container)) inset;
+    caret-color: rgb(var(--c-on-surface));
+  }
 
   .btn {
-    @apply inline-flex items-center justify-center gap-2 h-11 px-space-lg rounded-lg text-label-lg font-semibold
-      transition-all duration-150 select-none disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98];
+    @apply inline-flex items-center justify-center gap-2 h-10 px-5 text-label-lg font-semibold
+      transition-[background-color,color,opacity,transform] duration-150 select-none disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98];
+    /* Shape and lettering follow the theme design. */
+    border-radius: var(--btn-radius);
+    text-transform: var(--btn-transform);
+    letter-spacing: var(--btn-tracking);
   }
   .btn-primary {
-    @apply btn bg-primary text-on-primary hover:bg-inverse-surface shadow-sm;
+    @apply btn bg-primary text-on-primary hover:opacity-90;
   }
   .btn-secondary {
-    @apply btn bg-secondary text-on-secondary hover:brightness-110 shadow-sm;
+    @apply btn bg-secondary text-on-secondary hover:brightness-110;
   }
   .btn-tonal {
     @apply btn bg-surface-container-low text-on-surface hover:bg-surface-container-high;
@@ -222,17 +445,47 @@
     @apply inline-flex items-center gap-1 h-8 px-space-md rounded-full text-label-md whitespace-nowrap transition-colors;
   }
 
-  .page-enter {
-    animation: page-enter 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  /* Text sliding up into place (promo strip, rotating search hint). */
+  .animate-promo-in {
+    animation: promo-in 0.4s ease-out both;
   }
-  @keyframes page-enter {
+  @keyframes promo-in {
     from {
       opacity: 0;
-      transform: translateY(6px);
+      transform: translateY(8px);
     }
     to {
       opacity: 1;
       transform: none;
+    }
+  }
+
+  /* Springy "pop" for rewarding taps (add to bag). */
+  .animate-pop {
+    animation: pop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  @keyframes pop {
+    0% {
+      transform: scale(0.7);
+    }
+    60% {
+      transform: scale(1.2);
+    }
+    100% {
+      transform: scale(1);
+    }
+  }
+
+  .page-enter {
+    /* Opacity only: no transform, so fixed/sticky children are never re-anchored. */
+    animation: page-enter 0.18s ease-out both;
+  }
+  @keyframes page-enter {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
     }
   }
 
@@ -268,6 +521,11 @@
   .prose-wt img {
     @apply rounded-xl my-space-lg;
   }
+}
+
+/* Some themes lay a soft gradient over the band colour (e.g. the plum card of the Reference theme). */
+.bg-band {
+  background-image: var(--band-image);
 }
 
 /* Printing (customer bills): plain white page whatever the theme. */

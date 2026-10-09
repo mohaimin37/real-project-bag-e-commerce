@@ -12,10 +12,11 @@ import * as reviews from '../controllers/review.controller.js';
 import * as coupons from '../controllers/coupon.controller.js';
 import * as content from '../controllers/content.controller.js';
 import * as enquiries from '../controllers/enquiry.controller.js';
+import * as comments from '../controllers/comment.controller.js';
 
 import { productSchema, categorySchema, stockUpdateSchema, quickProductSchema, bulkProductSchema } from '../validators/catalog.validators.js';
-import { orderStatusSchema, paymentStatusSchema, couponSchema } from '../validators/commerce.validators.js';
-import { blogSchema, liveUpdateSchema, bannerSchema, settingsSchema, enquiryUpdateSchema } from '../validators/content.validators.js';
+import { orderStatusSchema, paymentStatusSchema, couponSchema, coinAdjustSchema } from '../validators/commerce.validators.js';
+import { blogSchema, liveUpdateSchema, bannerSchema, settingsSchema, enquiryUpdateSchema, adminCommentSchema } from '../validators/content.validators.js';
 
 const r = Router();
 r.use(adminOnly);
@@ -29,6 +30,9 @@ r.get('/reports', analytics.reports);
 r.get('/products', products.adminListProducts);
 r.post('/products', validate(productSchema), products.createProduct);
 r.post('/products/images', imageUpload.array('images', 10), products.uploadProductImages);
+r.get('/products/suggest', products.suggestProductDetails);
+r.get('/products/ai-status', products.aiStatus);
+r.post('/products/ai-write', products.aiWriteProduct);
 r.get('/products/:id', products.adminGetProduct);
 r.put('/products/:id', validate(productSchema), products.updateProduct);
 r.patch('/products/:id/flags', products.toggleProductFlag);
@@ -53,8 +57,10 @@ r.get('/notifications', admin.listNotifications);
 
 // Customers
 r.get('/customers', admin.listCustomers);
+r.get('/customers/board', admin.customerBoard);
 r.get('/customers/:id', admin.getCustomer);
 r.patch('/customers/:id', admin.updateCustomer);
+r.post('/customers/:id/coins', validate(coinAdjustSchema), admin.adjustCustomerCoins);
 
 // Coupons
 r.get('/coupons', coupons.listCoupons);
@@ -67,6 +73,12 @@ r.delete('/coupons/:id', coupons.deleteCoupon);
 r.get('/reviews', reviews.adminListReviews);
 r.patch('/reviews/:id', reviews.adminSetReviewStatus);
 r.delete('/reviews/:id', reviews.adminDeleteReview);
+
+// Homepage customer comments
+r.get('/comments', comments.adminListComments);
+r.post('/comments', validate(adminCommentSchema), comments.adminCreateComment);
+r.patch('/comments/:id', comments.adminSetCommentStatus);
+r.delete('/comments/:id', comments.adminDeleteComment);
 
 // Enquiries & newsletter
 for (const kind of ['corporate', 'contact']) {

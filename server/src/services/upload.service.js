@@ -47,16 +47,33 @@ export async function uploadFile(file, subfolder = 'misc') {
     return { url: result.secure_url, publicId: result.public_id };
   }
 
-  // Serverless hosts (Netlify Functions) have no lasting disk, so local files would vanish.
+  const name = `${Date.now()}-${crypto.randomBytes(6).toString('hex')}${EXT[file.mimetype] || ''}`;
+
+  // Serverless hosts (Netlify Functions) have no lasting disk: keep the file in Netlify Blobs instead.
   if (process.env.UPLOADS_READONLY) {
-    throw ApiError.badRequest('Photo uploads on the live site need Cloudinary. Add the CLOUDINARY_* keys in your hosting settings.');
+    const key = `${subfolder}/${name}`;
+    await (await blobStore()).set(key, file.buffer, { metadata: { type: file.mimetype } });
+    return { url: `/uploads/blob/${key}`, publicId: `blob:${key}` };
   }
   const dir = path.join(UPLOAD_DIR, subfolder);
   await fs.mkdir(dir, { recursive: true });
-  const name = `${Date.now()}-${crypto.randomBytes(6).toString('hex')}${EXT[file.mimetype] || ''}`;
   await fs.writeFile(path.join(dir, name), file.buffer);
   // Relative URL: the client serves /uploads through the same origin (Vite proxy in dev).
   return { url: `/uploads/${subfolder}/${name}`, publicId: `local:${subfolder}/${name}` };
+}
+
+/** Netlify Blobs store for uploads on the live site (loaded only there). */
+async function blobStore() {
+  const { getStore } = await import('@netlify/blobs');
+  // Default (eventual) consistency: every upload gets a new unique key, so a stale read can't happen.
+  return getStore('uploads');
+}
+
+/** Reads a file saved by uploadFile in Netlify Blobs: { data: ArrayBuffer, type } or null. */
+export async function readBlob(key) {
+  if (!/^[\w-]+\/[\w.-]+$/.test(key)) return null;
+  const res = await (await blobStore()).getWithMetadata(key, { type: 'arrayBuffer' });
+  return res ? { data: res.data, type: res.metadata?.type || 'application/octet-stream' } : null;
 }
 
 export async function uploadMany(files = [], subfolder) {
@@ -70,6 +87,8 @@ export async function deleteFile(publicId) {
       const rel = publicId.slice(6);
       const target = path.resolve(UPLOAD_DIR, rel);
       if (target.startsWith(UPLOAD_DIR)) await fs.unlink(target);
+    } else if (publicId.startsWith('blob:')) {
+      await (await blobStore()).delete(publicId.slice(5));
     } else if (env.cloudinary.enabled) {
       await cloudinary.uploader.destroy(publicId);
     }

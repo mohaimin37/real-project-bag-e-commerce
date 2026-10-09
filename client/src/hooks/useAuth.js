@@ -27,8 +27,10 @@ export function useAuthActions() {
     }
   }
 
-  async function afterAuth(user) {
-    dispatch(setUser(user));
+  async function afterAuth(res) {
+    const user = res?.user || res;
+    const token = res?.token;
+    dispatch(setUser({ user, token }));
     await mergeGuestData();
     qc.invalidateQueries({ queryKey: ['cart'] });
     qc.invalidateQueries({ queryKey: ['wishlist'] });
@@ -36,17 +38,18 @@ export function useAuthActions() {
   }
 
   return {
-    login: async (values) => afterAuth((await api.login(values)).user),
+    login: async (values) => afterAuth(await api.login(values)),
     // Admin sessions skip the guest bag/wishlist merge.
     adminLogin: async (values) => {
-      const { user } = await api.adminLogin(values);
-      dispatch(setUser(user));
+      const res = await api.adminLogin(values);
+      dispatch(setUser({ user: res.user, token: res.token }));
       qc.removeQueries({ queryKey: ['cart'] });
       qc.removeQueries({ queryKey: ['wishlist'] });
-      return user;
+      return res.user;
     },
-    register: async (values) => afterAuth((await api.register(values)).user),
-    resetPassword: async (values) => afterAuth((await api.resetPassword(values)).user),
+    register: async (values) => afterAuth(await api.register(values)),
+    resetPasswordOtp: async (values) => afterAuth(await api.resetPasswordOtp(values)),
+    resetPassword: async (values) => afterAuth(await api.resetPassword(values)),
     logout: async () => {
       await api.logout().catch(() => {});
       dispatch(clearUser());

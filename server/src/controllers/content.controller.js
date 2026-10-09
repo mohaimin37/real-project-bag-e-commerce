@@ -2,6 +2,7 @@ import Blog from '../models/Blog.js';
 import Banner from '../models/Banner.js';
 import LiveUpdate from '../models/LiveUpdate.js';
 import Setting from '../models/Setting.js';
+import { loyaltyRules } from '../services/coin.service.js';
 import ApiError from '../utils/ApiError.js';
 import asyncHandler from '../utils/asyncHandler.js';
 import { escapeRegex, paginated, parsePagination } from '../utils/helpers.js';
@@ -185,6 +186,14 @@ export const publicConfig = asyncHandler(async (req, res) => {
       storeName: s.storeName,
       supportEmail: s.supportEmail,
       supportPhone: s.supportPhone,
+      businessAddress: s.businessAddress, // public business details for the policy pages (also printed on bills)
+      supportHours: s.supportHours,
+      grievanceOfficer: {
+        name: s.grievanceOfficer?.name || '',
+        designation: s.grievanceOfficer?.designation || 'Grievance Officer',
+        email: s.grievanceOfficer?.email || s.supportEmail,
+        phone: s.grievanceOfficer?.phone || '',
+      },
       announcement: s.announcement,
       baseCurrency: s.baseCurrency,
       currencies: s.currencies,
@@ -192,9 +201,15 @@ export const publicConfig = asyncHandler(async (req, res) => {
       taxLabel: s.taxLabel,
       pricesIncludeTax: s.pricesIncludeTax,
       freeShippingThreshold: s.freeShippingThreshold,
+      loyalty: loyaltyRules(s),
       shippingMethods: s.shippingMethods,
       paymentMethods: listPaymentMethods(s, 0),
       social: s.social,
+      appearance: {
+        defaultTheme: s.appearance?.defaultTheme || 'default',
+        defaultMode: s.appearance?.defaultMode || 'dark',
+        enabledThemes: s.appearance?.enabledThemes?.length ? s.appearance.enabledThemes : undefined,
+      },
     },
   });
 });

@@ -49,8 +49,9 @@ export async function buildProductFilter(query, { admin = false } = {}) {
     filter.subcategory = { $in: await resolveCategoryIds(query.subcategory) };
   }
 
-  const genders = toList(query.gender);
-  if (genders.length) filter.gender = { $in: genders.includes('women') ? [...genders, 'unisex'] : genders };
+  // Exact audience: /men → men, /women → women, /unisex → unisex (pieces made for everyone).
+  const genders = toList(query.gender).filter((g) => ['men', 'women', 'unisex'].includes(g));
+  if (genders.length) filter.gender = { $in: genders };
 
   const purposes = toList(query.purpose).map((p) => p.toLowerCase());
   if (purposes.length) filter.purposes = { $in: purposes };

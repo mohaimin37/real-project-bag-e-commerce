@@ -56,10 +56,15 @@ export function Img({ src, alt = '', className, imgClassName, w = 480, ...props 
           src={url}
           srcSet={srcSet}
           alt={alt}
-          loading="lazy"
+          loading={props.loading || 'lazy'}
           decoding="async"
           onLoad={() => setState('loaded')}
           onError={() => setState('error')}
+          ref={(node) => {
+            if (node && node.complete && node.naturalWidth > 0 && status.value !== 'loaded') {
+              setState('loaded');
+            }
+          }}
           className={cn('w-full h-full object-cover transition-opacity duration-300', state === 'loaded' ? 'opacity-100' : 'opacity-0', imgClassName)}
           {...props}
         />
@@ -126,7 +131,7 @@ export const CountrySelect = forwardRef(function CountrySelect({ placeholder = '
 export function PhoneInput({ dialProps, numberProps, error }) {
   return (
     <div className="flex gap-2">
-      <div className="relative w-36 shrink-0">
+      <div className="relative w-28 sm:w-36 shrink-0">
         <select className={cn('input appearance-none pr-8 cursor-pointer', error && 'input-error')} aria-label="Dialling code" {...dialProps}>
           {sortedForPicker(DIAL_CODES).map((c) => (
             <option key={c.dial} value={c.dial}>
@@ -136,7 +141,7 @@ export function PhoneInput({ dialProps, numberProps, error }) {
         </select>
         <Icon name="expand_more" className="absolute right-2 top-1/2 -translate-y-1/2 text-outline pointer-events-none text-[18px]" />
       </div>
-      <input type="tel" inputMode="tel" autoComplete="tel-national" placeholder="98765 43210" className={cn('input', error && 'input-error')} {...numberProps} />
+      <input type="tel" inputMode="tel" autoComplete="tel-national" placeholder="98765 43210" className={cn('input min-w-0', error && 'input-error')} {...numberProps} />
     </div>
   );
 }
@@ -273,12 +278,12 @@ export function Modal({ open, onClose, title, children, size = 'md', className, 
   const widths = { sm: 'max-w-md', md: 'max-w-xl', lg: 'max-w-3xl', xl: 'max-w-5xl' };
   return createPortal(
     <div className="fixed inset-0 z-[80] flex items-end sm:items-center justify-center p-0 sm:p-space-md">
-      <div className="absolute inset-0 bg-primary-container/60 backdrop-blur-sm animate-fade-in" onClick={onClose} />
+      <div className="absolute inset-0 bg-black/45 animate-fade-in" onClick={onClose} />
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby={title ? titleId : undefined}
-        className={cn('relative w-full bg-surface-container-lowest rounded-t-2xl sm:rounded-2xl shadow-lift animate-pop-in max-h-[92vh] overflow-y-auto', widths[size], className)}
+        className={cn('relative w-full bg-surface-container-lowest rounded-t-2xl sm:rounded-2xl shadow-lift animate-pop-in max-h-[calc(92vh/var(--zoom,1))] overflow-y-auto', widths[size], className)}
       >
         {(title || !hideClose) && (
           <div className="sticky top-0 z-10 flex items-center justify-between gap-4 px-space-lg py-space-md bg-surface-container-lowest/95 backdrop-blur">
@@ -309,7 +314,7 @@ export function Drawer({ open, onClose, side = 'right', title, children, footer,
   if (!open) return null;
   return createPortal(
     <div className="fixed inset-0 z-[70]">
-      <div className="absolute inset-0 bg-primary-container/50 backdrop-blur-sm animate-fade-in" onClick={onClose} />
+      <div className="absolute inset-0 bg-black/40 animate-fade-in" onClick={onClose} />
       <aside
         role="dialog"
         aria-modal="true"
@@ -320,14 +325,14 @@ export function Drawer({ open, onClose, side = 'right', title, children, footer,
           side === 'right' ? 'right-0 animate-slide-in-right' : 'left-0 animate-slide-in-left'
         )}
       >
-        <div className="flex items-center justify-between px-space-lg h-16 shrink-0 border-b border-surface-container-high">
+        <div className="flex items-center justify-between px-5 h-14 shrink-0 border-b border-surface-container-high">
           <div className="text-headline-sm flex items-center gap-2">{title}</div>
           <button type="button" onClick={onClose} className="btn-icon" aria-label="Close">
             <Icon name="close" />
           </button>
         </div>
         <div className="flex-1 overflow-y-auto">{children}</div>
-        {footer && <div className="shrink-0 border-t border-surface-container-high p-space-lg bg-surface-container-lowest">{footer}</div>}
+        {footer && <div className="shrink-0 border-t border-surface-container-high px-5 py-3 pb-safe bg-surface-container-lowest">{footer}</div>}
       </aside>
     </div>,
     document.body
@@ -440,13 +445,14 @@ export function Breadcrumbs({ items }) {
   );
 }
 
-export function Toggle({ checked, onChange, label, disabled }) {
+export function Toggle({ checked, onChange, label, disabled, ariaLabel }) {
   return (
     <label className={cn('inline-flex items-center gap-2 cursor-pointer select-none', disabled && 'opacity-50 cursor-not-allowed')}>
       <button
         type="button"
         role="switch"
         aria-checked={checked}
+        aria-label={ariaLabel}
         disabled={disabled}
         onClick={() => onChange(!checked)}
         className={cn('relative w-10 h-6 rounded-full transition-colors', checked ? 'bg-secondary' : 'bg-surface-container-highest')}

@@ -25,6 +25,13 @@
   status = 200
   force = true
 
+# Photos uploaded on the live site are kept in Netlify Blobs and served by the function.
+[[redirects]]
+  from = "/uploads/blob/*"
+  to = "/.netlify/functions/api/uploads/blob/:splat"
+  status = 200
+  force = true
+
 [[redirects]]
   from = "/sitemap.xml"
   to = "/.netlify/functions/api/sitemap.xml"

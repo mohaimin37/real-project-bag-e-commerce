@@ -69,9 +69,11 @@ export default function OrderSuccess() {
           <div className="flex flex-col gap-1 text-body-sm">
             <div className="flex justify-between"><span className="text-on-surface-variant">Subtotal</span><span>{money(o.subtotal)}</span></div>
             {o.discount > 0 && <div className="flex justify-between text-secondary"><span>Discount {o.coupon?.code && `(${o.coupon.code})`}</span><span>−{money(o.discount)}</span></div>}
+            {o.coinDiscount > 0 && <div className="flex justify-between text-success"><span>Coins used ({o.coinsRedeemed})</span><span>−{money(o.coinDiscount)}</span></div>}
             <div className="flex justify-between"><span className="text-on-surface-variant">Shipping</span><span>{o.shipping ? money(o.shipping) : 'Free'}</span></div>
             <div className="flex justify-between"><span className="text-on-surface-variant">Tax</span><span>{money(o.tax)}</span></div>
             <div className="flex justify-between text-headline-sm pt-1"><span>Total</span><span>{money(o.grandTotal)}</span></div>
+            {o.coinsEarned > 0 && <p className="mt-1 text-[12px] px-2.5 py-2 rounded-lg bg-[#c08a2e]/10 text-on-surface">{o.orderStatus === 'Cancelled' || o.orderStatus === 'Returned' ? `The ${o.coinsEarned} coins from this order were removed.` : <>This order earned you <b>{o.coinsEarned} WILDTANE Coins</b> — use them on your next order.</>}</p>}
           </div>
         </div>
         <div className="flex flex-col gap-2">

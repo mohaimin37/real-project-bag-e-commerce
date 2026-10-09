@@ -3,8 +3,13 @@ import Order from '../models/Order.js';
 import Product from '../models/Product.js';
 import User from '../models/User.js';
 import Review from '../models/Review.js';
+import Comment from '../models/Comment.js';
 import Notification from '../models/Notification.js';
-import { CorporateEnquiry, ContactEnquiry } from '../models/Enquiry.js';
+import { CorporateEnquiry, ContactEnquiry, Subscriber } from '../models/Enquiry.js';
+import Wishlist from '../models/Wishlist.js';
+import Cart from '../models/Cart.js';
+import CoinTransaction from '../models/CoinTransaction.js';
+import { moveCoins } from '../services/coin.service.js';
 import ApiError from '../utils/ApiError.js';
 import asyncHandler from '../utils/asyncHandler.js';
 import { escapeRegex, paginated, parsePagination, round2 } from '../utils/helpers.js';
@@ -78,6 +83,8 @@ export const dashboard = asyncHandler(async (req, res) => {
       Promise.all([
         CorporateEnquiry.countDocuments({ status: 'new' }),
         ContactEnquiry.countDocuments({ status: 'new' }),
+        Review.countDocuments({ status: 'pending' }),
+        Comment.countDocuments({ status: 'pending' }),
       ]),
       Notification.countDocuments({ status: 'failed' }),
       Promise.all([Product.countDocuments(), User.countDocuments({ role: 'customer' }), Order.countDocuments(), Review.countDocuments()]),
@@ -113,6 +120,8 @@ export const dashboard = asyncHandler(async (req, res) => {
       pendingOrders: pending,
       newCorporate: enquiries[0],
       newContact: enquiries[1],
+      pendingReviews: enquiries[2],
+      pendingComments: enquiries[3],
       failedNotifications: notifFailures,
       whatsappConfigured: env.whatsapp.enabled,
       cloudinaryConfigured: env.cloudinary.enabled,
@@ -205,12 +214,173 @@ export const getCustomer = asyncHandler(async (req, res) => {
   if (!mongoose.isValidObjectId(req.params.id)) throw ApiError.badRequest('Invalid id');
   const user = await User.findById(req.params.id);
   if (!user) throw ApiError.notFound('Customer not found');
-  const [orders, reviews] = await Promise.all([
+  const [orders, reviews, coinHistory] = await Promise.all([
     Order.find({ user: user._id }).sort({ createdAt: -1 }).limit(20).select('orderId grandTotal orderStatus paymentStatus createdAt'),
     Review.find({ user: user._id }).populate('product', 'name slug').sort({ createdAt: -1 }).limit(10),
+    CoinTransaction.find({ user: user._id }).sort({ createdAt: -1 }).limit(30).populate('by', 'name').lean(),
   ]);
   const spent = orders.filter((o) => !['Cancelled', 'Returned'].includes(o.orderStatus)).reduce((s, o) => s + o.grandTotal, 0);
-  res.json({ success: true, customer: user, orders, reviews, stats: { orders: orders.length, spent: round2(spent) } });
+  res.json({ success: true, customer: user, orders, reviews, coinHistory, stats: { orders: orders.length, spent: round2(spent) } });
+});
+
+/**
+ * Customer board: one card per person with everything they have given or done —
+ * profile, orders, messages (contact + corporate), reviews, wishlist, cart, newsletter
+ * and a short activity timeline. People who messaged without an account come back as guests.
+ * Sorted by most recent activity. Built for small/medium stores (up to 1,000 accounts scanned).
+ */
+export const customerBoard = asyncHandler(async (req, res) => {
+  const { page, limit } = parsePagination(req.query, { defaultLimit: 24, maxLimit: 60 });
+  const filter = { role: 'customer' };
+  if (req.query.q) {
+    const rx = new RegExp(escapeRegex(String(req.query.q).slice(0, 60)), 'i');
+    filter.$or = [{ name: rx }, { email: rx }, { 'phone.number': rx }];
+  }
+  const users = await User.find(filter)
+    .select('name email phone country avatar isActive createdAt lastLoginAt addresses recentlyViewed coins')
+    .sort({ createdAt: -1 })
+    .limit(1000)
+    .lean();
+  const ids = users.map((u) => u._id);
+  const emails = users.map((u) => u.email);
+  const msgFilter = (extra = {}) => ({ $or: [{ user: { $in: ids } }, { email: { $in: emails } }], ...extra });
+
+  const [orders, contacts, corporate, reviews, wishlists, carts, subs] = await Promise.all([
+    Order.find({ user: { $in: ids } }).select('user orderId grandTotal orderStatus createdAt items').sort({ createdAt: -1 }).lean(),
+    ContactEnquiry.find(msgFilter()).select('user email name subject message status createdAt orderId').sort({ createdAt: -1 }).lean(),
+    CorporateEnquiry.find(msgFilter()).select('user email company productType quantity message status createdAt').sort({ createdAt: -1 }).lean(),
+    Review.find({ user: { $in: ids } }).select('user product rating title comment status createdAt').populate('product', 'name slug').sort({ createdAt: -1 }).lean(),
+    Wishlist.find({ user: { $in: ids } }).select('user products').lean(),
+    Cart.find({ user: { $in: ids } }).select('user items updatedAt').populate('items.product', 'name finalPrice').lean(),
+    Subscriber.find({ email: { $in: emails } }).select('email createdAt').lean(),
+  ]);
+
+  const group = (rows, keyOf) => rows.reduce((m, r) => m.set(keyOf(r), [...(m.get(keyOf(r)) || []), r]), new Map());
+  const byUser = (rows) => group(rows, (r) => String(r.user));
+  const emailToId = new Map(users.map((u) => [u.email, String(u._id)]));
+  const msgOwner = (m) => (m.user ? String(m.user) : emailToId.get(m.email));
+  const ordersBy = byUser(orders);
+  const reviewsBy = byUser(reviews);
+  const contactsBy = group(contacts, msgOwner);
+  const corporateBy = group(corporate, msgOwner);
+  const wishBy = new Map(wishlists.map((w) => [String(w.user), w.products.length]));
+  const cartBy = new Map(carts.map((c) => [String(c.user), c]));
+  const subscribed = new Map(subs.map((s) => [s.email, s.createdAt]));
+  const OPEN = ['new', 'read'];
+  const PAID_OUT = ['Cancelled', 'Returned'];
+
+  let cards = users.map((u) => {
+    const id = String(u._id);
+    const o = ordersBy.get(id) || [];
+    const msgs = [
+      ...(contactsBy.get(id) || []).map((m) => ({ _id: m._id, kind: 'contact', title: m.subject, text: m.message, status: m.status, at: m.createdAt, orderId: m.orderId || '' })),
+      ...(corporateBy.get(id) || []).map((m) => ({ _id: m._id, kind: 'corporate', title: `${m.company} · ${m.quantity} × ${m.productType}`, text: m.message, status: m.status, at: m.createdAt })),
+    ].sort((a, b) => new Date(b.at) - new Date(a.at));
+    const r = reviewsBy.get(id) || [];
+    const cart = cartBy.get(id);
+    const cartItems = (cart?.items || []).filter((i) => i.product);
+    const cartUnits = cartItems.reduce((s, i) => s + i.quantity, 0);
+    const def = u.addresses?.find((a) => a.isDefault) || u.addresses?.[0];
+    const activity = [
+      { type: 'joined', text: 'Created an account', at: u.createdAt },
+      ...(u.lastLoginAt ? [{ type: 'login', text: 'Signed in', at: u.lastLoginAt }] : []),
+      ...o.slice(0, 3).map((x) => ({ type: 'order', text: `Ordered ${x.orderId} · ${x.orderStatus}`, at: x.createdAt })),
+      ...msgs.slice(0, 3).map((m) => ({ type: 'message', text: `${m.kind === 'corporate' ? 'Bulk enquiry' : 'Message'}: ${m.title}`, at: m.at })),
+      ...r.slice(0, 2).map((x) => ({ type: 'review', text: `Reviewed ${x.product?.name || 'a product'} · ${x.rating}★`, at: x.createdAt })),
+      ...(cart?.updatedAt && cartUnits ? [{ type: 'cart', text: `Bag updated (${cartUnits} item${cartUnits === 1 ? '' : 's'})`, at: cart.updatedAt }] : []),
+    ].sort((a, b) => new Date(b.at) - new Date(a.at));
+    const valid = o.filter((x) => !PAID_OUT.includes(x.orderStatus));
+    return {
+      _id: id,
+      name: u.name,
+      email: u.email,
+      phone: u.phone?.number ? `${u.phone.dialCode} ${u.phone.number}` : '',
+      country: u.country,
+      avatar: u.avatar?.url || '',
+      isActive: u.isActive,
+      createdAt: u.createdAt,
+      lastLoginAt: u.lastLoginAt || null,
+      address: def ? { city: def.city, state: def.state, postalCode: def.postalCode, country: def.country } : null,
+      addressCount: u.addresses?.length || 0,
+      orders: {
+        count: o.length,
+        spent: round2(valid.reduce((s, x) => s + x.grandTotal, 0)),
+        open: o.filter((x) => !['Delivered', ...PAID_OUT].includes(x.orderStatus)).length,
+        latest: o[0] ? { orderId: o[0].orderId, status: o[0].orderStatus, total: o[0].grandTotal, at: o[0].createdAt, items: o[0].items?.length || 0 } : null,
+      },
+      messages: { count: msgs.length, unread: msgs.filter((m) => m.status === 'new').length, open: msgs.filter((m) => OPEN.includes(m.status)).length, latest: msgs.slice(0, 2) },
+      reviews: { count: r.length, latest: r[0] ? { rating: r[0].rating, product: r[0].product?.name || '', slug: r[0].product?.slug || '', text: r[0].comment, status: r[0].status } : null },
+      wishlist: wishBy.get(id) || 0,
+      coins: u.coins || 0,
+      cart: { items: cartUnits, value: round2(cartItems.reduce((s, i) => s + i.quantity * (i.product.finalPrice || 0), 0)), names: cartItems.slice(0, 3).map((i) => i.product.name) },
+      viewed: u.recentlyViewed?.length || 0,
+      subscribedAt: subscribed.get(u.email) || null,
+      activity: activity.slice(0, 5),
+      lastActive: activity[0]?.at || u.createdAt,
+    };
+  });
+
+  const show = req.query.show;
+  if (show === 'unread') cards = cards.filter((c) => c.messages.unread > 0);
+  if (show === 'orders') cards = cards.filter((c) => c.orders.count > 0);
+  if (show === 'open-orders') cards = cards.filter((c) => c.orders.open > 0);
+  if (show === 'cart') cards = cards.filter((c) => c.cart.items > 0 && c.orders.open === 0);
+  if (show === 'blocked') cards = cards.filter((c) => !c.isActive);
+  cards.sort((a, b) => b.messages.unread - a.messages.unread || new Date(b.lastActive) - new Date(a.lastActive));
+
+  // Guests: messages from emails that don't belong to an account.
+  const known = new Set(emails);
+  const guestFilter = { user: null, email: { $nin: [...known] } };
+  if (req.query.q) {
+    const rx = new RegExp(escapeRegex(String(req.query.q).slice(0, 60)), 'i');
+    guestFilter.$or = [{ email: rx }, { name: rx }, { contactPerson: rx }];
+  }
+  const [gContacts, gCorporate] = await Promise.all([
+    ContactEnquiry.find(guestFilter).select('email name phone subject message status createdAt').sort({ createdAt: -1 }).limit(300).lean(),
+    CorporateEnquiry.find({ ...guestFilter, ...(guestFilter.$or ? { $or: guestFilter.$or.filter((c) => !('name' in c)) } : {}) })
+      .select('email contactPerson phone company productType quantity message status createdAt')
+      .sort({ createdAt: -1 })
+      .limit(300)
+      .lean(),
+  ]);
+  const guestMap = new Map();
+  const addGuest = (email, name, phone, msg) => {
+    const g = guestMap.get(email) || { email, name, phone, messages: [] };
+    g.name ||= name;
+    g.phone ||= phone;
+    g.messages.push(msg);
+    guestMap.set(email, g);
+  };
+  gContacts.forEach((m) => addGuest(m.email, m.name, m.phone, { _id: m._id, kind: 'contact', title: m.subject, text: m.message, status: m.status, at: m.createdAt }));
+  gCorporate.forEach((m) => addGuest(m.email, m.contactPerson, m.phone, { _id: m._id, kind: 'corporate', title: `${m.company} · ${m.quantity} × ${m.productType}`, text: m.message, status: m.status, at: m.createdAt }));
+  let guests = [...guestMap.values()].map((g) => {
+    const msgs = g.messages.sort((a, b) => new Date(b.at) - new Date(a.at));
+    return { ...g, messages: { count: msgs.length, unread: msgs.filter((m) => m.status === 'new').length, latest: msgs.slice(0, 2) }, lastActive: msgs[0].at };
+  });
+  if (show === 'unread') guests = guests.filter((g) => g.messages.unread > 0);
+  if (['orders', 'open-orders', 'cart', 'blocked'].includes(show)) guests = [];
+  guests.sort((a, b) => b.messages.unread - a.messages.unread || new Date(b.lastActive) - new Date(a.lastActive));
+
+  const summary = {
+    customers: users.length,
+    unreadMessages: cards.reduce((s, c) => s + c.messages.unread, 0) + guests.reduce((s, g) => s + g.messages.unread, 0),
+    openOrders: cards.reduce((s, c) => s + c.orders.open, 0),
+    abandonedCarts: cards.filter((c) => c.cart.items > 0 && c.orders.open === 0).length,
+    guests: guests.length,
+  };
+  const start = (page - 1) * limit;
+  res.json({ success: true, summary, guests: page === 1 ? guests.slice(0, 30) : [], ...paginated(cards.slice(start, start + limit), cards.length, page, limit) });
+});
+
+/** Admin gives (+) or takes back (−) loyalty coins; the reason shows in the customer's coin history. */
+export const adjustCustomerCoins = asyncHandler(async (req, res) => {
+  if (!mongoose.isValidObjectId(req.params.id)) throw ApiError.badRequest('Invalid id');
+  const user = await User.findById(req.params.id).select('coins');
+  if (!user) throw ApiError.notFound('Customer not found');
+  const { coins, note } = req.body;
+  if (coins < 0 && user.coins < -coins) throw ApiError.badRequest(`They only have ${user.coins} coins`, [{ field: 'coins', message: `Max ${user.coins}` }]);
+  const tx = await moveCoins(user._id, coins, { type: 'adjusted', note, by: req.user._id });
+  res.json({ success: true, balance: tx.balanceAfter, transaction: tx });
 });
 
 export const updateCustomer = asyncHandler(async (req, res) => {

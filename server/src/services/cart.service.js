@@ -1,6 +1,8 @@
 import Cart from '../models/Cart.js';
 import Product from '../models/Product.js';
 import Setting from '../models/Setting.js';
+import User from '../models/User.js';
+import { coinsFor, loyaltyRules } from './coin.service.js';
 import { round2 } from '../utils/helpers.js';
 import { computeDiscount, validateCoupon } from './coupon.service.js';
 import { findVariant, variantImage } from './product.service.js';
@@ -49,8 +51,11 @@ export async function resolveLines(rawItems) {
   });
 }
 
-/** Totals for a set of resolved lines. Pure apart from coupon lookup. */
-export async function computeTotals(lines, { userId, couponCode, shippingCode, settings, strictCoupon = false }) {
+/**
+ * Totals for a set of resolved lines. Pure apart from coupon lookup.
+ * coinBalance + useCoins: loyalty coins the shopper has and whether to spend them on this order.
+ */
+export async function computeTotals(lines, { userId, couponCode, shippingCode, settings, strictCoupon = false, coinBalance = 0, useCoins = false }) {
   const s = settings || (await Setting.get());
   const billable = lines.filter((l) => l.available && !l.issue);
   const subtotal = round2(billable.reduce((sum, l) => sum + l.lineTotal, 0));
@@ -78,9 +83,17 @@ export async function computeTotals(lines, { userId, couponCode, shippingCode, s
   const method = methods.find((m) => m.code === shippingCode) || methods[0];
   const shipping = subtotal > 0 ? method.price : 0;
 
+  // Loyalty coins work like a discount on the items (never on shipping), up to the store's limit.
+  const rules = loyaltyRules(s);
+  const maxCoins = rules.enabled ? Math.floor((afterDiscount * rules.maxRedeemPercent) / 100 / rules.rupeesPerCoin) : 0;
+  const usableCoins = Math.max(0, Math.min(Math.floor(coinBalance), maxCoins));
+  const coinsUsed = useCoins ? usableCoins : 0;
+  const coinDiscount = round2(coinsUsed * rules.rupeesPerCoin);
+  const itemsPayable = round2(afterDiscount - coinDiscount);
+
   const rate = s.taxRate / 100;
-  const tax = s.pricesIncludeTax ? round2(afterDiscount - afterDiscount / (1 + rate)) : round2(afterDiscount * rate);
-  const grandTotal = round2(afterDiscount + shipping + (s.pricesIncludeTax ? 0 : tax));
+  const tax = s.pricesIncludeTax ? round2(itemsPayable - itemsPayable / (1 + rate)) : round2(itemsPayable * rate);
+  const grandTotal = round2(itemsPayable + shipping + (s.pricesIncludeTax ? 0 : tax));
 
   return {
     itemCount,
@@ -93,6 +106,17 @@ export async function computeTotals(lines, { userId, couponCode, shippingCode, s
     grandTotal,
     coupon,
     couponError,
+    coins: {
+      enabled: rules.enabled,
+      balance: Math.floor(coinBalance),
+      usable: usableCoins, // how many could be spent on this order
+      used: coinsUsed,
+      discount: coinDiscount,
+      willEarn: coinsFor(itemsPayable, rules),
+      rupeesPerCoin: rules.rupeesPerCoin,
+      coinsPer100: rules.coinsPer100,
+      maxRedeemPercent: rules.maxRedeemPercent,
+    },
     shippingMethod: method,
     shippingMethods: methods,
     freeShippingThreshold: s.freeShippingThreshold,
@@ -102,7 +126,7 @@ export async function computeTotals(lines, { userId, couponCode, shippingCode, s
 }
 
 export async function buildCartResponse(cart, userId) {
-  const lines = await resolveLines(cart.items);
-  const summary = await computeTotals(lines, { userId, couponCode: cart.couponCode, shippingCode: cart.shippingMethod });
-  return { _id: cart._id, items: lines, couponCode: cart.couponCode, shippingMethod: cart.shippingMethod, summary };
+  const [lines, user] = await Promise.all([resolveLines(cart.items), userId ? User.findById(userId).select('coins').lean() : null]);
+  const summary = await computeTotals(lines, { userId, couponCode: cart.couponCode, shippingCode: cart.shippingMethod, coinBalance: user?.coins || 0, useCoins: cart.useCoins });
+  return { _id: cart._id, items: lines, couponCode: cart.couponCode, shippingMethod: cart.shippingMethod, useCoins: Boolean(cart.useCoins), summary };
 }

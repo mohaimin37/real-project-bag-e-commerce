@@ -13,7 +13,7 @@ export function FreeShippingMeter({ summary }) {
   return (
     <div className="flex flex-col gap-1.5">
       <div className="flex items-center justify-between text-label-sm">
-        <span className="font-semibold">{unlocked ? 'Carbon-neutral shipping' : `Add ${money(summary.amountToFreeShipping)} for free shipping`}</span>
+        <span className="font-semibold">{unlocked ? 'Free shipping unlocked' :`Add ${money(summary.amountToFreeShipping)} for free shipping`}</span>
         <span className={unlocked ? 'text-secondary' : 'text-outline'}>{unlocked ? 'UNLOCKED' : `${Math.round(pct)}%`}</span>
       </div>
       <div className="w-full h-1.5 rounded-full bg-surface-container-highest overflow-hidden">
@@ -91,7 +91,7 @@ export default function CartDrawer() {
               <span className="text-price-xl">{money(summary?.subtotal)}</span>
             </div>
             <p className="text-label-sm font-normal text-outline">
-              {summary?.taxIncluded ? `Prices include ${summary.taxLabel}. ` : ''}Shipping and coupons calculated at checkout. Lifetime repair warranty included.
+              {summary?.taxIncluded ? `Prices include ${summary.taxLabel}. ` : ''}Shipping and coupons calculated at checkout.
             </p>
             <Button className="w-full h-12" disabled={hasIssues} onClick={() => goto('/checkout')} iconRight="arrow_forward">
               Proceed to Secure Checkout

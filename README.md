@@ -40,11 +40,20 @@ See `server/.env.example` for every variable with comments.
 | `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `ADMIN_NAME` | seed | First admin account |
 | `CLOUDINARY_*` | no | Image storage. Blank → files saved to `server/uploads` |
 | `WHATSAPP_ACCESS_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, `ADMIN_WHATSAPP_NUMBER` | no | New-order alerts. Blank → message logged to the server console |
-| `SMTP_*`, `MAIL_FROM` | no | Password-reset emails. Blank → reset link printed to the console |
+| `SMTP_*`, `MAIL_FROM` | no | Password-reset and order emails. Blank → printed to the console (development also shows the reset link on the page). Check with `npm run test:email` |
 
 Secrets live only on the server. The client never receives API keys.
 
 ## How key flows work
+
+
+**Reviews.** Only customers with a *Delivered* order containing the product can review it; the server links the order and sets the Verified Buyer flag. New and edited reviews are `pending` until approved in **Admin → Reviews** (approve, reject, hide, delete). Only approved reviews are public and count towards ratings. Switch on **Show on homepage** for approved verified reviews to feature them in "What our customers say" (`GET /api/reviews/featured`, first name + last initial only).
+
+**Men / Women / Unisex.** `/men`, `/women` and `/unisex` each list only products with that *Audience* (`gender`). Set it in the product form, or in bulk from Admin → Quick edit → Set audience. A 7 Oct 2026 retag of 13 products is backed up in `server/src/seed/audience-backup-2026-10-07.json`.
+
+**Store claims.** On 7 Oct 2026 the unverified promises (lifetime repairs, carbon-neutral shipping, recycled/certified materials) were removed from the site. The Sustainability, Warranty and Compliance pages now redirect, and the database text that was changed is backed up in `server/src/seed/claims-backup-2026-10-07.json`.
+
+**Brand logo & policies.** Logo files in `client/public/brand/` and the favicons are generated from `brandlogo.jpeg` by `node scripts/brand-assets.mjs`. Policy text lives in `client/src/content/policies.js`; `[PLACEHOLDERS]` are highlighted on the pages until replaced.
 
 **Orders.** `POST /api/orders` re-prices the server cart, validates the coupon and payment method, then runs one MongoDB transaction that:
 1. decrements each variant's stock only if enough remains (so concurrent buyers can't oversell),

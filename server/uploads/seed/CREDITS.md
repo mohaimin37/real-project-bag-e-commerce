@@ -106,3 +106,55 @@ These seed photos are from Unsplash, used under the Unsplash License (free for c
 Replace these with your own product photography before launch.
 
 Files in `variants/` are colour variations generated from the photos above (bag cut out, then recoloured). Replace them with real photos of each colour when you have them.
+
+| catalog/passport-wanderlust-blush.jpg | https://unsplash.com/photos/KbtMWr6ysrw |
+| catalog/passport-wanderlust-sky.jpg | https://unsplash.com/photos/TAp9HueSlKQ |
+| catalog/passport-atlas.jpg | https://unsplash.com/photos/vKTxINZcvbE |
+| catalog/passport-heritage.jpg | https://unsplash.com/photos/tucWr6DLZn8 |
+| catalog/tag-navy.jpg | https://unsplash.com/photos/LORm00ZIuag |
+| catalog/tag-sky.jpg | https://unsplash.com/photos/SBdXPbXEwaI |
+| catalog/dopp-heritage-brown.jpg | https://unsplash.com/photos/d26iwbzYSKM |
+| catalog/dopp-heritage-black.jpg | https://unsplash.com/photos/xcGSvYOLcwE |
+| catalog/washbag-aqua.jpg | https://unsplash.com/photos/19O8XO4yfZU |
+| catalog/beltbag-cream.jpg | https://unsplash.com/photos/zgVwk8QZjI0 |
+| catalog/beltbag-red.jpg | https://unsplash.com/photos/kYQ2uqYm0aY |
+| catalog/beltbag-grey.jpg | https://unsplash.com/photos/VDEXsV6F4cw |
+| catalog/beltbag-holo.jpg | https://unsplash.com/photos/Yz8VScYQ3-I |
+| catalog/beltbag-magenta.jpg | https://unsplash.com/photos/9hx1l-iFSoQ |
+| catalog/beltbag-blue.jpg | https://unsplash.com/photos/WnkQ5j8Nrjs |
+| catalog/keyfob-black.jpg | https://unsplash.com/photos/fhKAEIZa9b4 |
+| catalog/keyfob-brown.jpg | https://unsplash.com/photos/V7iQ0hM4xCA |
+| catalog/keyset-onyx.jpg | https://unsplash.com/photos/6wQTt7tI_Qw |
+| catalog/zippouch-espresso.jpg | https://unsplash.com/photos/6YO98iqkKGA |
+| catalog/zippouch-tan.jpg | https://unsplash.com/photos/nfAbaVnE9cc |
+| catalog/zippouch-chocolate.jpg | https://unsplash.com/photos/D4126KY3M80 |
+| catalog/eyecase-white.jpg | https://unsplash.com/photos/x6BFZQ_2YEw |
+| catalog/eyecase-white-2.jpg | https://unsplash.com/photos/jym62KnsByQ |
+| catalog/eyesleeve-tan.jpg | https://unsplash.com/photos/Qbokpv3WIB0 |
+| catalog/eyesleeve-black.jpg | https://unsplash.com/photos/pt4yoY9Q-ew |
+| catalog/neckpillow-grey.jpg | https://unsplash.com/photos/9Iv6_QyjukI |
+| catalog/neckpillow-grey-2.jpg | https://unsplash.com/photos/365hT8h5pMQ |
+| catalog/bottle-lilac.jpg | https://unsplash.com/photos/e0omsarchd4 |
+| catalog/bottle-trio.jpg | https://unsplash.com/photos/6gLya_-tnP8 |
+| catalog/sleeve-saddle-tan.jpg | https://unsplash.com/photos/6dt0uGaTmoI |
+| catalog/sleeve-saddle-tan-2.jpg | https://unsplash.com/photos/k0CZkkuuqt0 |
+| catalog/sleeve-saddle-espresso.jpg | https://unsplash.com/photos/ZjWTjyBiiVA |
+| catalog/sleeve-saddle-cognac.jpg | https://unsplash.com/photos/8Z6srMPonq8 |
+| catalog/cardholder-tan.jpg | https://unsplash.com/photos/ZUzL86CQojw |
+| catalog/cardholder-black.jpg | https://unsplash.com/photos/GMx1KOIeRhs |
+| catalog/cardholder-red.jpg | https://unsplash.com/photos/HKw16a5yIEY |
+| catalog/bifold-tan.jpg | https://unsplash.com/photos/LBKDJI8Ernw |
+| catalog/bifold-brown.jpg | https://unsplash.com/photos/oIlix2slmsI |
+| catalog/weekender-heritage-cognac.jpg | https://unsplash.com/photos/M0g1sV4SEdo |
+| catalog/weekender-heritage-mustard.jpg | https://unsplash.com/photos/thIarMEfujc |
+| catalog/weekender-nylon-grey-2.jpg | https://unsplash.com/photos/xi0OWUlTfso |
+| catalog/travelpack-forest.jpg | https://unsplash.com/photos/O_bhy3TnSYU |
+| catalog/travelpack-olive.jpg | https://unsplash.com/photos/or5CCy0qrPQ |
+| catalog/trekpack-teal.jpg | https://unsplash.com/photos/9aZ3T1q83CM |
+| catalog/trekpack-sun.jpg | https://unsplash.com/photos/UVyOfX3v0Ls |
+| catalog/checkin-aurora-yellow.jpg | https://images.unsplash.com/photo-1770199105507-2af7f77a6ee0 |
+| catalog/checkin-aurora-black.jpg | https://unsplash.com/photos/GtsIq_mGwFI |
+| catalog/luggage-ivory-trio.jpg | https://unsplash.com/photos/nGz8rTToXto |
+| catalog/cabin-emerald.jpg | https://unsplash.com/photos/oXk-03LEFsk |
+| catalog/cabin-emerald-teal.jpg | https://unsplash.com/photos/-ZUHytrj4Ic |
+| catalog/cubes-navy-2.jpg | https://unsplash.com/photos/HejqYjjWGOs |

@@ -8,16 +8,22 @@ import asyncHandler from '../utils/asyncHandler.js';
 const STATIC_PAGES = [
   ['/', 'daily', '1.0'],
   ['/shop', 'daily', '0.9'],
+  ['/men', 'daily', '0.9'],
+  ['/women', 'daily', '0.9'],
+  ['/unisex', 'daily', '0.9'],
   ['/offers', 'daily', '0.8'],
   ['/blog', 'weekly', '0.7'],
+  ['/about', 'monthly', '0.6'],
   ['/corporate', 'monthly', '0.6'],
-  ['/sustainability', 'monthly', '0.5'],
   ['/contact', 'monthly', '0.5'],
-  ['/pages/shipping', 'yearly', '0.3'],
-  ['/pages/returns', 'yearly', '0.3'],
-  ['/pages/warranty', 'yearly', '0.3'],
-  ['/pages/privacy', 'yearly', '0.2'],
-  ['/pages/terms', 'yearly', '0.2'],
+  ['/help', 'monthly', '0.5'],
+  ['/faq', 'monthly', '0.5'],
+  ['/policies', 'yearly', '0.3'],
+  ['/csr-policy', 'yearly', '0.3'],
+  ['/return-policy', 'yearly', '0.3'],
+  ['/shipping-policy', 'yearly', '0.3'],
+  ['/privacy-policy', 'yearly', '0.2'],
+  ['/terms-and-conditions', 'yearly', '0.2'],
 ];
 
 const xmlEscape = (s) => String(s).replace(/[<>&'"]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', "'": '&apos;', '"': '&quot;' })[c]);

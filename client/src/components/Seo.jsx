@@ -5,7 +5,7 @@ import { imgUrl } from '../lib/format';
 export const SITE_NAME = 'WILDTANE';
 export const SITE_URL = (import.meta.env.VITE_SITE_URL || (typeof window !== 'undefined' ? window.location.origin : '')).replace(/\/$/, '');
 const DEFAULT_DESCRIPTION =
-  'WILDTANE designs architectural bags, laptop backpacks, leather totes and travel duffles — waterproof, recycled and backed by a lifetime repair guarantee. Free carbon-neutral shipping across India.';
+  'WILDTANE designs modern bags, laptop backpacks, leather handbags, totes and travel duffles for men, women and everyone. Tracked delivery across India and 7-day returns.';
 const DEFAULT_IMAGE = '/uploads/seed/hero-traveler.jpg';
 
 export const absUrl = (u) => {

@@ -273,6 +273,7 @@ function Invoice({ order: o, settings: st }) {
           <tbody>
             <tr><td className="py-0.5">Subtotal</td><td className="py-0.5 text-right">{formatINR(o.subtotal)}</td></tr>
             {o.discount > 0 && <tr><td className="py-0.5">Discount{o.coupon?.code ? ` (${o.coupon.code})` : ''}</td><td className="py-0.5 text-right">−{formatINR(o.discount)}</td></tr>}
+            {o.coinDiscount > 0 && <tr><td className="py-0.5">WILDTANE Coins ({o.coinsRedeemed})</td><td className="py-0.5 text-right">−{formatINR(o.coinDiscount)}</td></tr>}
             <tr><td className="py-0.5">Shipping{o.shippingMethod?.label ? ` (${o.shippingMethod.label})` : ''}</td><td className="py-0.5 text-right">{formatINR(o.shipping)}</td></tr>
             <tr><td className="py-0.5 text-gray-600">{st?.taxLabel || 'GST'}{st?.taxRate ? ` @ ${st.taxRate}%` : ''}{st?.pricesIncludeTax !== false ? ' (included)' : ''}</td><td className="py-0.5 text-right text-gray-600">{formatINR(o.tax)}</td></tr>
             <tr className="border-t-2 border-black text-[14px] font-bold"><td className="pt-1.5">Grand total</td><td className="pt-1.5 text-right">{formatINR(o.grandTotal)}</td></tr>
@@ -361,9 +362,11 @@ export default function OrderDetail() {
             <div className="mt-space-md ml-auto w-full sm:w-72 flex flex-col gap-1 text-body-sm">
               <div className="flex justify-between"><span className="text-on-surface-variant">Subtotal</span><span>{formatINR(o.subtotal)}</span></div>
               <div className="flex justify-between"><span className="text-on-surface-variant">Discount {o.coupon?.code && `(${o.coupon.code})`}</span><span>−{formatINR(o.discount)}</span></div>
+              {o.coinDiscount > 0 && <div className="flex justify-between text-emerald-700 dark:text-emerald-400"><span>Coins used ({o.coinsRedeemed})</span><span>−{formatINR(o.coinDiscount)}</span></div>}
               <div className="flex justify-between"><span className="text-on-surface-variant">Shipping · {o.shippingMethod?.label}</span><span>{formatINR(o.shipping)}</span></div>
               <div className="flex justify-between"><span className="text-on-surface-variant">Tax</span><span>{formatINR(o.tax)}</span></div>
               <div className="flex justify-between text-headline-sm pt-1 border-t border-surface-container-high mt-1"><span>Grand total</span><span>{formatINR(o.grandTotal)}</span></div>
+              {o.coinsEarned > 0 && <p className="text-[12px] text-on-surface-variant">Customer earned {o.coinsEarned} coins{['Cancelled', 'Returned'].includes(o.orderStatus) ? ' (removed after cancellation/return)' : ''}</p>}
             </div>
           </Panel>
 

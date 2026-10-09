@@ -264,6 +264,7 @@ async function seedReviews(delivered, products) {
         title: t.title,
         comment: t.comment,
         isVerifiedPurchase: true,
+        status: 'approved', // demo data: shown on product pages, never picked for the homepage
         helpfulCount: count % 7,
         createdAt: new Date(order.createdAt.getTime() + 5 * DAY),
       });

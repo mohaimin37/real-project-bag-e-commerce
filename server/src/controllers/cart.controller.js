@@ -130,6 +130,14 @@ export const setShippingMethod = asyncHandler(async (req, res) => {
   await respond(res, cart, req.user._id);
 });
 
+/** Turns "use my loyalty coins" on or off for this checkout. */
+export const setUseCoins = asyncHandler(async (req, res) => {
+  const cart = await getOrCreateCart(req.user._id);
+  cart.useCoins = req.body.use;
+  await cart.save();
+  await respond(res, cart, req.user._id);
+});
+
 /** Prices a guest bag held in the browser, so guests see real totals too. */
 export const quoteGuestCart = asyncHandler(async (req, res) => {
   const raw = req.body.items.map((i) => ({ product: i.productId, variantId: i.variantId, quantity: i.quantity }));

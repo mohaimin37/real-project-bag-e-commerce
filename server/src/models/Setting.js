@@ -4,14 +4,22 @@ const settingSchema = new mongoose.Schema(
   {
     key: { type: String, default: 'store', unique: true },
     storeName: { type: String, default: 'WILDTANE' },
-    supportEmail: { type: String, default: 'care@wildtane.com' },
+    supportEmail: { type: String, default: 'info@wildtane.com' },
     supportPhone: { type: String, default: '+91 98765 43210' },
-    // Printed on customer bills.
+    // Registered office: printed on customer bills and shown on the Contact page, footer and policies.
     businessAddress: { type: String, default: '' },
+    supportHours: { type: String, default: 'Monday to Saturday, 10:00 am – 6:00 pm (except public holidays)' },
+    // Grievance Officer required by the Consumer Protection (E-Commerce) Rules, 2020 and the DPDP Act, 2023.
+    grievanceOfficer: {
+      name: { type: String, default: '' },
+      designation: { type: String, default: 'Grievance Officer' },
+      email: { type: String, default: '' },
+      phone: { type: String, default: '' },
+    },
     gstin: { type: String, default: '' },
     announcement: {
       type: String,
-      default: 'Complimentary carbon-neutral express shipping on orders over ₹10,000',
+      default: 'Free standard shipping on orders over ₹10,000',
     },
     baseCurrency: { type: String, default: 'INR' },
     taxRate: { type: Number, default: 18, min: 0, max: 100 }, // GST %
@@ -34,21 +42,20 @@ const settingSchema = new mongoose.Schema(
       default: [
         {
           code: 'standard',
-          label: 'Carbon-Neutral Standard',
-          description: 'Tracked ground & sea freight, offset at source',
-          eta: '5–7 business days',
+          label: 'Standard Delivery',
+          description: 'Tracked delivery to your door',
+          eta: '3–7 working days',
           price: 199,
           freeEligible: true,
         },
-        {
-          code: 'express',
-          label: 'Priority Express',
-          description: 'Air express with live tracking and signature',
-          eta: '1–3 business days',
-          price: 599,
-          freeEligible: false,
-        },
       ],
+    },
+    // Loyalty coins (like Flipkart SuperCoins): earned on every order, spent as a discount on the next one.
+    loyalty: {
+      enabled: { type: Boolean, default: true },
+      coinsPer100: { type: Number, default: 5, min: 0, max: 100 }, // coins earned per full ₹100 paid for items
+      rupeesPerCoin: { type: Number, default: 1, min: 0.01, max: 100 }, // value of one coin at checkout
+      maxRedeemPercent: { type: Number, default: 50, min: 1, max: 100 }, // max share of the item total payable with coins
     },
     codEnabled: { type: Boolean, default: true },
     codMaxOrder: { type: Number, default: 50000 },
@@ -66,6 +73,13 @@ const settingSchema = new mongoose.Schema(
         { code: 'BHD', symbol: 'BHD ', label: 'Bahrain (BHD)', rate: 0.0045 },
       ],
     },
+    // Storefront look (themes are defined in client/src/theme/themes.js). Shoppers can still
+    // pick their own appearance/theme; these are the defaults and the allowed choices.
+    appearance: {
+      defaultTheme: { type: String, default: 'default' },
+      defaultMode: { type: String, enum: ['light', 'dark'], default: 'dark' },
+      enabledThemes: { type: [String], default: ['default', 'luxury', 'modern', 'ocean', 'rose', 'emerald', 'mono', 'reference', 'clear', 'custom'] },
+    },
     social: {
       instagram: { type: String, default: '' },
       facebook: { type: String, default: '' },
@@ -75,10 +89,23 @@ const settingSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-settingSchema.statics.get = async function getSettings() {
-  let doc = await this.findOne({ key: 'store' });
-  if (!doc) doc = await this.create({ key: 'store' });
-  return doc;
+// Read on almost every cart/checkout call, so kept for 30s (the same as the public /config cache).
+// Each caller gets its own copy; any save clears it.
+const TTL_MS = 30 * 1000;
+let cached = null;
+const forget = () => {
+  cached = null;
 };
+
+settingSchema.statics.get = async function getSettings() {
+  if (cached && cached.exp > Date.now()) return this.hydrate(mongoose.mongo.BSON.deserialize(cached.bson));
+  let doc = await this.findOne({ key: 'store' }).lean();
+  if (!doc) doc = (await this.create({ key: 'store' })).toObject();
+  cached = { bson: mongoose.mongo.BSON.serialize(doc), exp: Date.now() + TTL_MS };
+  return this.hydrate(doc);
+};
+
+settingSchema.post('save', forget);
+settingSchema.post(['findOneAndUpdate', 'updateOne', 'updateMany', 'deleteOne', 'deleteMany'], { document: false, query: true }, forget);
 
 export default mongoose.model('Setting', settingSchema);

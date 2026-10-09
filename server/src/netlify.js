@@ -15,6 +15,8 @@ const run = serverless(app, {
 
 export async function handler(event, context) {
   context.callbackWaitsForEmptyEventLoop = false; // keep the DB pool open between calls
+  // Gives this request access to Netlify Blobs (where photos uploaded on the live site are kept).
+  if (event.blobs) (await import('@netlify/blobs')).connectLambda(event);
   connecting ||= connectDB().catch((err) => {
     connecting = null; // retry on the next request
     throw err;

@@ -5,13 +5,17 @@ import Header from './components/layout/Header';
 import Footer from './components/layout/Footer';
 import CartDrawer from './components/layout/CartDrawer';
 import SearchModal from './components/layout/SearchModal';
+import BottomNav from './components/layout/BottomNav';
+import ScrollToTopFab from './components/layout/ScrollToTopFab';
+import InstallAppBanner from './components/layout/InstallAppBanner';
 import { QuickViewModal } from './components/product';
+import ThemeDrawer from './components/theme/ThemePanel';
 import { PageLoader } from './components/ui';
 import { usePageTracking } from './hooks/usePageTracking';
 
 import Home from './pages/Home';
-// Home loads with the app; other pages load when first visited (smaller first download).
-const Shop = lazy(() => import('./pages/Shop'));
+// Home (the product grid) loads with the app; other pages load when first visited (smaller first download).
+import Shop from './pages/Shop';
 const ProductDetail = lazy(() => import('./pages/ProductDetail'));
 const Cart = lazy(() => import('./pages/Cart'));
 const Login = lazy(() => import('./pages/Auth').then((m) => ({ default: m.Login })));
@@ -29,8 +33,26 @@ const Catalogue = lazy(() => import('./pages/Catalogue'));
 const BlogPost = lazy(() => import('./pages/BlogPost'));
 const Contact = lazy(() => import('./pages/Contact'));
 const Corporate = lazy(() => import('./pages/Corporate'));
-const Sustainability = lazy(() => import('./pages/Sustainability'));
-const InfoPage = lazy(() => import('./pages/InfoPage'));
+const About = lazy(() => import('./pages/About'));
+const Policy = lazy(() => import('./pages/Policy'));
+const PoliciesIndex = lazy(() => import('./pages/Policy').then((m) => ({ default: m.PoliciesIndex })));
+const HelpCentre = lazy(() => import('./pages/Help'));
+const FaqPage = lazy(() => import('./pages/Help').then((m) => ({ default: m.FaqPage })));
+
+// Policy pages live at short, readable URLs; older addresses redirect so saved links keep working.
+const POLICY_SLUGS = ['return-policy', 'shipping-policy', 'privacy-policy', 'terms-and-conditions', 'csr-policy'];
+const LEGACY_PAGES = {
+  // Refunds and cancellations are sections of the Return, Refund & Exchange Policy.
+  'refund-policy': '/return-policy#refund-policy',
+  'cancellation-policy': '/return-policy#order-cancellation',
+  'pages/returns': '/return-policy',
+  'pages/shipping': '/shipping-policy',
+  'pages/privacy': '/privacy-policy',
+  'pages/terms': '/terms-and-conditions',
+  'pages/warranty': '/return-policy',
+  'pages/compliance': '/policies',
+  sustainability: '/csr-policy',
+};
 const AdminApp = lazy(() => import('./admin/AdminApp'));
 const AdminLogin = lazy(() => import('./admin/AdminLogin'));
 
@@ -83,12 +105,13 @@ function StoreLayout() {
   const { pathname } = useLocation();
   usePageTracking();
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col w-full max-w-full overflow-x-clip">
       <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[100] btn-primary">
         Skip to content
       </a>
       <Header />
-      <main id="main" className="flex-1">
+      <InstallAppBanner />
+      <main id="main" className="flex-1 w-full max-w-full overflow-x-clip">
         <Suspense fallback={<PageLoader />}>
           {/* Keyed by path so each page fades in on navigation. */}
           <div key={pathname} className="page-enter">
@@ -97,9 +120,12 @@ function StoreLayout() {
         </Suspense>
       </main>
       <Footer />
+      <BottomNav />
+      <ScrollToTopFab />
       <CartDrawer />
       <SearchModal />
       <QuickViewModal />
+      <ThemeDrawer />
     </div>
   );
 }
@@ -165,6 +191,9 @@ export default function App() {
           <Route index element={<Home />} />
           <Route path="shop" element={<Shop />} />
           <Route path="shop/:category" element={<Shop />} />
+          <Route path="men" element={<Shop key="men" preset="men" />} />
+          <Route path="women" element={<Shop key="women" preset="women" />} />
+          <Route path="unisex" element={<Shop key="unisex" preset="unisex" />} />
           <Route path="offers" element={<Shop preset="offers" />} />
           <Route path="catalogue" element={<Catalogue />} />
           <Route path="product/:slug" element={<ProductDetail />} />
@@ -180,8 +209,16 @@ export default function App() {
           <Route path="blog/:slug" element={<BlogPost />} />
           <Route path="contact" element={<Contact />} />
           <Route path="corporate" element={<Corporate />} />
-          <Route path="sustainability" element={<Sustainability />} />
-          <Route path="pages/:slug" element={<InfoPage />} />
+          <Route path="about" element={<About />} />
+          <Route path="policies" element={<PoliciesIndex />} />
+          <Route path="help" element={<HelpCentre />} />
+          <Route path="faq" element={<FaqPage />} />
+          {POLICY_SLUGS.map((slug) => (
+            <Route key={slug} path={slug} element={<Policy slug={slug} />} />
+          ))}
+          {Object.entries(LEGACY_PAGES).map(([path, to]) => (
+            <Route key={path} path={path} element={<Navigate to={to} replace />} />
+          ))}
           <Route path="unauthorized" element={<Unauthorized />} />
           <Route path="*" element={<NotFound />} />
         </Route>

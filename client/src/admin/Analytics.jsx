@@ -103,7 +103,7 @@ export default function Analytics() {
                   <XAxis dataKey="day" tick={axis} axisLine={false} tickLine={false} />
                   <YAxis tick={axis} axisLine={false} tickLine={false} allowDecimals={false} width={30} />
                   <Tooltip {...tip} cursor={{ fill: cc.hover }} />
-                  <Bar dataKey="orders" fill="#006b5d" radius={[6, 6, 0, 0]} maxBarSize={36} />
+                  <Bar dataKey="orders" fill="#96582c" radius={[6, 6, 0, 0]} maxBarSize={36} />
                 </BarChart>
               </ResponsiveContainer>
             </div>

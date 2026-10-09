@@ -14,6 +14,8 @@ import { AddressCard, AddressForm, emptyAddress } from '../components/AddressFor
 import { Button, CountrySelect, EmptyState, Field, Icon, Img, Input, PageLoader, PhoneInput, Textarea } from '../components/ui';
 import { CouponBox, SummaryRows } from './Cart';
 import Seo from '../components/Seo';
+import { UseCoinsCard } from '../components/coins';
+import { BrandLogo } from '../components/Brand';
 
 const STEPS = ['Your details', 'Delivery address', 'How to pay', 'Check & order'];
 
@@ -24,7 +26,9 @@ function CheckoutHeader() {
       <Seo title="Secure Checkout" noindex />
       <div className="container-x py-4 flex flex-col sm:flex-row items-center justify-between gap-3">
         <div className="flex items-center gap-space-md">
-          <Link to="/" className="text-headline-md uppercase tracking-tight">WILDTANE</Link>
+          <Link to="/" aria-label="WILDTANE home">
+            <BrandLogo className="h-9 md:h-10" alt="WILDTANE" eager />
+          </Link>
           <span className="h-4 w-px bg-surface-container-highest" />
           <span className="flex items-center gap-1.5 text-secondary text-label-sm uppercase tracking-wider bg-secondary/10 px-2.5 py-1 rounded-full">
             <Icon name="lock" className="text-[16px]" /> SSL encrypted
@@ -36,6 +40,7 @@ function CheckoutHeader() {
             {config?.supportPhone && <a href={`tel:${config.supportPhone.replace(/\s/g, '')}`} className="text-on-surface hover:text-secondary">{config.supportPhone}</a>}
           </span>
           <Link to="/cart" className="hidden sm:inline-flex items-center gap-1 hover:text-secondary"><Icon name="arrow_back" className="text-[16px]" /> Back to bag</Link>
+          <Link to="/" className="inline-flex items-center gap-1 h-8 px-3 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface"><Icon name="home" className="text-[16px]" /> Home</Link>
         </div>
       </div>
     </div>
@@ -93,7 +98,7 @@ export default function Checkout() {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const money = useMoney();
-  const { items, summary, isLoading, hasIssues, setShipping } = useCart();
+  const { items, summary, isLoading, hasIssues, setShipping, setUseCoins } = useCart();
   const [step, setStep] = useState(0);
   const [customer, setCustomer] = useState(null);
   const [addressChoice, setAddressChoice] = useState(null); // { addressId } | { address, saveAddress }
@@ -144,6 +149,7 @@ export default function Checkout() {
       qc.invalidateQueries({ queryKey: ['cart'] });
       qc.invalidateQueries({ queryKey: ['addresses'] });
       qc.invalidateQueries({ queryKey: ['orders'] });
+      qc.invalidateQueries({ queryKey: ['my-coins'] });
       navigate(`/order/${res.order.orderId}/success`, { replace: true });
     },
     onError: (err) => {
@@ -385,6 +391,7 @@ export default function Checkout() {
               ))}
             </div>
             <CouponBox />
+            <UseCoinsCard summary={summary} busy={setUseCoins.isPending} onToggle={(use) => setUseCoins.mutate(use)} />
             <SummaryRows summary={summary} />
             {step === 3 ? (
               <Button variant="secondary" className="w-full h-12" icon="lock" loading={place.isPending} disabled={hasIssues} onClick={() => place.mutate()}>
@@ -394,7 +401,7 @@ export default function Checkout() {
               <p className="text-label-sm font-normal text-outline text-center">Complete the steps to place your order.</p>
             )}
             <div className="grid grid-cols-3 gap-2 text-center text-label-sm font-normal text-on-surface-variant">
-              {[['verified_user', 'Lifetime warranty'], ['published_with_changes', '30-day returns'], ['co2', 'Carbon neutral']].map(([icon, label]) => (
+              {[['lock', 'Secure checkout'], ['published_with_changes', '7-day returns'], ['local_shipping', 'Tracked delivery']].map(([icon, label]) => (
                 <div key={label} className="p-2 rounded-lg bg-surface-container-low flex flex-col items-center gap-1"><Icon name={icon} className="text-secondary text-[18px]" />{label}</div>
               ))}
             </div>

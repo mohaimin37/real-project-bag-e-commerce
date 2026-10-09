@@ -32,8 +32,9 @@ createRoot(document.getElementById('root')).render(
               position="top-center"
               containerStyle={{ top: 72 }}
               toastOptions={{
-                className: '!bg-inverse-surface !text-inverse-on-surface !text-body-sm !rounded-xl !shadow-lift',
-                success: { iconTheme: { primary: '#65dac4', secondary: '#141b2c' } },
+                className: '!bg-inverse-surface !text-inverse-on-surface !text-body-sm !rounded-full !px-4 !shadow-lift',
+                success: { iconTheme: { primary: 'rgb(var(--c-accent))', secondary: 'rgb(var(--c-on-accent))' } },
+                error: { iconTheme: { primary: 'rgb(var(--c-error))', secondary: 'rgb(var(--c-on-error))' } },
               }}
             />
           </ConfirmProvider>
@@ -42,3 +43,11 @@ createRoot(document.getElementById('root')).render(
     </Provider>
   </StrictMode>
 );
+
+if ('serviceWorker' in navigator && window.location.protocol.startsWith('http')) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch((err) => {
+      console.log('SW registration error:', err);
+    });
+  });
+}

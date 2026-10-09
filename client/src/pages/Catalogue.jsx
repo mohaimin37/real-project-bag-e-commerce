@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../lib/api';
 import { cn } from '../lib/format';
+import { categoryTone } from '../lib/categoryTone';
 import { useCategories } from '../hooks/useStore';
 import { ProductCard, ProductCardSkeleton } from '../components/product';
 import Seo from '../components/Seo';
@@ -47,9 +48,9 @@ function Rail({ products }) {
   const scroll = (dir) => ref.current?.scrollBy({ left: dir * ref.current.clientWidth * 0.85, behavior: 'smooth' });
   return (
     <div className="relative group/rail">
-      <div ref={ref} onScroll={update} className="flex gap-gutter overflow-x-auto snap-x snap-mandatory scrollbar-none -mx-margin-sm px-margin-sm scroll-px-margin-sm md:mx-0 md:px-0 md:scroll-px-0 pb-2">
+      <div ref={ref} onScroll={update} className="flex gap-2 sm:gap-3 md:gap-gutter overflow-x-auto snap-x snap-mandatory scrollbar-none -mx-3 px-3 scroll-px-3 md:mx-0 md:px-0 md:scroll-px-0 pb-2">
         {products.map((p) => (
-          <div key={p._id} className="snap-start shrink-0 w-[72%] min-[480px]:w-[45%] md:w-[31%] xl:w-[23.5%]">
+          <div key={p._id} className="snap-start shrink-0 w-[46%] min-[480px]:w-[45%] md:w-[31%] xl:w-[23.5%]">
             <ProductCard product={p} />
           </div>
         ))}
@@ -70,7 +71,7 @@ function Rail({ products }) {
 
 function Grid({ products }) {
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-gutter">
+    <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-3 md:gap-gutter">
       {products.map((p) => <ProductCard key={p._id} product={p} />)}
     </div>
   );
@@ -185,17 +186,24 @@ export default function Catalogue() {
       {sections.length > 0 && (
         <nav aria-label="Catalogue categories" className="sticky top-16 lg:top-[72px] z-30 bg-surface/90 backdrop-blur-xl border-b border-surface-container-high">
           <div className="container-x flex gap-2 overflow-x-auto scrollbar-none py-2.5">
-            {sections.map(({ cat, count }) => (
-              <button key={cat._id} type="button" onClick={() => jump(cat.slug)} aria-current={active === cat.slug ? 'true' : undefined} className={cn('chip h-10 shrink-0 border transition-colors', active === cat.slug ? 'bg-primary text-on-primary border-primary' : 'border-surface-container-high hover:bg-surface-container-low')}>
-                {cat.name} <span className={cn('text-label-sm', active === cat.slug ? 'opacity-80' : 'text-outline')}>{count}</span>
-              </button>
-            ))}
+            {sections.map(({ cat, count }) => {
+              const tone = categoryTone(cat);
+              const on = active === cat.slug;
+              return (
+                <button key={cat._id} type="button" onClick={() => jump(cat.slug)} aria-current={on ? 'true' : undefined} className={cn('chip h-10 shrink-0 border transition-colors', on ? tone.solid : cn('border-transparent font-semibold', tone.tint, tone.text))}>
+                  <Icon name={tone.icon} className="text-[18px]" /> {cat.name} <span className="text-label-sm opacity-75">{count}</span>
+                </button>
+              );
+            })}
             <span className="w-px bg-surface-container-high shrink-0 mx-1" />
-            {sections.flatMap(({ groups }) => groups).map(({ sub, items }) => (
-              <button key={sub._id} type="button" onClick={() => document.getElementById(`sub-${sub._id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })} className="chip h-10 shrink-0 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low">
-                {sub.name} <span className="text-label-sm text-outline">{items.length}</span>
-              </button>
-            ))}
+            {sections.flatMap(({ groups }) => groups).map(({ sub, items }) => {
+              const tone = categoryTone(sub);
+              return (
+                <button key={sub._id} type="button" onClick={() => document.getElementById(`sub-${sub._id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })} className="chip h-10 shrink-0 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low">
+                  <span className={cn('w-2 h-2 rounded-full', tone.dot)} /> {sub.name} <span className="text-label-sm text-outline">{items.length}</span>
+                </button>
+              );
+            })}
           </div>
         </nav>
       )}
@@ -210,13 +218,18 @@ export default function Catalogue() {
         ) : (
           sections.map(({ cat, groups, count }) => (
             <section key={cat._id} id={`cat-${cat.slug}`} className="scroll-mt-36 flex flex-col gap-space-xl">
-              <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2 border-b border-surface-container-high pb-space-md">
-                <div>
-                  <span className="eyebrow">{count} product{count === 1 ? '' : 's'}</span>
-                  <h2 className="text-headline-lg">{cat.name}</h2>
-                  {cat.tagline && <p className="text-body-md text-on-surface-variant">{cat.tagline}</p>}
+              <div className={cn('flex flex-col sm:flex-row sm:items-center justify-between gap-2 rounded-2xl p-space-md', categoryTone(cat).tint)}>
+                <div className="flex items-center gap-3">
+                  <span className={cn('w-12 h-12 shrink-0 rounded-xl flex items-center justify-center', categoryTone(cat).solid)}>
+                    <Icon name={categoryTone(cat).icon} className="text-[24px]" />
+                  </span>
+                  <div>
+                    <span className={cn('text-label-sm font-bold uppercase tracking-wide', categoryTone(cat).text)}>{count} product{count === 1 ? '' : 's'}</span>
+                    <h2 className="text-headline-lg">{cat.name}</h2>
+                    {cat.tagline && <p className="text-body-md text-on-surface-variant">{cat.tagline}</p>}
+                  </div>
                 </div>
-                <Link to={`/shop/${cat.slug}`} className="inline-flex items-center gap-1 text-label-lg text-secondary hover:gap-2 transition-all">
+                <Link to={`/shop/${cat.slug}`} className={cn('inline-flex items-center gap-1 text-label-lg font-semibold hover:gap-2 transition-all', categoryTone(cat).text)}>
                   Shop all {cat.name} with filters <Icon name="arrow_forward" className="text-[18px]" />
                 </Link>
               </div>
@@ -224,8 +237,11 @@ export default function Catalogue() {
                 <div key={sub._id} id={`sub-${sub._id}`} className="scroll-mt-36 flex flex-col gap-space-md">
                   <div className="flex items-center justify-between gap-2">
                     <h3 className="text-headline-sm flex items-center gap-2">
+                      <span className={cn('w-8 h-8 rounded-lg flex items-center justify-center', categoryTone(sub).tint, categoryTone(sub).text)}>
+                        <Icon name={categoryTone(sub).icon} className="text-[18px]" />
+                      </span>
                       {sub.name}
-                      <span className="text-label-sm px-2 py-0.5 rounded-full bg-surface-container-low text-on-surface-variant">{items.length}</span>
+                      <span className={cn('text-label-sm px-2 py-0.5 rounded-full font-bold', categoryTone(sub).tint, categoryTone(sub).text)}>{items.length}</span>
                     </h3>
                     {sub.slug && (
                       <Link to={`/shop/${sub.slug}`} className="text-label-md text-on-surface-variant hover:text-secondary inline-flex items-center gap-1">

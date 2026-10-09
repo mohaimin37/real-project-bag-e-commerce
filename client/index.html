@@ -1,13 +1,15 @@
 <!doctype html>
-<html lang="en-IN" class="scroll-smooth">
+<html lang="en-IN" class="scroll-smooth" data-theme="dark" style="background-color: #0c0c0c; color: #f5f5f3;">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <title>WILDTANE — Architectural Bags, Backpacks & Travel Gear</title>
-    <meta name="description" content="WILDTANE designs architectural bags, laptop backpacks, leather totes and travel duffles — waterproof, recycled and backed by a lifetime repair guarantee. Free carbon-neutral shipping across India." />
+    <meta name="description" content="WILDTANE designs modern bags, laptop backpacks, leather handbags, totes and travel duffles for men, women and everyone. Tracked delivery across India and 7-day returns." />
     <meta name="robots" content="index, follow, max-image-preview:large" />
-    <meta name="theme-color" content="#141b2c" />
-    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#0c0c0c" />
+    <meta name="theme-color" content="#0c0c0c" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#faf8f5" media="(prefers-color-scheme: light)" />
+    <meta name="color-scheme" content="dark light" />
     <meta name="format-detection" content="telephone=no" />
 
     <!-- Defaults for link previews (WhatsApp, Facebook, LinkedIn, X) — crawlers that don't run JS read these. -->
@@ -15,12 +17,15 @@
     <meta property="og:type" content="website" />
     <meta property="og:locale" content="en_IN" />
     <meta property="og:title" content="WILDTANE — Architectural Bags, Backpacks & Travel Gear" />
-    <meta property="og:description" content="Waterproof laptop backpacks, leather totes and cabin-ready duffles with a lifetime repair guarantee." />
+    <meta property="og:description" content="Laptop backpacks, leather handbags, totes and cabin-ready luggage for men, women and everyone." />
     <meta property="og:image" content="/uploads/seed/hero-traveler.jpg" />
     <meta name="twitter:card" content="summary_large_image" />
 
-    <link rel="icon" type="image/png" href="/logo.png" />
-    <link rel="apple-touch-icon" href="/logo.png" />
+    <!-- Official WILDTANE logo (generated from brandlogo.jpeg by scripts/brand-assets.mjs). -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="64x64" href="/favicon.png" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/logo-192.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/manifest.webmanifest" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -28,8 +33,10 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,300..600,0..1,0&display=block" rel="stylesheet" />
+    <!-- Text fonts swap in (text shows immediately); DM Serif Display is only used for headings. -->
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <!-- Icons: only the axes the CSS uses (opsz 24, weight 400, outline + filled) — a fraction of the full variable font. -->
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0..1,0&display=block" rel="stylesheet" />
     <script src="/theme.js"></script>
   </head>
   <body>

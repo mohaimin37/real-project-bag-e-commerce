@@ -18,6 +18,14 @@ export const couponApplySchema = z.object({ code: z.string().trim().min(2).max(3
 
 export const shippingMethodSchema = z.object({ code: z.string().trim().min(2).max(30) });
 
+export const useCoinsSchema = z.object({ use: z.boolean() });
+
+// Admin: give (+) or take back (−) loyalty coins, with a reason the customer sees in their history.
+export const coinAdjustSchema = z.object({
+  coins: z.coerce.number().int().refine((n) => n !== 0, 'Enter a number of coins').refine((n) => Math.abs(n) <= 100000, 'Too many coins'),
+  note: z.string().trim().min(3, 'Add a short reason').max(200),
+});
+
 export const checkoutSchema = z
   .object({
     customer: z.object({
