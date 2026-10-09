@@ -1073,36 +1073,53 @@ function CustomerReviewsCarousel() {
   );
 }
 
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(() => (typeof window !== 'undefined' ? window.innerWidth < 768 : false));
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+    const mq = window.matchMedia('(max-width: 767px)');
+    const onChange = (e) => setIsMobile(e.matches);
+    setIsMobile(mq.matches);
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  }, []);
+  return isMobile;
+}
+
 /**
  * Homepage: Men | Women → featured / new / best sellers → offers → all products (first page)
  * → why WILDTANE → editorial & field standards → customer reviews carousel → help & contact → store description.
  */
 export default function Home() {
+  const isMobile = useIsMobile();
+
   return (
     <>
       <h1 className="sr-only">WILDTANE: bags, backpacks & travel gear</h1>
 
       {/* ── MOBILE VIEW: Dedicated Flipkart-style App Experience (Phones / Touch screens) ── */}
-      <div className="md:hidden w-full max-w-full overflow-x-clip">
-        <MobileFlipkartHome />
-      </div>
-
-      {/* ── DESKTOP & LAPTOP VIEW: Original Rich Editorial Storefront ── */}
-      <div className="hidden md:block">
-        <CategoryStrip />
-        <HomeHero />
-        <GenderSplit />
-        <Collections />
-        <OfferRotator />
-        <div className="pt-6 md:pt-10">
-          <Shop preset="home" />
+      {isMobile ? (
+        <div className="w-full max-w-full overflow-x-clip">
+          <MobileFlipkartHome />
         </div>
-        <BrandValues className="pt-4 md:pt-8" />
-        <EditorialSpotlight />
-        <CustomerReviewsCarousel />
-        <ContactBand />
-        <About />
-      </div>
+      ) : (
+        /* ── DESKTOP & LAPTOP VIEW: Original Rich Editorial Storefront ── */
+        <div>
+          <CategoryStrip />
+          <HomeHero />
+          <GenderSplit />
+          <Collections />
+          <OfferRotator />
+          <div className="pt-6 md:pt-10">
+            <Shop preset="home" />
+          </div>
+          <BrandValues className="pt-4 md:pt-8" />
+          <EditorialSpotlight />
+          <CustomerReviewsCarousel />
+          <ContactBand />
+          <About />
+        </div>
+      )}
     </>
   );
 }

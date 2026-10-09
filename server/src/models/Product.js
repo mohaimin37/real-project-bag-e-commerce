@@ -90,5 +90,9 @@ productSchema.index({ soldCount: -1 });
 // Storefront lists: visible products, default "featured" sort.
 productSchema.index({ isVisible: 1, isFeatured: -1, soldCount: -1, createdAt: -1 });
 productSchema.index({ isVisible: 1, subcategory: 1, finalPrice: 1 });
+productSchema.index({ isVisible: 1, gender: 1, category: 1, finalPrice: 1 });
+productSchema.index({ isVisible: 1, category: 1, finalPrice: 1 });
+productSchema.index({ isVisible: 1, gender: 1, soldCount: -1 });
+productSchema.index({ isVisible: 1, gender: 1, createdAt: -1 });
 
 export default mongoose.model('Product', productSchema);

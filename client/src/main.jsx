@@ -12,8 +12,10 @@ import './index.css';
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 30 * 1000,
+      staleTime: 60 * 1000,
+      gcTime: 10 * 60 * 1000,
       refetchOnWindowFocus: false,
+      refetchOnReconnect: true,
       retry: (count, err) => err?.status >= 500 && count < 2,
     },
   },

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { memo, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -124,7 +124,7 @@ export function WishlistButton({ product, className }) {
 const BADGE_TONES = { Bestseller: 'from-rose-600 to-pink-500', New: 'from-violet-600 to-fuchsia-500', Sale: 'from-emerald-600 to-teal-500' };
 
 /** Compact listing card: image, name, rating, price. Tap anywhere to open the product. */
-export function ProductCard({ product, priority }) {
+export const ProductCard = memo(function ProductCard({ product, priority }) {
   const money = useMoney();
   const { add } = useCart();
   const qc = useQueryClient();
@@ -239,7 +239,7 @@ export function ProductCard({ product, priority }) {
       </div>
     </article>
   );
-}
+});
 
 export function ProductCardSkeleton() {
   return (

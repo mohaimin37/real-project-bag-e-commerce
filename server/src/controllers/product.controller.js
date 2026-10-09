@@ -28,7 +28,7 @@ export const listProducts = asyncHandler(async (req, res) => {
   const filter = await buildProductFilter(req.query);
   const sort = SORTS[req.query.sort] || SORTS.featured;
   const [items, total] = await Promise.all([
-    Product.find(filter).select(PUBLIC_PRODUCT_FIELDS).populate(populateCats).sort(sort).skip(skip).limit(limit),
+    Product.find(filter).select(PUBLIC_PRODUCT_FIELDS).populate(populateCats).sort(sort).skip(skip).limit(limit).lean(),
     Product.countDocuments(filter),
   ]);
   res.json({ success: true, ...paginated(items, total, page, limit) });
@@ -48,8 +48,9 @@ export const suggest = asyncHandler(async (req, res) => {
     Product.find({ isVisible: true, $or: [{ name: rx }, { tags: rx }, { tagline: rx }, { materials: rx }] })
       .select('name slug images price salePrice finalPrice tagline')
       .sort({ soldCount: -1 })
-      .limit(6),
-    Category.find({ isActive: true, name: rx }).select('name slug parent').limit(4),
+      .limit(6)
+      .lean(),
+    Category.find({ isActive: true, name: rx }).select('name slug parent').limit(4).lean(),
   ]);
   res.json({ success: true, products, categories });
 });
@@ -58,9 +59,9 @@ export const getCollections = asyncHandler(async (req, res) => {
   const base = { isVisible: true };
   const limit = Math.min(12, Number(req.query.limit) || 8);
   const [bestSellers, newArrivals, featured] = await Promise.all([
-    Product.find({ ...base, isBestseller: true }).select(PUBLIC_PRODUCT_FIELDS).sort({ soldCount: -1 }).limit(limit),
-    Product.find({ ...base, isNewArrival: true }).select(PUBLIC_PRODUCT_FIELDS).sort({ createdAt: -1 }).limit(limit),
-    Product.find({ ...base, isFeatured: true }).select(PUBLIC_PRODUCT_FIELDS).sort({ soldCount: -1 }).limit(limit),
+    Product.find({ ...base, isBestseller: true }).select(PUBLIC_PRODUCT_FIELDS).sort({ soldCount: -1 }).limit(limit).lean(),
+    Product.find({ ...base, isNewArrival: true }).select(PUBLIC_PRODUCT_FIELDS).sort({ createdAt: -1 }).limit(limit).lean(),
+    Product.find({ ...base, isFeatured: true }).select(PUBLIC_PRODUCT_FIELDS).sort({ soldCount: -1 }).limit(limit).lean(),
   ]);
   res.json({ success: true, bestSellers, newArrivals, featured });
 });
@@ -68,7 +69,7 @@ export const getCollections = asyncHandler(async (req, res) => {
 export const getProduct = asyncHandler(async (req, res) => {
   const { slug } = req.params;
   const query = mongoose.isValidObjectId(slug) ? { _id: slug } : { slug };
-  const product = await Product.findOne({ ...query, isVisible: true }).populate(populateCats);
+  const product = await Product.findOne({ ...query, isVisible: true }).populate(populateCats).lean();
   if (!product) throw ApiError.notFound('This product is not available');
 
   const [related, distribution] = await Promise.all([
@@ -79,7 +80,8 @@ export const getProduct = asyncHandler(async (req, res) => {
     })
       .select(PUBLIC_PRODUCT_FIELDS)
       .sort({ soldCount: -1 })
-      .limit(4),
+      .limit(4)
+      .lean(),
     Review.aggregate([
       { $match: { product: product._id, status: 'approved' } },
       { $group: { _id: '$rating', count: { $sum: 1 } } },
