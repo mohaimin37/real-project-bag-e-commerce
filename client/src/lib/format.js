@@ -12,8 +12,13 @@ const IMG_WIDTHS = [160, 320, 480, 640, 960, 1280];
  * Full URL for an image. With a width, asks for a resized copy:
  * local uploads → "?w=480" (server makes a small WebP), Cloudinary → "w_480,f_auto,q_auto".
  */
+export const FALLBACK_IMAGE = '/uploads/seed/backpack-terracotta.jpg';
+
 export function imgUrl(url, width) {
-  if (!url) return '';
+  if (url && typeof url === 'object' && url.url) {
+    url = url.url;
+  }
+  if (!url || typeof url !== 'string') return FALLBACK_IMAGE;
   const w = width ? IMG_WIDTHS.find((x) => x >= width) || 1280 : null;
   if (url.startsWith('/uploads/')) {
     // On Netlify, its image CDN resizes and picks WebP/AVIF; elsewhere the API resizes (?w=).
@@ -71,7 +76,14 @@ export function timeAgo(d) {
 export const compact = (n) => Intl.NumberFormat('en-IN', { notation: 'compact', maximumFractionDigits: 1 }).format(n || 0);
 
 export function productImage(product, variant) {
-  return imgUrl(variant?.images?.[0]?.url || product?.images?.[0]?.url);
+  const url =
+    variant?.images?.[0]?.url ||
+    (typeof variant?.images?.[0] === 'string' ? variant.images[0] : null) ||
+    product?.images?.[0]?.url ||
+    (typeof product?.images?.[0] === 'string' ? product.images[0] : null) ||
+    product?.image ||
+    FALLBACK_IMAGE;
+  return imgUrl(url);
 }
 
 export function discountPercent(p) {

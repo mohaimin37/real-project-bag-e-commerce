@@ -1,7 +1,7 @@
 import { createContext, forwardRef, useCallback, useContext, useEffect, useId, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
-import { cn, imgUrl, STATUS_STYLE } from '../lib/format';
+import { cn, imgUrl, FALLBACK_IMAGE, STATUS_STYLE } from '../lib/format';
 import { COUNTRIES, DIAL_CODES, sortedForPicker } from '../lib/countries';
 
 export function Icon({ name, className, fill, ...props }) {
@@ -34,38 +34,67 @@ export function Skeleton({ className }) {
   );
 }
 
-/** Image with a shimmer while loading and a graceful fallback on error. */
+/** Image with a shimmer while loading, auto-retry on resizing hiccups, and a graceful fallback on error. */
 // w = display width in CSS px; the 2x copy keeps it sharp on high-density screens.
-export function Img({ src, alt = '', className, imgClassName, w = 480, ...props }) {
-  const url = imgUrl(src, w);
-  const srcSet = w ? `${url} 1x, ${imgUrl(src, w * 2)} 2x` : undefined;
-  // Status is tracked per URL so a cached image that loads instantly is never reset to "loading".
-  const [status, setStatusFor] = useState({ url: null, value: 'loading' });
-  const state = !url ? 'error' : status.url === url ? status.value : 'loading';
-  const setState = (value) => setStatusFor({ url, value });
+export function Img({ src, alt = '', className, imgClassName, w = 480, fallback = FALLBACK_IMAGE, ...props }) {
+  const target = src || fallback;
+  const initialUrl = imgUrl(target, w);
+  const [currentUrl, setCurrentUrl] = useState(initialUrl);
+  const [currentSrcSet, setCurrentSrcSet] = useState(() => (w && target ? `${initialUrl} 1x, ${imgUrl(target, w * 2)} 2x` : undefined));
+  const [loaded, setLoaded] = useState(false);
+  const [failed, setFailed] = useState(false);
+  const retryStep = useRef(0);
+
+  useEffect(() => {
+    const raw = src || fallback;
+    retryStep.current = 0;
+    setLoaded(false);
+    setFailed(false);
+    const u = imgUrl(raw, w);
+    setCurrentUrl(u);
+    setCurrentSrcSet(w && raw ? `${u} 1x, ${imgUrl(raw, w * 2)} 2x` : undefined);
+  }, [src, w, fallback]);
+
+  const handleError = () => {
+    if (retryStep.current === 0 && w && src) {
+      // Step 1: bypass resize middleware (?w=) and fetch direct raw asset
+      retryStep.current = 1;
+      setCurrentSrcSet(undefined);
+      setCurrentUrl(imgUrl(src, null));
+    } else if (retryStep.current <= 1 && fallback && currentUrl !== fallback) {
+      // Step 2: fallback to guaranteed seed asset
+      retryStep.current = 2;
+      setCurrentSrcSet(undefined);
+      setCurrentUrl(fallback);
+    } else {
+      // Step 3: show fallback icon if all attempts fail
+      setFailed(true);
+    }
+  };
+
   return (
     // Only default to `relative` when the caller hasn't positioned it (Tailwind would let `relative` override `absolute`).
     <div className={cn(!/\b(absolute|fixed|sticky)\b/.test(className || '') && 'relative', 'overflow-hidden bg-surface-container-low', className)}>
-      {state === 'loading' && <Skeleton className="absolute inset-0 rounded-none" />}
-      {state === 'error' ? (
+      {!loaded && !failed && <Skeleton className="absolute inset-0 rounded-none" />}
+      {failed ? (
         <div className="absolute inset-0 flex items-center justify-center text-outline">
           <Icon name="image" className="text-[32px]" />
         </div>
       ) : (
         <img
-          src={url}
-          srcSet={srcSet}
+          src={currentUrl}
+          srcSet={currentSrcSet}
           alt={alt}
           loading={props.loading || 'lazy'}
           decoding="async"
-          onLoad={() => setState('loaded')}
-          onError={() => setState('error')}
+          onLoad={() => setLoaded(true)}
+          onError={handleError}
           ref={(node) => {
-            if (node && node.complete && node.naturalWidth > 0 && status.value !== 'loaded') {
-              setState('loaded');
+            if (node && node.complete && node.naturalWidth > 0 && !loaded) {
+              setLoaded(true);
             }
           }}
-          className={cn('w-full h-full object-cover transition-opacity duration-300', state === 'loaded' ? 'opacity-100' : 'opacity-0', imgClassName)}
+          className={cn('w-full h-full object-cover transition-opacity duration-300', loaded ? 'opacity-100' : 'opacity-0', imgClassName)}
           {...props}
         />
       )}
