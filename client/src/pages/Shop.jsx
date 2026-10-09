@@ -229,7 +229,65 @@ const DEPARTMENT_NAV = [
   { key: 'offers', label: 'Offers', to: '/offers' },
 ];
 
-function DepartmentHero({ page, current }) {
+export const DEPARTMENT_SHORTCUTS = {
+  men: [
+    { key: 'all', label: 'All Men', category: '', icon: 'man', img: '/uploads/seed/briefcase-black.jpg' },
+    { key: 'wallets', label: 'Wallets', category: 'wallets', icon: 'wallet', img: '/uploads/seed/catalog/wallet-woodland.jpg' },
+    { key: 'bags', label: 'Bags', category: 'bags', icon: 'shopping_bag', img: '/uploads/seed/briefcase-cognac.jpg' },
+    { key: 'belts', label: 'Belts', category: 'belts', icon: 'styler', img: '/uploads/seed/catalog/keyfob-brown.jpg' },
+    { key: 't-shirts', label: 'T-Shirts', category: 't-shirts', icon: 'checkroom', img: '/uploads/seed/catalog/tote-cotton.jpg' },
+    { key: 'laptop-bags', label: 'Laptop Bags', category: 'laptop-bags', icon: 'laptop_mac', img: '/uploads/seed/catalog/laptop-sterling.jpg' },
+    { key: 'office-bags', label: 'Briefcases', category: 'office-bags', icon: 'business_center', img: '/uploads/seed/briefcase-oxford.jpg' },
+    { key: 'sling-bags', label: 'Messengers', category: 'sling-bags', icon: 'backpack', img: '/uploads/seed/catalog/messenger-dalton.jpg' },
+    { key: 'duffle-bags', label: 'Duffles & Travel', category: 'duffle-bags', icon: 'flight_takeoff', img: '/uploads/seed/catalog/duffle-highway.jpg' },
+    { key: 'accessories', label: 'Accessories', category: 'accessories', icon: 'watch', img: '/uploads/seed/catalog/keyset-onyx.jpg' },
+  ],
+  women: [
+    { key: 'all', label: 'All Women', category: '', icon: 'woman', img: '/uploads/seed/handbag-rose.jpg' },
+    { key: 'handbags', label: 'Handbags', category: 'handbags', icon: 'shopping_bag', img: '/uploads/seed/handbag-sienna.jpg' },
+    { key: 'tote-bags', label: 'Totes', category: 'tote-bags', icon: 'shopping_basket', img: '/uploads/seed/tote-ochre.jpg' },
+    { key: 'sling-bags', label: 'Crossbody', category: 'sling-bags', icon: 'backpack', img: '/uploads/seed/catalog/crossbody-cloud.jpg' },
+    { key: 'clutches', label: 'Clutches', category: 'clutches', icon: 'account_balance_wallet', img: '/uploads/seed/clutch-espresso.jpg' },
+    { key: 'wallets', label: 'Wallets', category: 'wallets', icon: 'wallet', img: '/uploads/seed/catalog/wallet-zip.jpg' },
+    { key: 'perfumes', label: 'Perfumes', category: 'perfumes', icon: 'local_florist', img: '/uploads/seed/catalog/bottle-lilac.jpg' },
+    { key: 'belts', label: 'Belts', category: 'belts', icon: 'styler', img: '/uploads/seed/catalog/beltbag-grey.jpg' },
+    { key: 'beach-straw-bags', label: 'Beach Bags', category: 'beach-straw-bags', icon: 'beach_access', img: '/uploads/seed/catalog/straw-riviera.jpg' },
+    { key: 'accessories', label: 'Accessories', category: 'accessories', icon: 'watch', img: '/uploads/seed/catalog/raffia-tassel.jpg' },
+  ],
+  universal: [
+    { key: 'all', label: 'All Universal', category: '', icon: 'public', img: '/uploads/seed/apex-navy.jpg' },
+    { key: 'backpacks', label: 'Backpacks', category: 'backpacks', icon: 'backpack', img: '/uploads/seed/backpack-terracotta.jpg' },
+    { key: 'cabin-luggage', label: 'Cabin Luggage', category: 'cabin-luggage', icon: 'luggage', img: '/uploads/seed/cabin-aluminium.jpg' },
+    { key: 'duffle-bags', label: 'Travel Duffles', category: 'duffle-bags', icon: 'flight_takeoff', img: '/uploads/seed/duffle-tan.jpg' },
+    { key: 'laptop-sleeves', label: 'Laptop Sleeves', category: 'laptop-sleeves', icon: 'laptop', img: '/uploads/seed/catalog/sleeve-saddle-tan.jpg' },
+    { key: 'daypacks', label: 'Daypacks', category: 'daypacks', icon: 'hiking', img: '/uploads/seed/daypack-navy.jpg' },
+    { key: 'accessories', label: 'Accessories', category: 'accessories', icon: 'watch', img: '/uploads/seed/cable-pouch.jpg' },
+  ],
+  'travel-utility': [
+    { key: 'all', label: 'All Travel', category: '', icon: 'flight_takeoff', img: '/uploads/seed/cabin-hardshell.jpg' },
+    { key: 'cabin-luggage', label: 'Cabin Luggage', category: 'cabin-luggage', icon: 'luggage', img: '/uploads/seed/cabin-aluminium.jpg' },
+    { key: 'tech-briefcases', label: 'Tech Briefcases', category: 'tech-briefcases', icon: 'business_center', img: '/uploads/seed/briefcase-black.jpg' },
+    { key: 'waterproof-commuters', label: 'Waterproof', category: 'waterproof-commuters', icon: 'water_drop', img: '/uploads/seed/pack-trailhead.jpg' },
+    { key: 'daypacks', label: 'Daypacks', category: 'daypacks', icon: 'hiking', img: '/uploads/seed/daypack-grey.jpg' },
+    { key: 'travel-organisers', label: 'Organizers', category: 'travel-organisers', icon: 'inventory_2', img: '/uploads/seed/packing-cube.jpg' },
+  ],
+  accessories: [
+    { key: 'all', label: 'All Accessories', category: '', icon: 'watch', img: '/uploads/seed/cable-pouch.jpg' },
+    { key: 'wallets', label: 'Wallets', category: 'wallets', icon: 'wallet', img: '/uploads/seed/cardholder-tan.jpg' },
+    { key: 'belts', label: 'Belts', category: 'belts', icon: 'styler', img: '/uploads/seed/catalog/keyfob-brown.jpg' },
+    { key: 'perfumes', label: 'Perfumes', category: 'perfumes', icon: 'local_florist', img: '/uploads/seed/catalog/bottle-lilac.jpg' },
+    { key: 'laptop-sleeves', label: 'Laptop Sleeves', category: 'laptop-sleeves', icon: 'laptop', img: '/uploads/seed/catalog/sleeve-saddle-tan.jpg' },
+    { key: 'toiletry-kits', label: 'Dopp Kits', category: 'toiletry-kits', icon: 'sanitizer', img: '/uploads/seed/catalog/dopp-heritage-brown.jpg' },
+    { key: 'belt-bags', label: 'Belt Bags', category: 'belt-bags', icon: 'backpack', img: '/uploads/seed/catalog/beltbag-cream.jpg' },
+    { key: 'luggage-tags', label: 'Luggage Tags', category: 'luggage-tags', icon: 'label', img: '/uploads/seed/catalog/tag-navy.jpg' },
+  ],
+};
+DEPARTMENT_SHORTCUTS.unisex = DEPARTMENT_SHORTCUTS.universal;
+
+function DepartmentHero({ page, current, onSelectCategory, selectedCategory }) {
+  const departmentKey = current === 'unisex' ? 'universal' : current;
+  const shortcuts = DEPARTMENT_SHORTCUTS[departmentKey] || [];
+
   return (
     <div className="container-x pt-3 md:pt-5">
       <section
@@ -277,27 +335,59 @@ function DepartmentHero({ page, current }) {
               ))}
             </div>
 
-            {/* Department Navigation Chips */}
-            <div className="flex flex-wrap items-center gap-1.5 pt-2">
-              <span className="text-[11.5px] font-bold text-on-surface-variant mr-1">Switch:</span>
-              {DEPARTMENT_NAV.map((dep) => {
-                const isActive = dep.key === current;
-                return (
-                  <Link
-                    key={dep.key}
-                    to={dep.to}
-                    className={cn(
-                      'inline-flex items-center gap-1 h-8 px-3.5 rounded-full text-[12px] font-semibold transition-all',
-                      isActive
-                        ? 'bg-secondary text-on-secondary shadow-sm scale-105'
-                        : 'bg-surface/80 backdrop-blur-md ring-1 ring-surface-container-high text-on-surface hover:bg-surface-container'
-                    )}
-                  >
-                    {dep.label}
-                    {!isActive && <Icon name="arrow_forward" className="text-[13px] opacity-70" />}
-                  </Link>
-                );
-              })}
+            {/* Curated Category Shortcuts for this Department (Direct 1-Click Filter) */}
+            {shortcuts.length > 0 && onSelectCategory && (
+              <div className="pt-2">
+                <div className="flex items-center gap-2 mb-1.5">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-on-surface-variant">
+                    Explore {page.title} Collections:
+                  </span>
+                  {selectedCategory && (
+                    <button
+                      type="button"
+                      onClick={() => onSelectCategory('')}
+                      className="text-[11px] font-semibold text-secondary hover:underline cursor-pointer"
+                    >
+                      (Clear filter)
+                    </button>
+                  )}
+                </div>
+                <div className="flex flex-wrap items-center gap-1.5">
+                  {shortcuts.map((sc) => {
+                    const isSelected = (!selectedCategory && sc.category === '') || selectedCategory === sc.category;
+                    return (
+                      <button
+                        key={sc.key}
+                        type="button"
+                        onClick={() => onSelectCategory(sc.category === selectedCategory ? '' : sc.category)}
+                        className={cn(
+                          'inline-flex items-center gap-1.5 h-8 px-3 rounded-full text-[12px] font-semibold transition-all shadow-xs active:scale-95 cursor-pointer',
+                          isSelected
+                            ? 'bg-secondary text-on-secondary shadow-sm scale-102 ring-2 ring-secondary/30'
+                            : 'bg-surface/85 backdrop-blur-md ring-1 ring-surface-container-high text-on-surface hover:bg-surface-container hover:scale-102'
+                        )}
+                      >
+                        <Icon name={sc.icon} className="text-[15px]" />
+                        {sc.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Secondary Department Switcher */}
+            <div className="flex flex-wrap items-center gap-1 pt-1 opacity-80 hover:opacity-100 transition-opacity">
+              <span className="text-[11px] font-medium text-on-surface-variant mr-1">Other departments:</span>
+              {DEPARTMENT_NAV.filter((d) => d.key !== current).map((dep) => (
+                <Link
+                  key={dep.key}
+                  to={dep.to}
+                  className="inline-flex items-center gap-0.5 text-[11px] font-medium text-on-surface-variant hover:text-secondary px-2 py-0.5 rounded-full hover:bg-surface/60 transition-colors"
+                >
+                  {dep.label} <Icon name="chevron_right" className="text-[12px]" />
+                </Link>
+              ))}
             </div>
           </div>
 
@@ -340,12 +430,25 @@ function Filters({ facets, state, categoryTree, activeCategory, lockedGender }) 
       {subcats?.length > 0 && (
         <Section title="Category">
           <div className="flex flex-col">
-            {subcats.map((c) => (
-              <Link key={c._id} to={`/shop/${c.slug}`} className={cn('flex items-center justify-between py-1.5 text-[13px] hover:text-secondary', activeCategory?._id === c._id && 'text-secondary font-semibold')}>
-                {c.name}
-                <span className="text-[11px] text-outline">{c.productCount}</span>
-              </Link>
-            ))}
+            {subcats.map((c) => {
+              const isSelected = activeCategory?._id === c._id || activeCategory?.slug === c.slug;
+              return lockedGender ? (
+                <button
+                  key={c._id}
+                  type="button"
+                  onClick={() => update({ category: isSelected ? '' : c.slug })}
+                  className={cn('flex items-center justify-between py-1.5 text-[13px] hover:text-secondary text-left transition-colors cursor-pointer', isSelected && 'text-secondary font-semibold')}
+                >
+                  <span>{c.name}</span>
+                  {c.productCount > 0 && <span className="text-[11px] text-outline">{c.productCount}</span>}
+                </button>
+              ) : (
+                <Link key={c._id} to={`/shop/${c.slug}`} className={cn('flex items-center justify-between py-1.5 text-[13px] hover:text-secondary', isSelected && 'text-secondary font-semibold')}>
+                  <span>{c.name}</span>
+                  <span className="text-[11px] text-outline">{c.productCount}</span>
+                </Link>
+              );
+            })}
           </div>
         </Section>
       )}
@@ -454,13 +557,56 @@ function Filters({ facets, state, categoryTree, activeCategory, lockedGender }) 
 }
 
 /** Round category shortcuts, Flipkart style. Scrolls sideways on phones. */
-function CategoryRail({ tree, activeSlug, preset }) {
+function CategoryRail({ tree, activeSlug, preset, selectedCategory, onSelectCategory }) {
+  const isDepartment = ['men', 'women', 'universal', 'unisex'].includes(preset) || ['travel-utility', 'accessories'].includes(activeSlug);
+  const departmentKey = preset === 'unisex' ? 'universal' : (preset || activeSlug);
+  const departmentItems = DEPARTMENT_SHORTCUTS[departmentKey];
+
+  if (isDepartment && departmentItems?.length) {
+    return (
+      <div className="flex gap-3 md:gap-5 overflow-x-auto scrollbar-none -mx-3 px-3 md:mx-0 md:px-0 py-2">
+        {departmentItems.map((c) => {
+          const isSelected = (!selectedCategory && c.category === '') || selectedCategory === c.category;
+          return (
+            <button
+              key={c.key}
+              type="button"
+              onClick={() => onSelectCategory && onSelectCategory(c.category === selectedCategory ? '' : c.category)}
+              className="group flex flex-col items-center gap-1.5 shrink-0 w-16 md:w-20 cursor-pointer active:scale-95 transition-transform"
+              title={`View ${c.label}`}
+            >
+              <span
+                className={cn(
+                  'w-13 h-13 md:w-16 md:h-16 rounded-2xl overflow-hidden flex items-center justify-center ring-2 transition-all shadow-xs',
+                  isSelected
+                    ? 'ring-secondary ring-offset-2 ring-offset-surface scale-105 shadow-md bg-secondary text-on-secondary'
+                    : 'ring-outline-variant/30 group-hover:scale-105 group-hover:ring-secondary/50 bg-surface-container-low text-on-surface'
+                )}
+              >
+                {c.img ? (
+                  <img src={imgUrl(c.img, 128)} alt={c.label} loading="lazy" decoding="async" className="w-full h-full object-cover transition-transform group-hover:scale-110" />
+                ) : (
+                  <Icon name={c.icon || 'category'} className="text-[24px]" />
+                )}
+              </span>
+              <span className={cn('text-[11px] md:text-[12px] leading-tight text-center w-full truncate', isSelected ? 'font-bold text-secondary' : 'font-medium text-on-surface-variant')}>
+                {c.label}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    );
+  }
+
   const items = [
     { key: 'all', label: 'All', to: '/', icon: 'apps', on: preset === 'home' || (!activeSlug && !['offers', 'men', 'women', 'universal', 'unisex'].includes(preset)) },
     { key: 'men', label: 'Men', to: '/men', icon: 'man', on: preset === 'men' },
     { key: 'women', label: 'Women', to: '/women', icon: 'woman', on: preset === 'women' },
     { key: 'universal', label: 'Universal', to: '/universal', icon: 'public', on: preset === 'universal' || preset === 'unisex' },
-    ...(tree || []).map((c) => ({
+    { key: 'travel-utility', label: 'Travel', to: '/shop/travel-utility', icon: 'flight_takeoff', on: activeSlug === 'travel-utility' },
+    { key: 'accessories', label: 'Accessories', to: '/shop/accessories', icon: 'watch', on: activeSlug === 'accessories' },
+    ...(tree || []).filter((c) => !['travel-utility', 'accessories'].includes(c.slug)).map((c) => ({
       key: c._id,
       label: c.name,
       to: `/shop/${c.slug}`,
@@ -473,7 +619,7 @@ function CategoryRail({ tree, activeSlug, preset }) {
   return (
     <div className="flex gap-3 md:gap-5 overflow-x-auto scrollbar-none -mx-3 px-3 md:mx-0 md:px-0 py-1">
       {items.map((c) => {
-        const tone = c.tone || TAB_TONES[c.key];
+        const tone = c.tone || TAB_TONES[c.key] || TAB_TONES.bags;
         return (
           <Link key={c.key} to={c.to} className="group flex flex-col items-center gap-1 shrink-0 w-14 md:w-16">
             <span
@@ -493,10 +639,14 @@ function CategoryRail({ tree, activeSlug, preset }) {
   );
 }
 
-function ActiveFilters({ state, onClear }) {
+function ActiveFilters({ state, onClear, flatCategories }) {
   const { get, getList, update, toggleIn } = state;
   const chips = [];
   LIST_KEYS.forEach((k) => getList(k).forEach((v) => chips.push([`${k}:${v}`, v, () => toggleIn(k, v)])));
+  if (get('category')) {
+    const catObj = flatCategories?.find((c) => c.slug === get('category'));
+    chips.push(['category', `Category: ${catObj?.name || get('category')}`, () => update({ category: '' })]);
+  }
   if (get('gender')) chips.push(['gender', { women: 'Women', men: 'Men', unisex: 'Universal', universal: 'Universal' }[get('gender')] || get('gender'), () => update({ gender: '' })]);
   if (get('minPrice') || get('maxPrice')) chips.push(['price', `₹${get('minPrice') || 0} – ${get('maxPrice') ? `₹${get('maxPrice')}` : 'any'}`, () => update({ minPrice: '', maxPrice: '' })]);
   if (get('inStock')) chips.push(['stock', 'In stock', () => update({ inStock: '' })]);
@@ -507,11 +657,11 @@ function ActiveFilters({ state, onClear }) {
   return (
     <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none">
       {chips.map(([key, label, remove]) => (
-        <button key={key} type="button" onClick={remove} className="inline-flex items-center gap-1 h-7 pl-2.5 pr-1.5 rounded-full bg-surface-container-lowest border border-surface-container-high text-[12px] whitespace-nowrap capitalize hover:border-outline">
+        <button key={key} type="button" onClick={remove} className="inline-flex items-center gap-1 h-7 pl-2.5 pr-1.5 rounded-full bg-surface-container-lowest border border-surface-container-high text-[12px] whitespace-nowrap capitalize hover:border-outline cursor-pointer">
           {label} <Icon name="close" className="text-[14px] text-outline" />
         </button>
       ))}
-      <button type="button" onClick={onClear} className="h-7 px-2 text-[12px] font-semibold text-secondary whitespace-nowrap">Clear all</button>
+      <button type="button" onClick={onClear} className="h-7 px-2 text-[12px] font-semibold text-secondary whitespace-nowrap cursor-pointer">Clear all</button>
     </div>
   );
 }
@@ -551,7 +701,10 @@ export default function Shop({ preset }) {
   const Heading = isHome ? 'h2' : 'h1';
 
   const flat = useMemo(() => (tree || []).flatMap((c) => [c, ...c.children]), [tree]);
-  const effectiveCategory = categorySlug === 'travel-and-utility' ? 'travel-utility' : categorySlug;
+  const selectedCatParam = get('category');
+  const effectiveCategory = categorySlug === 'travel-and-utility'
+    ? (selectedCatParam || 'travel-utility')
+    : (selectedCatParam || categorySlug);
   const activeCategory = flat.find((c) => c.slug === effectiveCategory);
   const parent = activeCategory?.parent ? flat.find((c) => c._id === activeCategory.parent) : null;
 
@@ -587,11 +740,13 @@ export default function Shop({ preset }) {
   const { hasNextPage, isFetchingNextPage, fetchNextPage } = products;
   const sentinel = useNearViewport(() => infinite && hasNextPage && !isFetchingNextPage && fetchNextPage(), [hasNextPage, isFetchingNextPage, items.length]);
 
-  const activeCount = FILTER_KEYS.reduce((n, k) => n + (LIST_KEYS.includes(k) ? getList(k).length : get(k) ? 1 : 0), 0);
-  const clearAll = () => update(Object.fromEntries([...FILTER_KEYS, 'q'].map((k) => [k, ''])));
+  const activeCount = FILTER_KEYS.reduce((n, k) => n + (LIST_KEYS.includes(k) ? getList(k).length : get(k) ? 1 : 0), 0) + (selectedCatParam ? 1 : 0);
+  const clearAll = () => update(Object.fromEntries([...FILTER_KEYS, 'q', 'category'].map((k) => [k, ''])));
   const title =
     preset === 'offers'
       ? 'Offers'
+      : genderPage && activeCategory
+      ? `${genderPage.title}’s ${activeCategory.name}`
       : genderPage?.title ||
         activeCategory?.name ||
         (get('q') ? `Results for “${get('q')}”` : get('gender') === 'women' ? 'Women' : get('gender') === 'men' ? 'Men' : get('gender') === 'unisex' || get('gender') === 'universal' ? 'Universal' : get('featured') ? 'Featured' : get('bestseller') ? 'Best sellers' : get('newArrival') ? 'New arrivals' : 'All products');
@@ -599,11 +754,16 @@ export default function Shop({ preset }) {
   const setSort = (v) => update({ sort: v === 'featured' ? '' : v });
 
   const crumbs = [{ label: 'Home', to: '/' }];
-  if (!genderPage) crumbs.push({ label: 'Shop', to: '/shop' });
-  if (parent) crumbs.push({ label: parent.name, to: `/shop/${parent.slug}` });
-  crumbs.push({ label: title });
+  if (genderPage) {
+    crumbs.push({ label: genderPage.title, to: preset === 'universal' ? '/universal' : `/${preset}` });
+    if (activeCategory) crumbs.push({ label: activeCategory.name });
+  } else {
+    crumbs.push({ label: 'Shop', to: '/shop' });
+    if (parent) crumbs.push({ label: parent.name, to: `/shop/${parent.slug}` });
+    crumbs.push({ label: title });
+  }
   const canonical = isHome ? '/' : categorySlug ? `/shop/${categorySlug}` : genderPage ? (preset === 'unisex' ? '/universal' : `/${preset}`) : preset === 'offers' ? '/offers' : '/shop';
-  const filtered = [...FILTER_KEYS, 'q', 'sort'].some((k) => get(k));
+  const filtered = [...FILTER_KEYS, 'q', 'sort', 'category'].some((k) => get(k));
   const listLd = items.length && !filtered ? [itemListLd(items.slice(0, 24))] : [];
 
   const filters = <Filters facets={facets.data} state={state} categoryTree={tree} activeCategory={activeCategory} lockedGender={Boolean(genderPage)} />;
@@ -611,7 +771,7 @@ export default function Shop({ preset }) {
   return (
     <>
       <Seo
-        title={isHome ? undefined : genderPage ? genderPage.seoTitle : activeCategory ? `Buy ${activeCategory.name} Online` : title}
+        title={isHome ? undefined : genderPage && activeCategory ? `${genderPage.title}’s ${activeCategory.name} — WILDTANE` : genderPage ? genderPage.seoTitle : activeCategory ? `Buy ${activeCategory.name} Online` : title}
         description={isHome ? undefined : genderPage ? genderPage.description : `${description} Shop ${activeCategory?.name?.toLowerCase() || 'bags'} at WILDTANE.`}
         canonical={canonical}
         image={genderPage?.image}
@@ -623,7 +783,12 @@ export default function Shop({ preset }) {
       {!get('q') && (
         <div className="hidden md:block">
           {genderPage ? (
-            <DepartmentHero page={genderPage} current={preset} />
+            <DepartmentHero
+              page={genderPage}
+              current={preset}
+              selectedCategory={selectedCatParam}
+              onSelectCategory={(c) => update({ category: c })}
+            />
           ) : preset === 'offers' ? (
             <DepartmentHero page={OFFERS_PAGE} current="offers" />
           ) : !isHome && !categorySlug ? (
@@ -635,7 +800,13 @@ export default function Shop({ preset }) {
       {/* Category Rail (hidden when searching so results appear at the top) */}
       {!get('q') && (
         <div className="container-x pt-2 md:pt-4">
-          <CategoryRail tree={tree} activeSlug={categorySlug} preset={preset} />
+          <CategoryRail
+            tree={tree}
+            activeSlug={effectiveCategory}
+            preset={preset}
+            selectedCategory={selectedCatParam}
+            onSelectCategory={(c) => update({ category: c })}
+          />
         </div>
       )}
 
@@ -874,7 +1045,7 @@ export default function Shop({ preset }) {
                 </button>
               ))}
             </div>
-            <ActiveFilters state={state} onClear={clearAll} />
+            <ActiveFilters state={state} onClear={clearAll} flatCategories={flat} />
           </div>
 
           {products.isError ? (
