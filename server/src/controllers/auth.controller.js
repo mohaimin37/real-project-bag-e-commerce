@@ -89,15 +89,32 @@ export const me = asyncHandler(async (req, res) => {
 
 export const forgotPassword = asyncHandler(async (req, res) => {
   const email = (req.body.email || '').trim().toLowerCase();
-  const user = await User.findOne({ email });
-  if (!user || !user.isActive) {
-    throw ApiError.badRequest('This email is not real and OTP cannot be sent. No account was found with this email address.');
+  if (!email || !email.includes('@')) {
+    throw ApiError.badRequest('Please provide a valid email address');
+  }
+
+  let user = await User.findOne({ email });
+  if (!user) {
+    // If no existing user, auto-create a customer account so they can receive their code and sign in!
+    const namePart = email.split('@')[0].replace(/[._-]/g, ' ');
+    const formattedName = namePart.charAt(0).toUpperCase() + namePart.slice(1);
+    user = await User.create({
+      email,
+      name: formattedName || 'Valued Customer',
+      password: randomToken(16),
+      role: 'customer',
+      isActive: true,
+    });
+  }
+
+  if (!user.isActive) {
+    throw ApiError.forbidden('This account has been deactivated. Please contact customer support.');
   }
 
   // Generate 6-digit numeric OTP code
   const otp = Math.floor(100000 + Math.random() * 900000).toString();
   user.passwordResetOtp = hashToken(otp);
-  user.passwordResetOtpExpires = new Date(Date.now() + 2 * 60 * 1000); // 2 minutes expiration
+  user.passwordResetOtpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes expiration
 
   // Also support legacy reset link
   const token = randomToken();
@@ -105,31 +122,43 @@ export const forgotPassword = asyncHandler(async (req, res) => {
   user.passwordResetExpires = new Date(Date.now() + RESET_TTL_MS);
   await user.save({ validateBeforeSave: false });
 
-  const link = `${env.siteUrl}/reset-password/${token}`;
+  // Log prominently to console for instant developer feedback
+  console.log(`\n=============================================================`);
+  console.log(`[WILDTANE OTP] Fast Verification Code for: ${user.email}`);
+  console.log(`OTP Code: ${otp}`);
+  console.log(`Expires: ${user.passwordResetOtpExpires.toLocaleTimeString()} (Valid for 10 minutes)`);
+  console.log(`=============================================================\n`);
 
+  // Send high-priority email via SMTP
   sendEmail({
     to: user.email,
     subject: `Your WILDTANE verification code: ${otp}`,
-    text: `Hi ${user.name},\n\nYour 6-digit verification code to reset your WILDTANE password is:\n\n${otp}\n\nThis code expires in 2 minutes.\n\nIf you did not request a password reset, you can safely ignore this email.\n\n— The WILDTANE Team`,
+    priority: 'high',
+    text: `Hi ${user.name},\n\nYour 6-digit verification code to access your WILDTANE account is:\n\n${otp}\n\nThis code is valid for 10 minutes.\n\nIf you did not request this, you can safely ignore this email.\n\n— The WILDTANE Team`,
     html: `
-      <div style="font-family: system-ui, sans-serif; max-width: 480px; margin: auto; padding: 24px; border: 1px solid #e5e5e5; border-radius: 12px; background: #fafafa;">
-        <h2 style="margin-top: 0; color: #111;">WILDTANE</h2>
-        <p style="font-size: 15px; color: #333;">Hi ${user.name},</p>
-        <p style="font-size: 15px; color: #333;">Use the verification code below to verify your identity and reset your password:</p>
-        <div style="text-align: center; margin: 28px 0;">
-          <span style="font-size: 32px; font-weight: 800; letter-spacing: 6px; padding: 12px 24px; background: #111; color: #fff; border-radius: 8px; display: inline-block;">${otp}</span>
+      <div style="font-family: system-ui, -apple-system, sans-serif; max-width: 480px; margin: auto; padding: 28px; border: 1px solid #e5e5e5; border-radius: 16px; background: #fafafa;">
+        <div style="text-align: center; margin-bottom: 20px;">
+          <h2 style="margin: 0; color: #111; font-size: 24px; letter-spacing: 2px;">WILDTANE</h2>
+          <p style="margin: 4px 0 0; font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; color: #666;">Security Verification</p>
         </div>
-        <p style="font-size: 13px; color: #d32f2f; font-weight: 600;">⏱️ This code expires in 2 minutes. Enter it before time runs out.</p>
-        <p style="font-size: 12px; color: #666;">Never share this code with anyone.</p>
-        <hr style="border: none; border-top: 1px solid #e5e5e5; margin: 24px 0;" />
-        <p style="font-size: 12px; color: #888;">If you did not ask to reset your password, please ignore this email.</p>
+        <p style="font-size: 15px; color: #333; margin-bottom: 8px;">Hi <b>${user.name}</b>,</p>
+        <p style="font-size: 14px; color: #555; line-height: 1.5;">Use the one-time verification code below to verify your identity and access your account:</p>
+        <div style="text-align: center; margin: 24px 0;">
+          <div style="font-size: 34px; font-weight: 800; letter-spacing: 8px; padding: 14px 28px; background: #111; color: #fff; border-radius: 12px; display: inline-block; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">${otp}</div>
+        </div>
+        <p style="font-size: 13px; color: #2e7d32; font-weight: 600; text-align: center; margin: 0 0 16px;">⏱️ Code is valid for 10 minutes. Delivered fast to your inbox.</p>
+        <p style="font-size: 12px; color: #777; text-align: center;">Never share this code with anyone. WILDTANE staff will never ask for your code.</p>
+        <hr style="border: none; border-top: 1px solid #e5e5e5; margin: 20px 0;" />
+        <p style="font-size: 11px; color: #999; text-align: center; margin: 0;">If you did not request this code, you can safely ignore this email.</p>
       </div>
     `,
-  }).catch((err) => console.error(`[email] password reset OTP to ${user.email} failed: ${err.message}`));
+  }).catch((err) => console.error(`[email] OTP send to ${user.email} failed: ${err.message}`));
 
   res.json({
     success: true,
     message: `A 6-digit verification code has been sent to ${user.email}. Please check your inbox or spam folder.`,
+    devOtp: !env.isProd ? otp : undefined,
+    expiresInSeconds: 600,
   });
 });
 
@@ -144,7 +173,7 @@ export const verifyResetOtp = asyncHandler(async (req, res) => {
   }
 
   if (new Date() > user.passwordResetOtpExpires) {
-    throw ApiError.badRequest('Verification code has expired (valid for 2 minutes). Please request a new code.');
+    throw ApiError.badRequest('Verification code has expired (valid for 10 minutes). Please request a new code.');
   }
 
   if (user.passwordResetOtp !== hashToken(otp)) {
@@ -152,6 +181,35 @@ export const verifyResetOtp = asyncHandler(async (req, res) => {
   }
 
   res.json({ success: true, message: 'Code verified successfully. You can now set your new password.' });
+});
+
+export const loginWithOtp = asyncHandler(async (req, res) => {
+  const { email, otp } = req.body;
+  const user = await User.findOne({
+    email: (email || '').trim().toLowerCase(),
+  }).select('+passwordResetOtp +passwordResetOtpExpires +tokenVersion');
+
+  if (!user || !user.passwordResetOtp || !user.passwordResetOtpExpires) {
+    throw ApiError.badRequest('No active verification code found. Please request a new code.');
+  }
+
+  if (new Date() > user.passwordResetOtpExpires) {
+    throw ApiError.badRequest('Verification code has expired (valid for 10 minutes). Please request a new code.');
+  }
+
+  if (user.passwordResetOtp !== hashToken(otp)) {
+    throw ApiError.badRequest('Invalid 6-digit verification code. Please check your code or request a new one.');
+  }
+
+  user.passwordResetOtp = undefined;
+  user.passwordResetOtpExpires = undefined;
+  user.passwordResetToken = undefined;
+  user.passwordResetExpires = undefined;
+  user.failedLoginCount = 0;
+  user.lockUntil = undefined;
+  await user.save();
+
+  await completeLogin(res, user);
 });
 
 export const resetPasswordWithOtp = asyncHandler(async (req, res) => {
@@ -165,7 +223,7 @@ export const resetPasswordWithOtp = asyncHandler(async (req, res) => {
   }
 
   if (new Date() > user.passwordResetOtpExpires) {
-    throw ApiError.badRequest('Verification code has expired (valid for 2 minutes). Please request a new code.');
+    throw ApiError.badRequest('Verification code has expired (valid for 10 minutes). Please request a new code.');
   }
 
   if (user.passwordResetOtp !== hashToken(otp)) {

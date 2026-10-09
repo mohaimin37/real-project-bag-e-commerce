@@ -34,6 +34,7 @@ export const authRoutes = Router()
   .get('/me', optionalAuth, auth.me)
   .post('/forgot-password', authLimiter, validate(av.forgotSchema), auth.forgotPassword)
   .post('/verify-otp', authLimiter, validate(av.verifyOtpSchema), auth.verifyResetOtp)
+  .post('/login-otp', authLimiter, validate(av.verifyOtpSchema), auth.loginWithOtp)
   .post('/reset-password-otp', authLimiter, validate(av.resetPasswordOtpSchema), auth.resetPasswordWithOtp)
   .post('/reset-password', authLimiter, validate(av.resetSchema), auth.resetPassword);
 

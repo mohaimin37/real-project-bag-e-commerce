@@ -10,9 +10,6 @@ function getTransporter() {
     const options = isGmail
       ? {
           service: 'gmail',
-          pool: true,
-          maxConnections: 5,
-          maxMessages: 100,
           auth: env.smtp.user ? { user: env.smtp.user, pass: env.smtp.pass } : undefined,
           connectionTimeout: 8000,
           greetingTimeout: 5000,
@@ -22,9 +19,6 @@ function getTransporter() {
           host: env.smtp.host,
           port: env.smtp.port,
           secure: env.smtp.port === 465,
-          pool: true,
-          maxConnections: 5,
-          maxMessages: 100,
           auth: env.smtp.user ? { user: env.smtp.user, pass: env.smtp.pass } : undefined,
           connectionTimeout: 8000,
           greetingTimeout: 5000,
@@ -35,13 +29,30 @@ function getTransporter() {
   return transporter;
 }
 
-/** Sends an email, or prints it to the console when SMTP is not configured. */
-export async function sendEmail({ to, subject, text, html }) {
+/** Sends an email with high delivery priority, or logs to console when SMTP is disabled. */
+export async function sendEmail({ to, subject, text, html, priority = 'high' }) {
   const t = getTransporter();
   if (!t) {
     console.log(`\n[email:dev] To: ${to}\nSubject: ${subject}\n${text}\n`);
     return { delivered: false, logged: true };
   }
-  await t.sendMail({ from: env.smtp.from, to, subject, text, html });
-  return { delivered: true };
+
+  const start = Date.now();
+  const info = await t.sendMail({
+    from: env.smtp.from,
+    to,
+    subject,
+    text,
+    html,
+    priority: priority === 'high' ? 'high' : 'normal',
+    headers: {
+      'X-Priority': '1',
+      'X-MSMail-Priority': 'High',
+      Importance: 'high',
+    },
+  });
+
+  const duration = Date.now() - start;
+  console.log(`[email:sent] Delivered to ${to} in ${duration}ms (Message ID: ${info.messageId})`);
+  return { delivered: true, messageId: info.messageId, duration };
 }

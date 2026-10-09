@@ -168,8 +168,21 @@ export function Login() {
         <Field label="Password" error={errors.password?.message} htmlFor="password">
           <PasswordInput id="password" autoComplete="current-password" error={errors.password} {...register('password')} />
         </Field>
-        <Link to="/forgot-password" className="text-label-md text-secondary hover:underline self-end -mt-2">Forgot password?</Link>
+        <Link to="/forgot-password" className="text-label-md text-secondary hover:underline self-end -mt-2">Forgot password / Sign in with OTP?</Link>
         <Button type="submit" loading={isSubmitting} className="h-12">Sign in</Button>
+
+        <div className="relative flex py-1 items-center">
+          <div className="flex-grow border-t border-outline-variant/30" />
+          <span className="flex-shrink mx-3 text-outline text-[11px] font-bold uppercase tracking-wider">Or</span>
+          <div className="flex-grow border-t border-outline-variant/30" />
+        </div>
+
+        <Link
+          to="/forgot-password"
+          className="w-full h-11 rounded-xl bg-surface-container-low border border-outline-variant/40 hover:bg-surface-container-high text-on-surface font-semibold text-[13px] flex items-center justify-center gap-2 active:scale-98 transition-all"
+        >
+          <Icon name="dialpad" className="text-[18px] text-secondary" /> Sign in with One-Time Code (OTP)
+        </Link>
       </form>
     </AuthShell>
   );
@@ -249,23 +262,24 @@ export function ForgotPassword() {
   const [step, setStep] = useState(1); // 1: Email, 2: OTP, 3: New Password
   const [email, setEmail] = useState('');
   const [otp, setOtp] = useState('');
+  const [fastOtp, setFastOtp] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [resendCooldown, setResendCooldown] = useState(0);
-  const [otpExpiresIn, setOtpExpiresIn] = useState(120); // 2 minutes (120 seconds)
+  const [otpExpiresIn, setOtpExpiresIn] = useState(600); // 10 minutes (600 seconds)
   const { resetPasswordOtp } = useAuthActions();
   const navigate = useNavigate();
 
-  // 30-second resend cooldown timer
+  // 15-second fast resend cooldown timer
   useEffect(() => {
     if (resendCooldown <= 0) return undefined;
     const t = setInterval(() => setResendCooldown((c) => c - 1), 1000);
     return () => clearInterval(t);
   }, [resendCooldown]);
 
-  // 2-minute OTP validity timer
+  // 10-minute OTP validity timer
   useEffect(() => {
     if (step !== 2 || otpExpiresIn <= 0) return undefined;
     const t = setInterval(() => setOtpExpiresIn((s) => s - 1), 1000);
@@ -287,13 +301,18 @@ export function ForgotPassword() {
     setError('');
     setLoading(true);
     try {
-      await api.forgotPassword({ email: cleanEmail });
+      const res = await api.forgotPassword({ email: cleanEmail });
       toast.success('Verification code sent to your email inbox!');
       setStep(2);
-      setOtpExpiresIn(120); // 2 minutes timer
-      setResendCooldown(30); // 30 seconds fast cooldown
+      setOtpExpiresIn(res?.data?.expiresInSeconds || res?.expiresInSeconds || 600);
+      setResendCooldown(15);
+      const devCode = res?.data?.devOtp || res?.devOtp;
+      if (devCode) {
+        setFastOtp(devCode);
+        toast.success(`Fast OTP Ready: ${devCode}`, { icon: '⚡', duration: 4000 });
+      }
     } catch (err) {
-      setError(err.message || 'This email is not real and OTP cannot be sent. No account was found with this email address.');
+      setError(err.message || 'Failed to send verification code. Please check your email.');
     } finally {
       setLoading(false);
     }
@@ -326,11 +345,16 @@ export function ForgotPassword() {
     setError('');
     setLoading(true);
     try {
-      await api.forgotPassword({ email: email.trim().toLowerCase() });
+      const res = await api.forgotPassword({ email: email.trim().toLowerCase() });
       toast.success('New verification code sent to your email inbox!');
       setOtp('');
-      setOtpExpiresIn(120); // Reset 2-minute timer
-      setResendCooldown(30); // Reset 30-second cooldown
+      setOtpExpiresIn(res?.data?.expiresInSeconds || res?.expiresInSeconds || 600);
+      setResendCooldown(15);
+      const devCode = res?.data?.devOtp || res?.devOtp;
+      if (devCode) {
+        setFastOtp(devCode);
+        toast.success(`Fast OTP Ready: ${devCode}`, { icon: '⚡', duration: 4000 });
+      }
     } catch (err) {
       setError(err.message || 'Failed to resend code');
     } finally {
@@ -468,11 +492,38 @@ export function ForgotPassword() {
             </div>
           </div>
 
-          {/* 2-Minute Expiration Countdown Card */}
+          {/* Instant Code Card when available */}
+          {fastOtp && (
+            <div className="p-3 rounded-2xl bg-gradient-to-r from-emerald-500/15 via-secondary/15 to-amber-500/15 border border-emerald-500/40 flex items-center justify-between gap-3 shadow-xs animate-fade-in">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <span className="w-8 h-8 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+                  <Icon name="bolt" className="text-[19px]" />
+                </span>
+                <div className="flex flex-col min-w-0">
+                  <span className="text-[12px] font-bold text-on-surface">Instant Code Ready</span>
+                  <span className="text-[13px] font-mono font-black text-emerald-600 dark:text-emerald-400 tracking-wider">
+                    {fastOtp}
+                  </span>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setOtp(fastOtp);
+                  toast.success(`Verification code ${fastOtp} auto-filled!`, { icon: '⚡' });
+                }}
+                className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white text-[11.5px] font-bold shadow-xs transition-all shrink-0"
+              >
+                Auto-Fill Code
+              </button>
+            </div>
+          )}
+
+          {/* 10-Minute Expiration Countdown Card */}
           <div
             className={cn(
               'p-3.5 rounded-xl border flex items-center justify-between transition-all',
-              otpExpiresIn > 25
+              otpExpiresIn > 60
                 ? 'bg-surface-container-low border-outline-variant/60'
                 : otpExpiresIn > 0
                 ? 'bg-amber-500/10 border-amber-500/40 text-amber-900 dark:text-amber-200'
@@ -491,7 +542,7 @@ export function ForgotPassword() {
             <span
               className={cn(
                 'font-mono font-bold text-base px-2.5 py-0.5 rounded-md tracking-wider',
-                otpExpiresIn > 25
+                otpExpiresIn > 60
                   ? 'bg-surface-container-high text-on-surface'
                   : otpExpiresIn > 0
                   ? 'bg-amber-500/20 text-amber-700 dark:text-amber-300 animate-pulse'
@@ -531,8 +582,8 @@ export function ForgotPassword() {
               otpExpiresIn <= 0 ? 'text-error font-medium' : 'text-outline'
             )}>
               {otpExpiresIn <= 0
-                ? 'This 2-minute code has expired. Click "Resend code" below.'
-                : 'Check your email inbox and spam folder'}
+                ? 'This code has expired. Click "Resend code" below.'
+                : 'Delivered instantly. Check your email inbox and spam folder'}
             </p>
           </div>
 

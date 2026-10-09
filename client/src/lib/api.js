@@ -53,6 +53,7 @@ export const api = {
   logoutAll: () => http.post('/auth/logout-all'),
   forgotPassword: (body) => http.post('/auth/forgot-password', body),
   verifyResetOtp: (body) => http.post('/auth/verify-otp', body),
+  loginWithOtp: (body) => http.post('/auth/login-otp', body),
   resetPasswordOtp: (body) => http.post('/auth/reset-password-otp', body),
   resetPassword: (body) => http.post('/auth/reset-password', body),
 
