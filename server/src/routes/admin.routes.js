@@ -50,6 +50,7 @@ r.delete('/categories/:id', categories.deleteCategory);
 // Orders
 r.get('/orders', orders.adminListOrders);
 r.get('/orders/:id', orders.adminGetOrder);
+r.post('/orders/:id/approve', orders.adminApproveOrder);
 r.patch('/orders/:id/status', validate(orderStatusSchema), orders.adminUpdateStatus);
 r.patch('/orders/:id/payment', validate(paymentStatusSchema), orders.adminUpdatePayment);
 r.post('/notifications/:notificationId/resend', orders.adminResendNotification);

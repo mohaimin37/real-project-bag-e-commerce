@@ -582,7 +582,7 @@ export default function About() {
           <div className="flex flex-col gap-1.5">
             <span className="text-[11px] font-bold uppercase tracking-wider text-secondary">Registered Address</span>
             <address className="not-italic text-[13px] text-on-surface-variant leading-relaxed">
-              A 370 Amar Puri Nabi Karim, Paharganj, New Delhi-110055
+              Paharganj , New Delhi , 110055
             </address>
           </div>
           <div className="flex flex-col gap-1.5">

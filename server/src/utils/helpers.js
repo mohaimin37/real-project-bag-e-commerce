@@ -46,3 +46,21 @@ export function toList(value) {
     .map((v) => String(v).trim())
     .filter(Boolean);
 }
+
+const ONES = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
+const TENS = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+function words(n) {
+  if (n < 20) return ONES[n];
+  if (n < 100) return `${TENS[Math.floor(n / 10)]} ${ONES[n % 10]}`.trim();
+  if (n < 1000) return `${ONES[Math.floor(n / 100)]} Hundred ${words(n % 100)}`.trim();
+  for (const [size, name] of [[1e7, 'Crore'], [1e5, 'Lakh'], [1e3, 'Thousand']]) {
+    if (n >= size) return `${words(Math.floor(n / size))} ${name} ${words(n % size)}`.trim();
+  }
+  return '';
+}
+
+export function amountInWords(amount) {
+  const rupees = Math.floor(amount || 0);
+  const paise = Math.round(((amount || 0) - rupees) * 100);
+  return `Rupees ${words(rupees) || 'Zero'}${paise ? ` and ${words(paise)} Paise` : ''} Only`;
+}

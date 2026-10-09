@@ -4,7 +4,7 @@ import Notification from '../models/Notification.js';
 import ApiError from '../utils/ApiError.js';
 import asyncHandler from '../utils/asyncHandler.js';
 import { escapeRegex, paginated, parsePagination } from '../utils/helpers.js';
-import { placeOrder, changeOrderStatus, cancelByCustomer } from '../services/order.service.js';
+import { placeOrder, changeOrderStatus, cancelByCustomer, approveOrder } from '../services/order.service.js';
 import { deliver } from '../services/whatsapp.service.js';
 
 function findQuery(idOrOrderId) {
@@ -105,4 +105,11 @@ export const adminResendNotification = asyncHandler(async (req, res) => {
   if (!notification) throw ApiError.notFound('Notification not found');
   await deliver(notification);
   res.json({ success: true, notification });
+});
+
+export const adminApproveOrder = asyncHandler(async (req, res) => {
+  const order = await Order.findOne(findQuery(req.params.id));
+  if (!order) throw ApiError.notFound('Order not found');
+  const result = await approveOrder(order, req.user._id);
+  res.json({ success: true, ...result });
 });

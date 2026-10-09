@@ -25,7 +25,7 @@ const TOPICS = ['Order status & delivery', 'Returns & exchanges', 'Damaged or de
  * Filled from Admin → Settings → Store details; each card stays hidden until its details are set.
  */
 function OfficeCards({ config }) {
-  const address = config?.businessAddress?.trim() || 'A 370 Amar Puri Nabi Karim, Paharganj, New Delhi-110055';
+  const address = config?.businessAddress?.trim() || 'Paharganj , New Delhi , 110055';
   const companyName = config?.companyName || 'WILDTANE PRIVATE LIMITED';
   const gstin = config?.gstin || '07AAECW3767F1Z4';
   const phone = config?.supportPhone || '8920550465';

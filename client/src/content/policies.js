@@ -15,7 +15,7 @@
 export const COMPANY = 'WILDTANE PRIVATE LIMITED';
 export const POLICY_LAST_UPDATED = '7 October 2026';
 export const EFFECTIVE_DATE = '7 October 2026';
-export const REGISTERED_ADDRESS = 'A 370 Amar Puri Nabi Karim, Paharganj, New Delhi-110055';
+export const REGISTERED_ADDRESS = 'Paharganj , New Delhi , 110055';
 export const GSTIN = '07AAECW3767F1Z4';
 export const PHONE = '8920550465';
 

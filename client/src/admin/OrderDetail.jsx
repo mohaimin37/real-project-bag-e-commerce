@@ -21,27 +21,48 @@ function WhatsAppLog({ notifications, onResent }) {
   });
   const tone = { sent: 'bg-secondary text-on-secondary', logged: 'bg-tertiary-fixed text-tertiary-container', failed: 'bg-error-container text-on-error-container', pending: 'bg-surface-container-highest' };
   return (
-    <Panel title="WhatsApp admin alerts">
+    <Panel title="Outbound Alerts & WhatsApp Logs">
       {notifications.length === 0 ? (
-        <p className="text-body-sm text-on-surface-variant">No notification recorded for this order.</p>
+        <p className="text-body-sm text-on-surface-variant">No notification recorded for this order yet.</p>
       ) : (
         <div className="flex flex-col gap-2">
-          {notifications.map((n) => (
-            <div key={n._id} className="p-space-sm rounded-xl bg-surface-container-low flex flex-col gap-2">
-              <div className="flex items-center justify-between gap-2">
-                <span className={cn('px-2 py-0.5 rounded-full text-label-sm uppercase', tone[n.status])}>{n.status}</span>
-                <span className="text-label-sm font-normal text-outline">{n.provider === 'dev_log' ? 'Dev log' : 'Cloud API'} · {n.attempts} attempt{n.attempts === 1 ? '' : 's'} · {timeAgo(n.lastAttemptAt || n.createdAt)}</span>
+          {notifications.map((n) => {
+            const isCustomer = n.type === 'customer_order_approval' || n.type === 'customer_invoice';
+            const cleanRecip = (n.recipient || '').replace(/[^\d]/g, '');
+            const waTarget = cleanRecip.length === 10 ? `91${cleanRecip}` : cleanRecip;
+            return (
+              <div key={n._id} className="p-space-sm rounded-xl bg-surface-container-low flex flex-col gap-2">
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className={cn('px-2 py-0.5 rounded-full text-label-sm uppercase', tone[n.status])}>{n.status}</span>
+                    <span className="text-label-sm font-semibold text-on-surface">
+                      {n.type === 'customer_order_approval' ? '👤 Customer WhatsApp Invoice' : n.type === 'customer_invoice' ? '✉️ Customer Email Invoice' : '🛡️ Admin New Order Alert'}
+                    </span>
+                  </div>
+                  <span className="text-label-sm font-normal text-outline">
+                    {n.provider === 'dev_log' ? 'Dev log' : n.provider === 'smtp' ? 'SMTP' : 'Cloud API'} · {n.attempts} attempt{n.attempts === 1 ? '' : 's'} · {timeAgo(n.lastAttemptAt || n.createdAt)}
+                  </span>
+                </div>
+                {n.recipient && (
+                  <p className="text-[12px] text-outline">
+                    Recipient: <span className="font-mono font-medium text-on-surface">{n.recipient}</span>
+                  </p>
+                )}
+                {n.error && <p className="text-label-md text-error">{n.error}</p>}
+                <div className="flex flex-wrap gap-2">
+                  <Button size="sm" variant="tonal" icon="visibility" onClick={() => setView(n)}>Preview</Button>
+                  {n.channel === 'whatsapp' && (
+                    <>
+                      <Button size="sm" variant="tonal" icon="send" loading={resend.isPending} onClick={() => resend.mutate(n._id)}>Resend</Button>
+                      <a className="btn-tonal btn-sm text-emerald-700 dark:text-emerald-300" href={`https://wa.me/${waTarget || ''}?text=${encodeURIComponent(n.message)}`} target="_blank" rel="noreferrer">
+                        <Icon name="chat" className="text-[18px]" /> Open in WhatsApp
+                      </a>
+                    </>
+                  )}
+                </div>
               </div>
-              {n.error && <p className="text-label-md text-error">{n.error}</p>}
-              <div className="flex flex-wrap gap-2">
-                <Button size="sm" variant="tonal" icon="visibility" onClick={() => setView(n)}>Preview</Button>
-                <Button size="sm" variant="tonal" icon="send" loading={resend.isPending} onClick={() => resend.mutate(n._id)}>Resend</Button>
-                <a className="btn-tonal btn-sm" href={`https://wa.me/${n.recipient || ''}?text=${encodeURIComponent(n.message)}`} target="_blank" rel="noreferrer">
-                  <Icon name="chat" className="text-[18px]" /> Open in WhatsApp
-                </a>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
       <Modal open={Boolean(view)} onClose={() => setView(null)} title="WhatsApp message" size="md">
@@ -210,7 +231,8 @@ function Invoice({ order: o, settings: st }) {
     <div className="hidden print:block text-black bg-white text-[12px] leading-snug">
       <div className="flex justify-between items-start gap-6 pb-4 border-b-2 border-black">
         <div>
-          <p className="text-[22px] font-extrabold tracking-tight uppercase">{st?.storeName || 'WILDTANE'}</p>
+          <img src="/brand/logo-horizontal-gold.png" alt="WILDTANE" className="h-9 w-auto mb-1.5" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+          <p className="text-[20px] font-extrabold tracking-tight uppercase">{st?.companyName || st?.storeName || 'WILDTANE'}</p>
           {st?.businessAddress && <p className="whitespace-pre-line max-w-xs">{st.businessAddress}</p>}
           <p>{[st?.supportEmail, st?.supportPhone].filter(Boolean).join(' · ')}</p>
           {st?.gstin && <p className="font-semibold">GSTIN: {st.gstin}</p>}
@@ -320,11 +342,44 @@ export default function OrderDetail() {
     onError: (e) => toast.error(e.message),
   });
 
+  const approveMutation = useMutation({
+    mutationFn: () => adminApi.approveOrder(order._id),
+    onSuccess: (res) => {
+      toast.success(res.message || 'Order approved! Tax Invoice dispatched to customer email & WhatsApp.');
+      refresh();
+      if (res.whatsappLink) {
+        window.open(res.whatsappLink, '_blank');
+      }
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
   if (isLoading) return <PageLoader />;
   if (isError) return <ErrorState error={error} onRetry={refetch} />;
   const o = order;
   const a = o.shippingAddress;
   const final = ['Cancelled', 'Returned'].includes(o.orderStatus);
+
+  const customerPhoneRaw = (a?.phone || o.phone || '').replace(/[^\d]/g, '');
+  const customerWaNumber = customerPhoneRaw.length === 10 ? `91${customerPhoneRaw}` : customerPhoneRaw;
+  const quickWaText = `✅ *ORDER APPROVED & VERIFIED - WILDTANE*
+
+Dear *${o.customerName}*,
+Your order *#${o.orderId}* has been verified and approved by WILDTANE admin.
+
+*TAX INVOICE DETAILS:*
+• Order ID: *${o.orderId}*
+• Registered Office: Paharganj , New Delhi , 110055
+• Grand Total: ${formatINR(o.grandTotal)}
+• Payment: ${PAYMENT_LABELS[o.paymentMethod] || o.paymentMethod} (${o.paymentStatus})
+
+📄 *View Live Digital Tax Invoice:*
+${window.location.origin}/account/orders/${o.orderId}
+
+A formal Tax Invoice with company logo has also been dispatched to your email (${o.email}).
+Need help? Contact info@wildtane.com / 8920550465.
+Thank you for choosing WILDTANE!`;
+  const customerWaLink = customerWaNumber ? `https://wa.me/${customerWaNumber}?text=${encodeURIComponent(quickWaText)}` : null;
 
   return (
     <>
@@ -338,8 +393,84 @@ export default function OrderDetail() {
             <p className="text-body-sm text-on-surface-variant">Placed {formatDateTime(o.createdAt)} · updated {timeAgo(o.updatedAt)}</p>
           </div>
         </div>
-        <Button icon="print" onClick={() => window.print()}>Print bill</Button>
+        <div className="flex flex-wrap items-center gap-2">
+          {o.orderStatus === 'Pending' && (
+            <Button
+              variant="filled"
+              className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold"
+              icon="verified"
+              loading={approveMutation.isPending}
+              onClick={() => approveMutation.mutate()}
+            >
+              Approve &amp; Send Invoice
+            </Button>
+          )}
+          {customerWaLink && (
+            <a
+              href={customerWaLink}
+              target="_blank"
+              rel="noreferrer"
+              className="btn-tonal flex items-center gap-1.5 text-emerald-700 dark:text-emerald-300 font-semibold"
+            >
+              <Icon name="chat" className="text-[18px]" /> WhatsApp Customer
+            </a>
+          )}
+          <Button icon="print" onClick={() => window.print()}>Print bill</Button>
+        </div>
       </div>
+
+      {o.orderStatus === 'Pending' ? (
+        <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <span className="w-10 h-10 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0">
+              <Icon name="pending_actions" className="text-[22px]" />
+            </span>
+            <div>
+              <h3 className="font-bold text-label-lg text-on-surface">Order Awaiting Admin Approval</h3>
+              <p className="text-body-sm text-on-surface-variant">
+                Verify items, pricing and address. When ready, click below to approve and dispatch the official Tax Invoice with company logo to <b>{o.email}</b> and WhatsApp <b>{o.phone}</b>.
+              </p>
+            </div>
+          </div>
+          <Button
+            variant="filled"
+            className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold shrink-0 shadow-md"
+            icon="verified"
+            loading={approveMutation.isPending}
+            onClick={() => approveMutation.mutate()}
+          >
+            Approve Order &amp; Dispatch Invoice
+          </Button>
+        </div>
+      ) : (
+        <div className="p-3 px-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex flex-wrap items-center justify-between gap-3 text-body-sm">
+          <div className="flex items-center gap-2 text-emerald-800 dark:text-emerald-300 font-semibold">
+            <Icon name="verified" className="text-[18px]" />
+            <span>Admin Approved · Official Tax Invoice dispatched to email &amp; WhatsApp {o.approvedAt ? `(${formatDateTime(o.approvedAt)})` : ''}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              variant="tonal"
+              icon="send"
+              loading={approveMutation.isPending}
+              onClick={() => approveMutation.mutate()}
+            >
+              Re-send Tax Invoice
+            </Button>
+            {customerWaLink && (
+              <a
+                href={customerWaLink}
+                target="_blank"
+                rel="noreferrer"
+                className="btn-tonal btn-sm text-emerald-700 dark:text-emerald-300"
+              >
+                <Icon name="chat" className="text-[16px]" /> Open WhatsApp Chat
+              </a>
+            )}
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-space-md items-start">
         <div className="xl:col-span-2 flex flex-col gap-space-md">

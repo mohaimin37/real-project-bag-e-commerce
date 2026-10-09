@@ -89,6 +89,9 @@ const orderSchema = new mongoose.Schema(
     courier: String,
     customerNote: { type: String, maxlength: 500 },
     inventoryRestored: { type: Boolean, default: false },
+    approvedAt: Date,
+    approvedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    invoiceSentAt: Date,
   },
   { timestamps: true }
 );

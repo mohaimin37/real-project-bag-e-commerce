@@ -193,8 +193,6 @@ const registerSchema = z
     name: z.string().trim().min(2, 'Enter your full name'),
     email: z.email('Enter a valid email'),
     phone: z.object({ dialCode: z.string(), number: z.string().trim().regex(/^[0-9\s-]{5,16}$/, 'Enter a valid phone number') }),
-    country: z.string().length(2, 'Select your country'),
-    nationality: z.string().length(2, 'Select your nationality'),
     password: passwordRule,
     confirm: z.string(),
     terms: z.literal(true, { message: 'Please accept the terms' }),
@@ -207,11 +205,11 @@ export function Register() {
   const next = useNext();
   const { register, handleSubmit, setError, formState: { errors, isSubmitting } } = useForm({
     resolver: zodResolver(registerSchema),
-    defaultValues: { phone: { dialCode: '+91', number: '' }, country: 'IN', nationality: 'IN' },
+    defaultValues: { phone: { dialCode: '+91', number: '' } },
   });
   const onSubmit = async ({ confirm, terms, ...values }) => {
     try {
-      const user = await signUp(values);
+      const user = await signUp({ ...values, country: 'IN', nationality: 'IN' });
       toast.success(`Registration successful. Welcome to WILDTANE, ${user.name.split(' ')[0]}!`);
       navigate(next || '/', { replace: true });
     } catch (err) {
@@ -232,14 +230,6 @@ export function Register() {
         <Field label="Mobile number" error={errors.phone?.number?.message} required>
           <PhoneInput dialProps={register('phone.dialCode')} numberProps={register('phone.number')} error={errors.phone?.number} />
         </Field>
-        <div className="grid sm:grid-cols-2 gap-space-md">
-          <Field label="Country of residence" error={errors.country?.message} required>
-            <CountrySelect error={errors.country} {...register('country')} />
-          </Field>
-          <Field label="Nationality" error={errors.nationality?.message} required>
-            <CountrySelect error={errors.nationality} {...register('nationality')} />
-          </Field>
-        </div>
         <Field label="Password" error={errors.password?.message} hint="8+ characters with a letter and a number" htmlFor="password" required>
           <PasswordInput id="password" autoComplete="new-password" error={errors.password} {...register('password')} />
         </Field>

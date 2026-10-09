@@ -8,7 +8,7 @@ const settingSchema = new mongoose.Schema(
     supportEmail: { type: String, default: 'info@wildtane.com' },
     supportPhone: { type: String, default: '8920550465' },
     // Registered office: printed on customer bills and shown on the Contact page, footer and policies.
-    businessAddress: { type: String, default: 'A 370 Amar Puri Nabi Karim, Paharganj, New Delhi-110055' },
+    businessAddress: { type: String, default: 'Paharganj , New Delhi , 110055' },
     supportHours: { type: String, default: 'Monday to Saturday, 10:00 am – 6:00 pm (except public holidays)' },
     // Grievance Officer required by the Consumer Protection (E-Commerce) Rules, 2020 and the DPDP Act, 2023.
     grievanceOfficer: {
@@ -106,7 +106,7 @@ settingSchema.statics.get = async function getSettings() {
   } else {
     const updates = {};
     if (!doc.companyName) updates.companyName = 'WILDTANE PRIVATE LIMITED';
-    if (!doc.businessAddress) updates.businessAddress = 'A 370 Amar Puri Nabi Karim, Paharganj, New Delhi-110055';
+    if (!doc.businessAddress || doc.businessAddress.includes('Amar Puri')) updates.businessAddress = 'Paharganj , New Delhi , 110055';
     if (!doc.gstin) updates.gstin = '07AAECW3767F1Z4';
     if (!doc.supportPhone || doc.supportPhone.includes('98765')) updates.supportPhone = '8920550465';
     if (Object.keys(updates).length > 0) {

@@ -109,7 +109,7 @@ export const organizationLd = (config) => ({
   telephone: config?.supportPhone || '8920550465',
   address: {
     '@type': 'PostalAddress',
-    streetAddress: 'A 370 Amar Puri Nabi Karim, Paharganj',
+    streetAddress: 'Paharganj',
     addressLocality: 'New Delhi',
     postalCode: '110055',
     addressCountry: 'IN',

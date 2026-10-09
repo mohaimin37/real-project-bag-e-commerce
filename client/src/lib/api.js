@@ -168,6 +168,7 @@ export const adminApi = {
 
   orders: (params) => http.get(`/admin/orders${qs(params)}`),
   order: (id) => http.get(`/admin/orders/${id}`),
+  approveOrder: (id) => http.post(`/admin/orders/${id}/approve`),
   orderStatus: (id, body) => http.patch(`/admin/orders/${id}/status`, body),
   orderPayment: (id, paymentStatus) => http.patch(`/admin/orders/${id}/payment`, { paymentStatus }),
   resendNotification: (id) => http.post(`/admin/notifications/${id}/resend`),

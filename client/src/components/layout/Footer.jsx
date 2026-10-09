@@ -92,7 +92,7 @@ function Newsletter() {
 
 /** "Mail us" / "Registered office" block: the company name and address. */
 function AddressBlock({ title, config, children }) {
-  const address = config?.businessAddress?.trim() || 'A 370 Amar Puri Nabi Karim, Paharganj, New Delhi-110055';
+  const address = config?.businessAddress?.trim() || 'Paharganj , New Delhi , 110055';
   const companyName = config?.companyName || 'WILDTANE PRIVATE LIMITED';
   return (
     <div className="flex flex-col gap-1.5">

@@ -3,7 +3,7 @@ import Notification from '../models/Notification.js';
 import { formatINR } from '../utils/helpers.js';
 import { countryName } from '../utils/countries.js';
 
-const PAYMENT_LABELS = { cod: 'Cash on Delivery', card: 'Card', upi: 'UPI / Net Banking', wallet: 'Wallet' };
+export const PAYMENT_LABELS = { cod: 'Cash on Delivery', card: 'Card', upi: 'UPI / Net Banking', wallet: 'Wallet' };
 
 export function formatAddress(a) {
   return [
@@ -48,8 +48,6 @@ export function buildOrderMessage(order) {
     `Name: ${order.customerName}`,
     `Phone: ${order.phone}`,
     `Email: ${order.email}`,
-    `Country: ${countryName(order.country)}`,
-    `Nationality: ${countryName(order.nationality)}`,
     '',
     '*DELIVERY ADDRESS*',
     formatAddress(order.shippingAddress),
@@ -70,6 +68,85 @@ export function buildOrderMessage(order) {
   ].join('\n');
 }
 
+/** Plain-text customer WhatsApp message sent upon admin order approval with full invoice details. */
+export function buildCustomerOrderApprovalMessage(order, settings = {}) {
+  const date = new Date(order.createdAt).toLocaleString('en-IN', {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+    timeZone: 'Asia/Kolkata',
+  });
+
+  const items = order.items
+    .map((it, i) =>
+      [
+        `${i + 1}. *${it.productName}*`,
+        `   Variant: ${it.variant?.name || 'Standard'}${it.variant?.size ? ` / ${it.variant.size}` : ''}`,
+        `   SKU: ${it.SKU}`,
+        `   Qty: ${it.quantity} × ${formatINR(it.unitPrice)} = ${formatINR(it.totalPrice)}`,
+      ].join('\n')
+    )
+    .join('\n\n');
+
+  const addr = order.shippingAddress;
+  const addressText = [
+    addr.fullName,
+    addr.addressLine1,
+    addr.addressLine2,
+    addr.landmark ? `Landmark: ${addr.landmark}` : '',
+    `${addr.city}, ${addr.state} ${addr.postalCode}`,
+    countryName(addr.country),
+  ]
+    .filter(Boolean)
+    .join(', ');
+
+  const invoiceUrl = `${env.siteUrl}/account/orders/${order.orderId}`;
+  const registeredAddress = settings.businessAddress || 'Paharganj , New Delhi , 110055';
+
+  return [
+    `✅ *ORDER APPROVED & VERIFIED - WILDTANE*`,
+    '',
+    `Dear *${order.customerName}*,`,
+    `Your order *#${order.orderId}* has been verified and approved by WILDTANE administration.`,
+    '',
+    `*TAX INVOICE DETAILS*`,
+    `• Order / Invoice No: *${order.orderId}*`,
+    `• Date: ${date} IST`,
+    `• Registered Office: ${registeredAddress}`,
+    `• GSTIN: ${settings.gstin || '07AAECW3767F1Z4'}`,
+    '',
+    `*ITEMS ORDERED*`,
+    items,
+    '',
+    `*FINANCIAL BREAKDOWN*`,
+    `• Subtotal: ${formatINR(order.subtotal)}`,
+    order.discount > 0 ? `• Discount: -${formatINR(order.discount)}` : '',
+    order.coinDiscount > 0 ? `• Coins: -${formatINR(order.coinDiscount)}` : '',
+    `• Shipping: ${order.shipping ? formatINR(order.shipping) : 'Free'}`,
+    `• GST Tax: ${formatINR(order.tax)}`,
+    `• *Grand Total: ${formatINR(order.grandTotal)}*`,
+    `• Payment: ${PAYMENT_LABELS[order.paymentMethod] || order.paymentMethod} (${order.paymentStatus})`,
+    '',
+    `*DELIVERY DESTINATION*`,
+    addressText,
+    '',
+    `📄 *Digital Tax Invoice:*`,
+    `View & track live: ${invoiceUrl}`,
+    '',
+    `A detailed Tax Invoice with company logo has also been dispatched to your email (${order.email}).`,
+    '',
+    `Need help? Reply here or contact ${settings.supportEmail || 'info@wildtane.com'} · ${settings.supportPhone || '8920550465'}.`,
+    `Thank you for choosing WILDTANE!`,
+  ]
+    .filter(Boolean)
+    .join('\n');
+}
+
+export function buildWhatsAppChatLink(phone, message) {
+  const digits = String(phone || '').replace(/[^\d]/g, '');
+  const target = digits.length === 10 ? `91${digits}` : digits;
+  return `https://wa.me/${target}?text=${encodeURIComponent(message)}`;
+}
+
 async function sendViaCloudApi(to, body) {
   const url = `https://graph.facebook.com/${env.whatsapp.apiVersion}/${env.whatsapp.phoneNumberId}/messages`;
   const res = await fetch(url, {
@@ -88,16 +165,20 @@ export async function deliver(notification) {
   notification.attempts += 1;
   notification.lastAttemptAt = new Date();
   try {
-    if (env.whatsapp.enabled) {
+    const rawRecipient = notification.recipient || env.whatsapp.adminNumber || '';
+    const digits = rawRecipient.replace(/[^\d]/g, '');
+    const cleanRecipient = digits.length === 10 ? `91${digits}` : digits;
+    notification.recipient = cleanRecipient;
+
+    if (env.whatsapp.enabled && cleanRecipient) {
       notification.provider = 'whatsapp_cloud';
-      notification.recipient = env.whatsapp.adminNumber;
-      notification.providerMessageId = await sendViaCloudApi(env.whatsapp.adminNumber, notification.message);
+      notification.providerMessageId = await sendViaCloudApi(cleanRecipient, notification.message);
       notification.status = 'sent';
       notification.error = undefined;
     } else {
       notification.provider = 'dev_log';
       notification.status = 'logged';
-      console.log(`\n[whatsapp:dev] WhatsApp API not configured — message logged instead:\n${notification.message}\n`);
+      console.log(`\n[whatsapp:dev] Outbound to ${cleanRecipient || 'admin'}:\n${notification.message}\n`);
     }
   } catch (err) {
     notification.status = 'failed';
@@ -123,6 +204,27 @@ export async function notifyAdminOfOrder(order) {
     return await deliver(notification);
   } catch (err) {
     console.error(`[whatsapp] Could not create notification for order ${order.orderId}: ${err.message}`);
+    return null;
+  }
+}
+
+/** Notifies customer via WhatsApp when admin approves the order. */
+export async function notifyCustomerOfOrderApprovalWhatsApp(order, settings = {}) {
+  try {
+    const customerPhone = order.shippingAddress?.phone || order.phone || '';
+    const message = buildCustomerOrderApprovalMessage(order, settings);
+    const notification = await Notification.create({
+      type: 'customer_order_approval',
+      channel: 'whatsapp',
+      order: order._id,
+      recipient: customerPhone,
+      message,
+      provider: env.whatsapp.enabled ? 'whatsapp_cloud' : 'dev_log',
+      status: 'pending',
+    });
+    return await deliver(notification);
+  } catch (err) {
+    console.error(`[whatsapp] Could not create customer approval notification for order ${order.orderId}: ${err.message}`);
     return null;
   }
 }

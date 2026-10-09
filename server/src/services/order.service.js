@@ -5,14 +5,16 @@ import Cart from '../models/Cart.js';
 import User from '../models/User.js';
 import Review from '../models/Review.js';
 import Setting from '../models/Setting.js';
+import Notification from '../models/Notification.js';
 import { nextSequence } from '../models/Counter.js';
 import ApiError from '../utils/ApiError.js';
 import { resolveLines, computeTotals } from './cart.service.js';
 import { redeemCoupon, releaseCoupon } from './coupon.service.js';
 import { moveCoins, reverseOrderCoins } from './coin.service.js';
 import { getProvider } from './payment.service.js';
-import { notifyAdminOfOrder } from './whatsapp.service.js';
+import { notifyAdminOfOrder, notifyCustomerOfOrderApprovalWhatsApp, buildCustomerOrderApprovalMessage, buildWhatsAppChatLink } from './whatsapp.service.js';
 import { sendEmail } from './email.service.js';
+import { buildTaxInvoiceHtml, buildTaxInvoiceText } from './invoice-email.template.js';
 import env from '../config/env.js';
 
 function formatOrderId(seq) {
@@ -206,6 +208,11 @@ export async function changeOrderStatus(order, { status, note, trackingNumber, c
   const statusChanged = status !== order.orderStatus;
   if (statusChanged) {
     order.orderStatus = status;
+    if (status === 'Confirmed') {
+      order.approvedAt = when;
+      order.approvedBy = changedBy;
+      order.invoiceSentAt = when;
+    }
     order.statusHistory.push({ status, note, changedBy, at: when });
   }
   if (trackingNumber !== undefined) order.trackingNumber = trackingNumber;
@@ -215,9 +222,94 @@ export async function changeOrderStatus(order, { status, note, trackingNumber, c
     order.paymentStatus = 'Paid';
   }
   await order.save();
-  // Fire-and-forget, like the WhatsApp alert: an email problem never blocks the status change.
-  if (statusChanged && notifyCustomer) notifyCustomerOfStatus(order, when, note).catch((e) => console.error('[email] status update failed:', e.message));
+  // Fire-and-forget: customer gets Tax Invoice on Confirmation, or status tracking alert
+  if (statusChanged && notifyCustomer) {
+    if (status === 'Confirmed') {
+      Setting.get().then((st) => {
+        sendOrderTaxInvoiceEmail(order, st).catch((e) => console.error('[email] tax invoice failed:', e.message));
+        notifyCustomerOfOrderApprovalWhatsApp(order, st).catch((e) => console.error('[whatsapp] customer approval failed:', e.message));
+      });
+    } else {
+      notifyCustomerOfStatus(order, when, note).catch((e) => console.error('[email] status update failed:', e.message));
+    }
+  }
   return order;
+}
+
+/** Dispatches a full Tax Invoice email with company logo to the customer. */
+export async function sendOrderTaxInvoiceEmail(order, settings) {
+  if (!order.email) return null;
+  const currentSettings = settings || (await Setting.get());
+  const html = buildTaxInvoiceHtml(order, currentSettings);
+  const text = buildTaxInvoiceText(order, currentSettings);
+  const subject = `Tax Invoice & Order Confirmation - ${order.orderId} [${currentSettings.storeName || 'Wildtane'}]`;
+
+  try {
+    const outcome = await sendEmail({
+      to: order.email,
+      subject,
+      html,
+      text,
+      priority: 'high',
+    });
+
+    await Notification.create({
+      type: 'customer_invoice',
+      channel: 'email',
+      order: order._id,
+      recipient: order.email,
+      message: `Tax Invoice emailed to ${order.email} (Order ${order.orderId})`,
+      provider: outcome?.delivered ? 'smtp' : 'dev_log',
+      status: outcome?.delivered ? 'sent' : 'logged',
+      providerMessageId: outcome?.messageId,
+    }).catch(() => {});
+
+    return outcome;
+  } catch (err) {
+    console.error(`[email] Tax invoice delivery failed for ${order.orderId}:`, err.message);
+    await Notification.create({
+      type: 'customer_invoice',
+      channel: 'email',
+      order: order._id,
+      recipient: order.email,
+      message: `Tax Invoice delivery failed: ${err.message}`,
+      provider: 'smtp',
+      status: 'failed',
+      error: err.message,
+    }).catch(() => {});
+    return null;
+  }
+}
+
+/** Explicit admin approval: marks order Confirmed, dispatches Tax Invoice to email and WhatsApp. */
+export async function approveOrder(order, adminUserId) {
+  const settings = await Setting.get();
+  order.orderStatus = 'Confirmed';
+  order.approvedAt = new Date();
+  if (adminUserId) order.approvedBy = adminUserId;
+  order.invoiceSentAt = new Date();
+
+  order.statusHistory.push({
+    status: 'Confirmed',
+    note: 'Approved by admin - Official Tax Invoice dispatched to email and WhatsApp',
+    changedBy: adminUserId,
+    at: new Date(),
+  });
+
+  await order.save();
+
+  // Send Tax Invoice email with company logo and all details
+  const emailPromise = sendOrderTaxInvoiceEmail(order, settings);
+  // Send customer WhatsApp confirmation
+  const waPromise = notifyCustomerOfOrderApprovalWhatsApp(order, settings);
+
+  await Promise.allSettled([emailPromise, waPromise]);
+
+  const customerPhone = order.shippingAddress?.phone || order.phone || '';
+  const waMessage = buildCustomerOrderApprovalMessage(order, settings);
+  const whatsappLink = buildWhatsAppChatLink(customerPhone, waMessage);
+
+  return { order, whatsappLink, message: 'Order approved successfully. Tax invoice sent to email and WhatsApp.' };
 }
 
 const STATUS_MESSAGES = {

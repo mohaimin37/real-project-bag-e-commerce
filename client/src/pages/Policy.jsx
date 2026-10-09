@@ -12,7 +12,7 @@ const anchor = (heading) => heading.toLowerCase().replace(/[^a-z0-9]+/g, '-').re
 /** Fills {{tokens}} from store settings; a missing contact setting becomes a [PLACEHOLDER]. */
 function fill(text, config) {
   const methods = (config?.shippingMethods || []).map((m) => `${m.label}: ${m.eta}${m.price ? ` (${formatINR(m.price)})` : ' (free)'}`);
-  const address = config?.businessAddress?.trim() || 'A 370 Amar Puri Nabi Karim, Paharganj, New Delhi-110055';
+  const address = config?.businessAddress?.trim() || 'Paharganj , New Delhi , 110055';
   const values = {
     storeName: config?.storeName || 'WILDTANE',
     companyName: config?.companyName || 'WILDTANE PRIVATE LIMITED',
