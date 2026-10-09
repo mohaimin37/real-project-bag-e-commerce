@@ -603,9 +603,9 @@ function CategoryRail({ tree, activeSlug, preset, selectedCategory, onSelectCate
     { key: 'all', label: 'All', to: '/', icon: 'apps', on: preset === 'home' || (!activeSlug && !['offers', 'men', 'women', 'universal', 'unisex'].includes(preset)) },
     { key: 'men', label: 'Men', to: '/men', icon: 'man', on: preset === 'men' },
     { key: 'women', label: 'Women', to: '/women', icon: 'woman', on: preset === 'women' },
-    { key: 'universal', label: 'Universal', to: '/universal', icon: 'public', on: preset === 'universal' || preset === 'unisex' },
-    { key: 'travel-utility', label: 'Travel', to: '/shop/travel-utility', icon: 'flight_takeoff', on: activeSlug === 'travel-utility' },
-    { key: 'accessories', label: 'Accessories', to: '/shop/accessories', icon: 'watch', on: activeSlug === 'accessories' },
+    { key: 'universal', label: 'Universal', to: '/universal', icon: 'public', tone: TAB_TONES.universal, on: preset === 'universal' || preset === 'unisex' },
+    { key: 'travel-utility', label: 'Travel', to: '/shop/travel-utility', icon: 'flight_takeoff', tone: TAB_TONES['travel-utility'], on: activeSlug === 'travel-utility' },
+    { key: 'accessories', label: 'Accessories', to: '/shop/accessories', icon: 'watch', tone: TAB_TONES.accessories, on: activeSlug === 'accessories' },
     ...(tree || []).filter((c) => !['travel-utility', 'accessories'].includes(c.slug)).map((c) => ({
       key: c._id,
       label: c.name,
@@ -614,12 +614,21 @@ function CategoryRail({ tree, activeSlug, preset, selectedCategory, onSelectCate
       img: c.image?.url || c.children?.find((x) => x.image?.url)?.image?.url,
       on: activeSlug === c.slug || c.children?.some((x) => x.slug === activeSlug),
     })),
-    { key: 'offers', label: 'Offers', to: '/offers', icon: 'sell', on: preset === 'offers' },
+    { key: 'offers', label: 'Offers', to: '/offers', icon: 'sell', tone: TAB_TONES.offers, on: preset === 'offers' },
   ];
+  const defaultTone = {
+    tint: 'bg-zinc-500/10',
+    ring: 'ring-zinc-500/40',
+    ringOn: 'ring-zinc-600',
+    solid: 'bg-zinc-700 text-white',
+    text: 'text-zinc-700 dark:text-zinc-300',
+    dot: 'bg-zinc-500',
+    icon: 'category',
+  };
   return (
     <div className="flex gap-3 md:gap-5 overflow-x-auto scrollbar-none -mx-3 px-3 md:mx-0 md:px-0 py-1">
       {items.map((c) => {
-        const tone = c.tone || TAB_TONES[c.key] || TAB_TONES.bags;
+        const tone = c.tone || (TAB_TONES && TAB_TONES[c.key]) || (TAB_TONES && TAB_TONES.bags) || (TAB_TONES && TAB_TONES.all) || defaultTone;
         return (
           <Link key={c.key} to={c.to} className="group flex flex-col items-center gap-1 shrink-0 w-14 md:w-16">
             <span

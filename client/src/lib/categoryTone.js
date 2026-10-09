@@ -153,14 +153,18 @@ export function categoryTone(cat) {
   return TONES[FALLBACK[h % FALLBACK.length]];
 }
 
-/** Tones for the non-category shortcuts (All, Men, Women, Universal, Offers). */
+/** Tones for the non-category shortcuts (All, Men, Women, Universal, Travel, Accessories, Offers). */
 export const TAB_TONES = {
   all: TONES.tech,
   men: TONES.navy,
   women: TONES.rose,
   universal: TONES.teal,
   unisex: TONES.teal,
+  'travel-utility': TONES.forest,
+  travel: TONES.forest,
+  accessories: TONES.leather,
   offers: TONES.forest,
+  bags: TONES.leather,
 };
 
 /** Tone for a product: its subcategory first, then its top category. */
