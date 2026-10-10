@@ -51,7 +51,7 @@ export const tidyAddress = (s) => String(s || '').replace(/\s+,/g, ',').replace(
 
 const money = (n) => `₹${Number(n || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const fmtDate = (d) => new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'Asia/Kolkata' });
-const PAYMENT_LABELS = { cod: 'Cash on Delivery', card: 'Card', upi: 'UPI / Net Banking', wallet: 'Wallet' };
+const PAYMENT_LABELS = { cod: 'Cash on Delivery', razorpay: 'Online Payment (Razorpay)', card: 'Card', upi: 'UPI / Net Banking', wallet: 'Wallet' };
 
 export const invoiceFileName = (order) => `WILDTANE_Tax_Invoice_${order.orderId}.pdf`;
 

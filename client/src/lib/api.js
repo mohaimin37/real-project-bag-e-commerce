@@ -112,7 +112,10 @@ export const api = {
   mergeWishlist: (productIds) => http.post('/wishlist/merge', { productIds }),
 
   // orders
+  initiateOnlinePayment: (body) => http.post('/orders/initiate-payment', body),
   placeOrder: (body) => http.post('/orders', body),
+  verifyPayment: (id, body) => http.post(`/orders/${id}/verify-payment`, body),
+  retryPayment: (id) => http.post(`/orders/${id}/retry-payment`),
   myOrders: (params) => http.get(`/orders${qs(params)}`),
   myOrder: (id) => http.get(`/orders/${id}`),
   cancelOrder: (id, reason) => http.post(`/orders/${id}/cancel`, { reason }),

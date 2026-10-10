@@ -212,7 +212,24 @@ export default function ProductForm() {
           <Panel title="Basics">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-space-md">
               <Field label="Product name" error={errors.name?.message} required className="md:col-span-2"><Input error={errors.name} {...register('name')} /></Field>
-              <Field label="Base SKU" error={errors.sku?.message} required><Input className="uppercase" error={errors.sku} {...register('sku')} /></Field>
+              <Field label="Base SKU" error={errors.sku?.message} required>
+                <div className="flex gap-2">
+                  <Input className="uppercase flex-1" error={errors.sku} {...register('sku')} />
+                  <Button
+                    type="button"
+                    variant="tonal"
+                    size="sm"
+                    icon="auto_awesome"
+                    onClick={() => {
+                      const code = (watch('name') || 'PRD').replace(/[^a-zA-Z]/g, '').slice(0, 3).toUpperCase() || 'BAG';
+                      const rand = Math.floor(100 + Math.random() * 900);
+                      setValue('sku', `WT-${code}-${rand}`, { shouldDirty: true, shouldValidate: true });
+                    }}
+                  >
+                    Generate
+                  </Button>
+                </div>
+              </Field>
               <Field label="URL slug" hint="Leave blank to generate from the name"><Input placeholder="the-apex-commuter-24l" {...register('slug')} /></Field>
               <Field label="Tagline" hint='Shown on cards, e.g. "24L Technical Pack"'><Input {...register('tagline')} /></Field>
               <Field label="Badge" hint="Bestseller, Cabin Approved…"><Input {...register('badge')} /></Field>

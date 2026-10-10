@@ -98,10 +98,14 @@ export const wishlistRoutes = Router()
 // ── /api/orders ──────────────────────────────────────────────
 export const orderRoutes = Router()
   .get('/:id/invoice.pdf', optionalAuth, orders.downloadInvoicePdf)
+  .post('/razorpay/webhook', orders.razorpayWebhook)
   .use(protect)
+  .post('/initiate-payment', orders.initiatePayment)
   .post('/', validate(cv.checkoutSchema), orders.createOrder)
   .get('/', orders.myOrders)
   .get('/:id', orders.myOrder)
+  .post('/:id/verify-payment', orders.verifyPayment)
+  .post('/:id/retry-payment', orders.retryPayment)
   .post('/:id/cancel', orders.cancelMyOrder);
 
 // ── /api/reviews ─────────────────────────────────────────────
@@ -142,7 +146,7 @@ export const commentRoutes = Router()
   .get('/', comments.listComments)
   .post('/', formLimiter, optionalAuth, validate(commentSchema), comments.submitComment);
 
-export const newsletterRoutes =Router().post('/', formLimiter, validate(subscribeSchema), enquiries.subscribe);
+export const newsletterRoutes = Router().post('/', formLimiter, validate(subscribeSchema), enquiries.subscribe);
 
 // ── /api/config, /api/banners ────────────────────────────────
 export const configRoutes = Router().get('/', content.publicConfig);
@@ -154,4 +158,3 @@ export const returnRoutes = Router()
   .get('/orders', protect, returns.getMyReturnOrders)
   .get('/order/:id', formLimiter, optionalAuth, returns.getOrderEligibility)
   .post('/request', protect, formLimiter, returns.submitRequest);
-

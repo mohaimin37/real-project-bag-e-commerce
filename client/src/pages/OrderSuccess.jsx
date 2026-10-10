@@ -1,16 +1,43 @@
+import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
+import toast from 'react-hot-toast';
 import { api } from '../lib/api';
 import { formatDateTime, PAYMENT_LABELS } from '../lib/format';
 import { countryName } from '../lib/countries';
+import { openRazorpayCheckout } from '../lib/razorpay';
 import { useMoney } from '../hooks/useStore';
-import { ErrorState, Icon, Img, PageLoader, StatusBadge } from '../components/ui';
+import { Button, ErrorState, Icon, Img, PageLoader, StatusBadge } from '../components/ui';
 import Seo from '../components/Seo';
 
 export default function OrderSuccess() {
   const { id } = useParams();
   const money = useMoney();
+  const [retrying, setRetrying] = useState(false);
   const { data, isLoading, isError, error, refetch } = useQuery({ queryKey: ['order', id], queryFn: () => api.myOrder(id), select: (d) => d.order });
+
+  const handleRetryPayment = async () => {
+    if (!data) return;
+    setRetrying(true);
+    try {
+      const res = await api.retryPayment(data._id);
+      if (res.payment?.gatewayOrder) {
+        await openRazorpayCheckout({
+          order: data,
+          payment: res.payment,
+          customer: { name: data.customerName, email: data.email, phone: data.phone },
+          onSuccess: () => {
+            refetch();
+          },
+        });
+      }
+    } catch (err) {
+      toast.error(err.message || 'Unable to initiate payment');
+    } finally {
+      setRetrying(false);
+    }
+  };
+
   if (isLoading) return <PageLoader />;
   if (isError) return <ErrorState error={error} onRetry={refetch} />;
   const o = data;
@@ -31,6 +58,23 @@ export default function OrderSuccess() {
           Your order <strong className="text-on-surface">{o.orderId}</strong> has been received. We've sent the details to {o.email} and our team will confirm it shortly.
         </p>
       </div>
+
+      {o.paymentMethod === 'razorpay' && o.paymentStatus === 'Pending' && (
+        <div className="card p-space-md bg-secondary-container/30 border border-secondary/40 flex flex-col sm:flex-row items-center justify-between gap-4 mb-space-lg shadow-sm">
+          <div className="flex items-center gap-3">
+            <span className="w-10 h-10 rounded-full bg-secondary text-on-secondary flex items-center justify-center shrink-0">
+              <Icon name="payment" />
+            </span>
+            <div>
+              <p className="text-label-lg font-bold">Online Payment Pending</p>
+              <p className="text-body-sm text-on-surface-variant">Complete your payment now via UPI, Cards or Net Banking to confirm your order.</p>
+            </div>
+          </div>
+          <Button variant="secondary" icon="credit_card" loading={retrying} onClick={handleRetryPayment}>
+            Complete Payment · {money(o.grandTotal)}
+          </Button>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-space-md mb-space-lg">
         {[

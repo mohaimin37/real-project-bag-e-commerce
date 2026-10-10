@@ -174,12 +174,22 @@ export const ProductCard = memo(function ProductCard({ product, priority }) {
             )}
           </span>
           {!soldOut && variant.stock <= 5 && (
-            <span className="absolute inset-x-0 bottom-0 py-1 bg-gradient-to-r from-rose-600/90 to-pink-500/90 text-white text-[10px] md:text-[11.5px] font-bold text-center">
-              Only {variant.stock} left
+            <span className="absolute inset-x-0 bottom-0 py-1 bg-gradient-to-r from-rose-600/95 to-pink-600/95 text-white text-[10px] md:text-[11.5px] font-bold text-center tracking-wide shadow-sm flex items-center justify-center gap-1">
+              <span>🔥</span> Only {variant.stock} left — selling fast!
+            </span>
+          )}
+          {!soldOut && variant.stock > 5 && variant.stock <= 10 && (
+            <span className="absolute inset-x-0 bottom-0 py-1 bg-gradient-to-r from-amber-600/95 to-orange-500/95 text-white text-[10px] md:text-[11.5px] font-bold text-center tracking-wide shadow-sm flex items-center justify-center gap-1">
+              <span>⚡</span> Only {variant.stock} left in stock
+            </span>
+          )}
+          {!soldOut && variant.stock > 10 && variant.stock <= 20 && (
+            <span className="absolute inset-x-0 bottom-0 py-1 bg-gradient-to-r from-slate-900/90 via-indigo-950/90 to-slate-900/90 text-amber-300 text-[9.5px] md:text-[11px] font-semibold text-center tracking-wide shadow-sm flex items-center justify-center gap-1">
+              <span>⏱</span> Low stock: {variant.stock} left
             </span>
           )}
           {soldOut && (
-            <span className="absolute inset-x-0 bottom-0 py-1 bg-on-surface/80 text-surface-container-lowest text-[10px] md:text-[11.5px] font-semibold text-center">
+            <span className="absolute inset-x-0 bottom-0 py-1 bg-on-surface/85 text-surface-container-lowest text-[10px] md:text-[11.5px] font-semibold text-center">
               Out of stock
             </span>
           )}

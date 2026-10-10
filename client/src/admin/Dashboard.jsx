@@ -71,11 +71,12 @@ export default function Dashboard() {
 
       {/* Alerts */}
       {data && (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-space-md">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-space-md">
           {[
             ['pending_actions', 'Pending orders', data.alerts.pendingOrders, '/admin/orders?status=Pending', 'amber'],
-            ['domain', 'New corporate leads', data.alerts.newCorporate, '/admin/enquiries/corporate?status=new', 'teal'],
-            ['mail', 'Unread messages', data.alerts.newContact, '/admin/enquiries/contact?status=new', 'navy'],
+            ['warning', 'Low stock items', data.alerts.lowStock ?? 0, '/admin/inventory?stockStatus=low', data.alerts.lowStock > 0 ? 'red' : 'teal'],
+            ['assignment_return', 'Pending returns', data.alerts.pendingReturns ?? 0, '/admin/returns?status=Requested', 'amber'],
+            ['domain', 'Corporate leads', data.alerts.newCorporate, '/admin/enquiries/corporate?status=new', 'teal'],
             ['notifications_active', 'Failed alerts', data.alerts.failedNotifications, '/admin/notifications?status=failed', 'red'],
           ].map(([icon, label, n, to, tone]) => (
             <Link key={label} to={to} className={cn('group flex items-center gap-3 p-space-md rounded-2xl border transition-all surface-card hover:-translate-y-0.5 hover:shadow-card', n ? 'bg-surface-container-lowest border-outline-variant/60 shadow-card' : 'border-surface-container-high bg-surface-container-low/40')}>

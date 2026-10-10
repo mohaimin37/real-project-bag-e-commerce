@@ -24,7 +24,9 @@ async function resolveCategoryIds(slugOrId) {
   const ids = values.filter((v) => mongoose.isValidObjectId(v));
   const slugs = values.filter((v) => !mongoose.isValidObjectId(v));
   const cats = await Category.find({ $or: [{ _id: { $in: ids } }, { slug: { $in: slugs } }] }).select('_id');
-  return cats.map((c) => c._id);
+  const catIds = cats.map((c) => c._id);
+  const childCats = await Category.find({ parent: { $in: catIds } }).select('_id');
+  return [...new Set([...catIds, ...childCats.map((c) => c._id)])];
 }
 
 /** Builds a Mongo filter from catalog query params. */

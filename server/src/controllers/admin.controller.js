@@ -42,7 +42,7 @@ export const dashboard = asyncHandler(async (req, res) => {
   const periodStart = startOfDay(new Date(now.getTime() - (days - 1) * DAY));
   const prevStart = new Date(periodStart.getTime() - days * DAY);
 
-  const [current, previous, newCustomers, prevCustomers, daily, statusBreakdown, recentOrders, lowStock, topProducts, pending, enquiries, notifFailures, totals, pendingReturns] =
+  const [current, previous, newCustomers, prevCustomers, daily, statusBreakdown, recentOrders, lowStock, topProducts, pending, enquiries, notifFailures, totals, pendingReturns, lowStockCount] =
     await Promise.all([
       revenueBetween(periodStart, now),
       revenueBetween(prevStart, periodStart),
@@ -90,6 +90,7 @@ export const dashboard = asyncHandler(async (req, res) => {
       Notification.countDocuments({ status: 'failed' }),
       Promise.all([Product.countDocuments(), User.countDocuments({ role: 'customer' }), Order.countDocuments(), Review.countDocuments()]),
       ReturnRequest.countDocuments({ status: { $in: ['Requested', 'Approved', 'Picked Up', 'Processing'] } }),
+      Product.countDocuments({ $expr: { $lte: ['$stock', '$lowStockThreshold'] } }),
     ]);
 
   // Fill gaps so the chart has one point per day.
@@ -121,6 +122,7 @@ export const dashboard = asyncHandler(async (req, res) => {
     alerts: {
       pendingOrders: pending,
       pendingReturns: pendingReturns || 0,
+      lowStock: lowStockCount || 0,
       newCorporate: enquiries[0],
       newContact: enquiries[1],
       pendingReviews: enquiries[2],

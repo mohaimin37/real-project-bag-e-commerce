@@ -1,14 +1,58 @@
-/**
- * Payment provider registry. Each provider implements:
- *   code, label, description, icon
- *   isAvailable({ settings, total }) -> { available: boolean, reason?: string }
- *   initiate(order) -> { paymentStatus, reference?, redirectUrl? }
- *
- * To add a gateway (Razorpay, Stripe, PayPal…): implement initiate() to create the
- * gateway order, return its redirect/client data, and add a webhook route that verifies
- * the gateway signature and sets order.paymentStatus = 'Paid'. Card numbers must never
- * touch this server — use the gateway's hosted fields or checkout.
- */
+import crypto from 'crypto';
+import Razorpay from 'razorpay';
+import env from '../config/env.js';
+
+let razorpayClient = null;
+function getRazorpay() {
+  if (!razorpayClient && env.razorpay.enabled) {
+    razorpayClient = new Razorpay({
+      key_id: env.razorpay.keyId,
+      key_secret: env.razorpay.keySecret,
+    });
+  }
+  return razorpayClient;
+}
+
+const razorpay = {
+  code: 'razorpay',
+  label: 'Pay Online',
+  description: 'UPI (GPay, PhonePe, Paytm), Credit / Debit Card, Net Banking & Wallets',
+  icon: 'credit_card',
+  isAvailable({ settings }) {
+    if (settings?.razorpayEnabled === false) {
+      return { available: false, reason: 'Online payment is currently unavailable' };
+    }
+    if (!env.razorpay.enabled) {
+      return { available: false, reason: 'Online payment is being configured' };
+    }
+    return { available: true };
+  },
+  async initiate(order) {
+    const rzp = getRazorpay();
+    if (!rzp) throw new Error('Razorpay is not configured');
+
+    const amountInPaise = Math.round(Number(order.grandTotal) * 100);
+    const options = {
+      amount: amountInPaise,
+      currency: order.currency || 'INR',
+      receipt: order.orderId,
+      notes: {
+        orderId: order._id ? order._id.toString() : '',
+        orderNum: order.orderId,
+        email: order.email || '',
+        customerName: order.customerName || '',
+      },
+    };
+
+    const gatewayOrder = await rzp.orders.create(options);
+    return {
+      paymentStatus: 'Pending',
+      reference: gatewayOrder.id,
+      gatewayOrder,
+      keyId: env.razorpay.keyId,
+    };
+  },
+};
 
 const cod = {
   code: 'cod',
@@ -39,6 +83,7 @@ const comingSoon = (code, label, description, icon) => ({
 });
 
 const providers = [
+  razorpay,
   cod,
   comingSoon('card', 'Credit / Debit Card', 'Visa, Mastercard, RuPay, Amex via secure gateway', 'credit_card'),
   comingSoon('upi', 'UPI / Net Banking', 'Google Pay, PhonePe, Paytm and all major banks', 'account_balance'),
@@ -58,3 +103,36 @@ export function listPaymentMethods(settings, total) {
     ...p.isAvailable({ settings, total }),
   }));
 }
+
+export function verifyRazorpaySignature({ razorpayOrderId, razorpayPaymentId, razorpaySignature }) {
+  if (!env.razorpay.keySecret || !razorpayOrderId || !razorpayPaymentId || !razorpaySignature) {
+    return false;
+  }
+  const expectedSignature = crypto
+    .createHmac('sha256', env.razorpay.keySecret)
+    .update(`${razorpayOrderId}|${razorpayPaymentId}`)
+    .digest('hex');
+  return expectedSignature === razorpaySignature;
+}
+
+export function verifyRazorpayWebhookSignature(rawBody, signature) {
+  if (!env.razorpay.webhookSecret || !rawBody || !signature) return false;
+  const expected = crypto
+    .createHmac('sha256', env.razorpay.webhookSecret)
+    .update(rawBody)
+    .digest('hex');
+  return expected === signature;
+}
+
+export async function createRazorpayOrder({ amount, currency = 'INR', receipt, notes = {} }) {
+  const rzp = getRazorpay();
+  if (!rzp) throw new Error('Razorpay is not configured');
+  const amountInPaise = Math.round(Number(amount) * 100);
+  return rzp.orders.create({
+    amount: amountInPaise,
+    currency,
+    receipt: receipt || `chk_${Date.now().toString(36)}`,
+    notes,
+  });
+}
+

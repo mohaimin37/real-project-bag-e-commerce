@@ -24,7 +24,7 @@ export const SHOP_DEPARTMENTS = [
     border: 'border-sky-500/30 hover:border-sky-500/60',
     accentText: 'text-sky-600 dark:text-sky-400',
     dot: 'bg-sky-500',
-    highlights: ['Briefcases', 'Laptop Messengers', 'Wallets', 'Weekenders'],
+    highlights: ['Briefcases', 'Laptop Bags', 'Messengers', 'Wallets', 'Weekenders'],
   },
   {
     key: 'women',
@@ -38,7 +38,7 @@ export const SHOP_DEPARTMENTS = [
     border: 'border-rose-500/30 hover:border-rose-500/60',
     accentText: 'text-rose-600 dark:text-rose-400',
     dot: 'bg-rose-500',
-    highlights: ['Luxury Handbags', 'Work Totes', 'Crossbody', 'Clutches'],
+    highlights: ['Luxury Handbags', 'Work Totes', 'Crossbody Slings', 'Clutches', 'Shoulder Bags'],
   },
   {
     key: 'universal',
@@ -80,7 +80,7 @@ export const SHOP_DEPARTMENTS = [
     border: 'border-purple-500/30 hover:border-purple-500/60',
     accentText: 'text-purple-600 dark:text-purple-400',
     dot: 'bg-purple-500',
-    highlights: ['RFID Wallets', 'Dopp Kits', 'Leather Belts', 'Cable Pouches'],
+    highlights: ['RFID Wallets', 'Passport Wallets', 'Dopp Kits', 'Leather Belts', 'Laptop Sleeves'],
   },
 ];
 

@@ -4,7 +4,7 @@ import mongoose from 'mongoose';
 // notification never affects order state.
 const notificationSchema = new mongoose.Schema(
   {
-    type: { type: String, enum: ['order_created', 'order_status', 'customer_invoice', 'customer_order_approval'], required: true },
+    type: { type: String, enum: ['order_created', 'order_status', 'customer_invoice', 'customer_order_approval', 'low_stock_alert'], required: true },
     channel: { type: String, enum: ['whatsapp', 'email'], required: true },
     order: { type: mongoose.Schema.Types.ObjectId, ref: 'Order', index: true },
     recipient: { type: String, default: '' },

@@ -44,6 +44,12 @@ export function CartLine({ line, compact }) {
           </div>
           <span className="text-label-lg shrink-0">{money(line.lineTotal)}</span>
         </div>
+        {line.available && !line.issue && line.stock != null && line.stock <= 20 && (
+          <p className={cn("text-[11px] font-semibold flex items-center gap-1", line.stock <= 5 ? "text-rose-600 dark:text-rose-400" : line.stock <= 10 ? "text-amber-600 dark:text-amber-400" : "text-amber-700 dark:text-amber-300")}>
+            <Icon name="bolt" className="text-[13px]" />
+            {line.stock <= 5 ? `Hurry, only ${line.stock} left in stock!` : line.stock <= 10 ? `Only ${line.stock} remaining` : `Low stock: ${line.stock} left`}
+          </p>
+        )}
         {line.issue && <p className="text-label-md text-error flex items-center gap-1"><Icon name="error" className="text-[14px]" /> {line.issue}</p>}
         <div className="flex items-center justify-between">
           {line.available ? (

@@ -36,6 +36,7 @@ const blank = () => ({
   tagline: '', badge: 'New', shortDescription: '', description: '', capacity: '',
   materials: [], features: [], purposes: [], tags: [], specifications: [], faqs: [],
   variants: [], isNewArrival: true, isFeatured: false, isBestseller: false,
+  lowStockThreshold: 10,
 });
 
 function loadDraft() {
@@ -92,6 +93,12 @@ function Card({ title, sub, children }) {
 }
 
 const toNum = (v) => (v === '' || v == null ? 0 : Number(v));
+
+function generateSmartSku(prod) {
+  const code = (prod?.name || 'PRD').replace(/[^a-zA-Z]/g, '').slice(0, 3).toUpperCase() || 'BAG';
+  const num = Math.floor(100 + Math.random() * 900);
+  return `WT-${code}-${num}`;
+}
 
 export default function ProductWizard() {
   const qc = useQueryClient();
@@ -520,7 +527,12 @@ export default function ProductWizard() {
 
                 <Card title="Product code (SKU)" sub="Your own stock code. We made one for you, so you can leave it.">
                   <Field error={errors.sku}>
-                    <Input className="uppercase" value={p.sku} error={errors.sku} onChange={(e) => set({ sku: e.target.value.toUpperCase() })} placeholder="WT-BKP-22" maxLength={40} />
+                    <div className="flex items-center gap-2">
+                      <Input className="uppercase flex-1" value={p.sku} error={errors.sku} onChange={(e) => set({ sku: e.target.value.toUpperCase() })} placeholder="WT-BKP-22" maxLength={40} />
+                      <Button type="button" variant="tonal" size="sm" icon="auto_awesome" onClick={() => set({ sku: generateSmartSku(p) })}>
+                        Generate SKU
+                      </Button>
+                    </div>
                   </Field>
                   {s?.sku && s.sku !== p.sku && <Hint>Suggested: <Pick onClick={() => set({ sku: s.sku })}>{s.sku}</Pick></Hint>}
                 </Card>
@@ -603,9 +615,21 @@ export default function ProductWizard() {
                         <Input className="flex-1 min-w-[140px]" placeholder="Colour name" value={v.name} error={errors[`v${i}`]} onChange={(e) => upd({ name: e.target.value })} maxLength={60} />
                         <div className="flex items-center gap-1">
                           <button type="button" className="btn-icon" onClick={() => upd({ stock: Math.max(0, toNum(v.stock) - 1) })} aria-label="Less stock"><Icon name="remove" /></button>
-                          <Input type="number" min={0} className="w-20 text-center" aria-label="Stock" value={v.stock} onChange={(e) => upd({ stock: e.target.value })} />
+                          <Input type="number" min={0} className="w-16 text-center" aria-label="Stock" value={v.stock} onChange={(e) => upd({ stock: e.target.value })} />
                           <button type="button" className="btn-icon" onClick={() => upd({ stock: toNum(v.stock) + 1 })} aria-label="More stock"><Icon name="add" /></button>
-                          <span className="text-[12px] text-outline w-10">in stock</span>
+                          <div className="flex items-center gap-0.5 ml-1">
+                            {[10, 20, 50].map((qty) => (
+                              <button
+                                key={qty}
+                                type="button"
+                                title={`Set stock to ${qty}`}
+                                onClick={() => upd({ stock: qty })}
+                                className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-surface-container hover:bg-surface-container-high text-secondary cursor-pointer"
+                              >
+                                {qty}
+                              </button>
+                            ))}
+                          </div>
                         </div>
                         <button type="button" className="btn-icon hover:text-error" onClick={() => set({ variants: p.variants.filter((_, j) => j !== i) })} aria-label="Remove colour"><Icon name="delete" /></button>
                       </div>
@@ -626,6 +650,27 @@ export default function ProductWizard() {
                     <Icon name="add" className="text-[14px]" /> Custom
                   </button>
                 </Hint>
+                <div className="mt-2 pt-3 border-t border-surface-container-high flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <span className="text-label-md font-semibold">Low-stock Alert Threshold:</span>
+                    <p className="text-[12px] text-on-surface-variant">Notify admin and alert customers when inventory drops to this amount or lower.</p>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    {[5, 10, 20].map((th) => (
+                      <Pick key={th} icon={null} active={p.lowStockThreshold === th} onClick={() => set({ lowStockThreshold: th })}>
+                        {th} units
+                      </Pick>
+                    ))}
+                    <Input
+                      type="number"
+                      min={1}
+                      value={p.lowStockThreshold || 10}
+                      onChange={(e) => set({ lowStockThreshold: Number(e.target.value) || 10 })}
+                      className="w-16 h-8 text-center text-[12px]"
+                      aria-label="Custom threshold"
+                    />
+                  </div>
+                </div>
                 <p className="text-body-sm text-on-surface-variant">Total stock: <b>{p.variants.reduce((n, v) => n + toNum(v.stock), 0)}</b></p>
               </Card>
             )}

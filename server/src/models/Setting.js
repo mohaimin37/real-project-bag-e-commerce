@@ -58,6 +58,7 @@ const settingSchema = new mongoose.Schema(
       rupeesPerCoin: { type: Number, default: 1, min: 0.01, max: 100 }, // value of one coin at checkout
       maxRedeemPercent: { type: Number, default: 50, min: 1, max: 100 }, // max share of the item total payable with coins
     },
+    razorpayEnabled: { type: Boolean, default: true },
     codEnabled: { type: Boolean, default: true },
     codMaxOrder: { type: Number, default: 50000 },
     // Display-only conversion: 1 INR = rate units of the currency.

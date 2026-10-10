@@ -38,17 +38,42 @@ function StockRow({ product }) {
             <label key={v._id} className={cn('flex items-center gap-2 p-2 rounded-xl', low ? 'bg-tertiary-fixed/40' : 'bg-surface-container-low')}>
               <span className="w-5 h-5 rounded-full shrink-0 ring-1 ring-outline-variant" style={{ background: v.colorHex }} />
               <span className="flex-1 min-w-0">
-                <span className="block text-label-md truncate">{v.name}</span>
+                <span className="flex items-center gap-1.5">
+                  <span className="text-label-md truncate">{v.name}</span>
+                  {low && (
+                    <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-700 dark:text-amber-300">
+                      Only {value} left
+                    </span>
+                  )}
+                </span>
                 <span className="block text-label-sm font-normal text-outline truncate">{v.sku}</span>
               </span>
-              <input
-                type="number"
-                min={0}
-                value={value}
-                onChange={(e) => setDraft({ ...draft, [v._id]: e.target.value === '' ? 0 : Math.max(0, parseInt(e.target.value, 10) || 0) })}
-                className="input h-9 w-20 text-right tabular-nums"
-                aria-label={`Stock for ${v.name}`}
-              />
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  title="Add 10 units"
+                  onClick={() => setDraft({ ...draft, [v._id]: (Number(value) || 0) + 10 })}
+                  className="px-1.5 py-0.5 rounded text-[10.5px] font-semibold bg-surface-container hover:bg-surface-container-high text-secondary cursor-pointer"
+                >
+                  +10
+                </button>
+                <button
+                  type="button"
+                  title="Add 20 units"
+                  onClick={() => setDraft({ ...draft, [v._id]: (Number(value) || 0) + 20 })}
+                  className="px-1.5 py-0.5 rounded text-[10.5px] font-semibold bg-surface-container hover:bg-surface-container-high text-secondary cursor-pointer"
+                >
+                  +20
+                </button>
+                <input
+                  type="number"
+                  min={0}
+                  value={value}
+                  onChange={(e) => setDraft({ ...draft, [v._id]: e.target.value === '' ? 0 : Math.max(0, parseInt(e.target.value, 10) || 0) })}
+                  className="input h-9 w-16 text-right tabular-nums text-[13px]"
+                  aria-label={`Stock for ${v.name}`}
+                />
+              </div>
             </label>
           );
         })}

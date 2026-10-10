@@ -116,4 +116,4 @@ export const STATUS_STYLE = {
   Refunded: 'bg-surface-container-highest text-on-surface',
 };
 
-export const PAYMENT_LABELS = { cod: 'Cash on Delivery', card: 'Card', upi: 'UPI / Net Banking', wallet: 'Wallet' };
+export const PAYMENT_LABELS = { cod: 'Cash on Delivery', razorpay: 'Online Payment (Razorpay)', card: 'Card', upi: 'UPI / Net Banking', wallet: 'Wallet' };

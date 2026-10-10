@@ -42,6 +42,13 @@ export const checkoutSchema = z
     shippingMethod: z.string().trim().min(2).max(30).default('standard'),
     paymentMethod: z.string().trim().min(2).max(30),
     customerNote: z.string().trim().max(500).optional().default(''),
+    paymentDetails: z
+      .object({
+        razorpayOrderId: z.string().trim().optional(),
+        razorpayPaymentId: z.string().trim().optional(),
+        razorpaySignature: z.string().trim().optional(),
+      })
+      .optional(),
   })
   .refine((d) => d.addressId || d.address, { message: 'Choose or enter a delivery address', path: ['address'] });
 

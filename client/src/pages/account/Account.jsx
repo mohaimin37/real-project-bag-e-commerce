@@ -7,6 +7,7 @@ import { z } from 'zod';
 import toast from 'react-hot-toast';
 import { api } from '../../lib/api';
 import { cn, formatDate, formatDateTime, PAYMENT_LABELS } from '../../lib/format';
+import { openRazorpayCheckout } from '../../lib/razorpay';
 import { countryName } from '../../lib/countries';
 import { useMoney, useUser } from '../../hooks/useStore';
 import { useAuthActions } from '../../hooks/useAuth';
@@ -515,6 +516,32 @@ function OrderDetail() {
           >
             <Icon name="chat" className="text-[16px]" /> WhatsApp Invoice
           </button>
+          {o.paymentMethod === 'razorpay' && o.paymentStatus === 'Pending' && !['Cancelled', 'Returned'].includes(o.orderStatus) && (
+            <button
+              type="button"
+              onClick={async () => {
+                try {
+                  const res = await api.retryPayment(o._id);
+                  if (res.payment?.gatewayOrder) {
+                    await openRazorpayCheckout({
+                      order: o,
+                      payment: res.payment,
+                      customer: { name: o.customerName, email: o.email, phone: o.phone },
+                      onSuccess: () => {
+                        qc.invalidateQueries({ queryKey: ['orders'] });
+                        qc.invalidateQueries({ queryKey: ['overview'] });
+                      },
+                    });
+                  }
+                } catch (err) {
+                  toast.error(err.message || 'Unable to start payment');
+                }
+              }}
+              className="btn bg-secondary text-on-secondary font-semibold text-[12px] h-8 px-3 rounded-xl flex items-center gap-1.5 shadow-xs transition-all hover:brightness-110 active:scale-95"
+            >
+              <Icon name="credit_card" className="text-[16px]" /> Pay Now
+            </button>
+          )}
           {canCancel && <Button variant="tonal" size="sm" icon="cancel" className="text-error" onClick={() => setCancelOpen(true)}>Cancel order</Button>}
           {canReturnOrExchange && (
             <div className="flex flex-col gap-1.5 w-full sm:w-auto">

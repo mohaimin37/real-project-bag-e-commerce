@@ -79,6 +79,7 @@ const orderSchema = new mongoose.Schema(
     paymentMethod: { type: String, required: true },
     paymentStatus: { type: String, enum: PAYMENT_STATUSES, default: 'Pending', index: true },
     paymentReference: String,
+    paymentDetails: { type: mongoose.Schema.Types.Mixed, default: null },
     orderStatus: { type: String, enum: ORDER_STATUSES, default: 'Pending', index: true },
     statusHistory: [
       {

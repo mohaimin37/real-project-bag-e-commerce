@@ -19,6 +19,25 @@ import { LogoMark } from '../components/Brand';
 
 const STEPS = ['Your details', 'Delivery address', 'How to pay', 'Check & order'];
 
+function loadRazorpayScript() {
+  return new Promise((resolve) => {
+    if (typeof window !== 'undefined' && window.Razorpay) return resolve(true);
+    const existing = document.getElementById('razorpay-checkout-js');
+    if (existing) {
+      existing.addEventListener('load', () => resolve(true));
+      existing.addEventListener('error', () => resolve(false));
+      return;
+    }
+    const script = document.createElement('script');
+    script.id = 'razorpay-checkout-js';
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    script.async = true;
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+  });
+}
+
 function CheckoutHeader() {
   const { data: config } = useConfig();
   return (
@@ -44,7 +63,7 @@ function CheckoutHeader() {
               {config?.supportPhone || '8920550465'}
             </a>
           </span>
-          <Link to="/cart" className="hidden sm:inline-flex items-center gap-1 hover:text-secondary"><Icon name="arrow_back" className="text-[16px]" /> Back to bag</Link>
+          <Link to="/cart" className="inline-flex items-center gap-1 hover:text-secondary text-label-md font-medium"><Icon name="arrow_back" className="text-[16px]" /> Back to bag</Link>
           <Link to="/" className="inline-flex items-center gap-1 h-8 px-3 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface"><Icon name="home" className="text-[16px]" /> Home</Link>
         </div>
       </div>
@@ -99,16 +118,16 @@ function SectionTitle({ children, action }) {
 }
 
 export default function Checkout() {
-  const user = useUser();
   const navigate = useNavigate();
   const qc = useQueryClient();
+  const user = useUser();
   const money = useMoney();
   const { items, summary, isLoading, hasIssues, setShipping, setUseCoins } = useCart();
   const [step, setStep] = useState(0);
   const [customer, setCustomer] = useState(null);
   const [addressChoice, setAddressChoice] = useState(null); // { addressId } | { address, saveAddress }
   const [adding, setAdding] = useState(false);
-  const [payment, setPayment] = useState('cod');
+  const [payment, setPayment] = useState('razorpay');
   const [note, setNote] = useState('');
 
   const addresses = useQuery({ queryKey: ['addresses'], queryFn: api.addresses, select: (d) => d.addresses });
@@ -126,6 +145,28 @@ export default function Checkout() {
   });
 
   useEffect(() => {
+    if (user) {
+      customerForm.reset({
+        name: user.name || '',
+        email: user.email || '',
+        phone: { dialCode: user.phone?.dialCode || '+91', number: user.phone?.number || '' },
+        country: user.country || 'IN',
+        nationality: user.nationality || 'IN',
+      });
+    }
+  }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (methods.data?.length) {
+      const currentMethod = methods.data.find((m) => m.code === payment);
+      if (!currentMethod || !currentMethod.available) {
+        const firstAvail = methods.data.find((m) => m.available);
+        if (firstAvail) setPayment(firstAvail.code);
+      }
+    }
+  }, [methods.data, payment]);
+
+  useEffect(() => {
     if (addresses.data && !addressChoice) {
       const def = addresses.data.find((a) => a.isDefault) || addresses.data[0];
       if (def) {
@@ -141,30 +182,136 @@ export default function Checkout() {
     }
   }, [addresses.data]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const place = useMutation({
-    mutationFn: () =>
-      api.placeOrder({
-        customer,
-        ...addressChoice,
-        shippingMethod: summary.shippingMethod.code,
-        paymentMethod: payment,
-        customerNote: note,
-      }),
-    onSuccess: (res) => {
+  const [submitting, setSubmitting] = useState(false);
+
+  const handlePlaceOrder = async () => {
+    if (submitting) return;
+    const formVals = customerForm.getValues();
+    const resolvedCustomer = customer || {
+      name: formVals.name || user?.name || '',
+      email: formVals.email || user?.email || '',
+      phone: {
+        dialCode: formVals.phone?.dialCode || user?.phone?.dialCode || '+91',
+        number: formVals.phone?.number || user?.phone?.number || '',
+      },
+      country: formVals.country || user?.country || 'IN',
+      nationality: formVals.nationality || user?.nationality || 'IN',
+    };
+
+    if (!resolvedCustomer.name || !resolvedCustomer.email || !resolvedCustomer.phone?.number) {
+      toast.error('Please enter customer contact details before placing order');
+      setStep(0);
+      return;
+    }
+
+    if (!selectedAddress) {
+      toast.error('Please select or add a delivery address');
+      setStep(1);
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      if (payment === 'razorpay') {
+        const loaded = await loadRazorpayScript();
+        if (!loaded) {
+          toast.error('Unable to load Razorpay payment gateway. Please check your connection.');
+          setSubmitting(false);
+          return;
+        }
+
+        // 1. Create gateway payment session without creating an order in database
+        const initRes = await api.initiateOnlinePayment({
+          shippingMethod: summary?.shippingMethod?.code || 'standard',
+        });
+
+        const options = {
+          key: initRes.keyId || import.meta.env.VITE_RAZORPAY_KEY_ID,
+          amount: initRes.gatewayOrder.amount,
+          currency: initRes.gatewayOrder.currency || 'INR',
+          name: 'WILDTANE',
+          description: 'Secure Order Payment',
+          image: '/brandlogo.jpeg',
+          order_id: initRes.gatewayOrder.id,
+          handler: async (response) => {
+            // Payment succeeded! Only now do we create and record the order in the database!
+            try {
+              const orderRes = await api.placeOrder({
+                customer: resolvedCustomer,
+                ...addressChoice,
+                shippingMethod: summary?.shippingMethod?.code || 'standard',
+                paymentMethod: 'razorpay',
+                customerNote: note,
+                paymentDetails: {
+                  razorpayOrderId: response.razorpay_order_id,
+                  razorpayPaymentId: response.razorpay_payment_id,
+                  razorpaySignature: response.razorpay_signature,
+                },
+              });
+
+              qc.invalidateQueries({ queryKey: ['cart'] });
+              qc.invalidateQueries({ queryKey: ['addresses'] });
+              qc.invalidateQueries({ queryKey: ['orders'] });
+              qc.invalidateQueries({ queryKey: ['my-coins'] });
+
+              toast.success('Payment verified & order placed successfully!');
+              navigate(`/order/${orderRes.order.orderId}/success`, { replace: true });
+            } catch (err) {
+              toast.error(err.message || 'Payment received but failed to record order. Please contact support.');
+              setSubmitting(false);
+            }
+          },
+          prefill: {
+            name: resolvedCustomer.name,
+            email: resolvedCustomer.email,
+            contact: `${resolvedCustomer.phone?.dialCode || '+91'}${resolvedCustomer.phone?.number || ''}`,
+          },
+          theme: {
+            color: '#0f172a',
+          },
+          modal: {
+            ondismiss: () => {
+              setSubmitting(false);
+              toast('Payment window closed. Your items remain safe in your bag — retry online payment or choose Cash on Delivery.', { icon: '🛍️' });
+            },
+            escape: true,
+            backdropclose: true,
+          },
+        };
+
+        const rzp = new window.Razorpay(options);
+        rzp.on('payment.failed', (response) => {
+          setSubmitting(false);
+          toast.error(response.error?.description || 'Payment was declined or failed. Please try again.');
+        });
+        rzp.open();
+      } else {
+        // COD: Place order directly
+        const orderRes = await api.placeOrder({
+          customer: resolvedCustomer,
+          ...addressChoice,
+          shippingMethod: summary?.shippingMethod?.code || 'standard',
+          paymentMethod: payment,
+          customerNote: note,
+        });
+
+        qc.invalidateQueries({ queryKey: ['cart'] });
+        qc.invalidateQueries({ queryKey: ['addresses'] });
+        qc.invalidateQueries({ queryKey: ['orders'] });
+        qc.invalidateQueries({ queryKey: ['my-coins'] });
+
+        toast.success('Order placed successfully!');
+        navigate(`/order/${orderRes.order.orderId}/success`, { replace: true });
+      }
+    } catch (err) {
+      toast.error(err.message || 'Failed to place order. Please try again.');
       qc.invalidateQueries({ queryKey: ['cart'] });
-      qc.invalidateQueries({ queryKey: ['addresses'] });
-      qc.invalidateQueries({ queryKey: ['orders'] });
-      qc.invalidateQueries({ queryKey: ['my-coins'] });
-      navigate(`/order/${res.order.orderId}/success`, { replace: true });
-    },
-    onError: (err) => {
-      toast.error(err.message, { duration: 6000 });
-      qc.invalidateQueries({ queryKey: ['cart'] });
-    },
-  });
+      setSubmitting(false);
+    }
+  };
 
   if (isLoading || addresses.isLoading) return <><CheckoutHeader /><PageLoader /></>;
-  if (!items.length && !place.isPending) {
+  if (!items.length && !submitting) {
     return (
       <>
         <CheckoutHeader />
@@ -173,7 +320,10 @@ export default function Checkout() {
     );
   }
 
-  const selectedAddress = addressChoice?.addressId ? addresses.data?.find((a) => a._id === addressChoice.addressId) : addressChoice?.address;
+  const selectedAddress = addressChoice?.addressId
+    ? addresses.data?.find((a) => a._id === addressChoice.addressId)
+    : (addressChoice?.address || (addresses.data?.length ? addresses.data[0] : null));
+  const currentCustomer = customer || customerForm.getValues();
   const selectedPayment = methods.data?.find((m) => m.code === payment);
 
   return (
@@ -186,7 +336,7 @@ export default function Checkout() {
             <div className="card p-space-lg flex items-center justify-between gap-4">
               <div className="flex items-center gap-3 min-w-0">
                 <div className="w-10 h-10 rounded-full bg-secondary-container text-on-secondary-fixed flex items-center justify-center shrink-0"><Icon name="verified_user" /></div>
-                <p className="text-body-sm text-on-surface-variant truncate">Signed in as <strong className="text-on-surface">{user.email}</strong></p>
+                <p className="text-body-sm text-on-surface-variant truncate">Signed in as <strong className="text-on-surface">{user?.email}</strong></p>
               </div>
             </div>
 
@@ -324,6 +474,12 @@ export default function Checkout() {
                     <p>Pay {money.inr(summary.grandTotal)} in cash or by UPI to the courier at delivery. No card details are collected or stored.</p>
                   </div>
                 )}
+                {selectedPayment?.code === 'razorpay' && (
+                  <div className="p-space-md rounded-2xl bg-secondary-container/30 flex items-start gap-3 text-body-sm">
+                    <Icon name="verified_user" className="text-secondary" />
+                    <p>Pay securely via UPI (Google Pay, PhonePe, Paytm), Credit / Debit Cards, Net Banking or Wallets through Razorpay with 256-bit encryption.</p>
+                  </div>
+                )}
                 <Field label="Order note (optional)" htmlFor="note">
                   <Textarea id="note" rows={3} maxLength={500} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Delivery instructions, gift message…" />
                 </Field>
@@ -335,15 +491,15 @@ export default function Checkout() {
             )}
 
             {/* Step 4: review */}
-            {step === 3 && customer && selectedAddress && (
+            {step === 3 && (
               <section className="flex flex-col gap-space-md">
                 <SectionTitle>Check & place your order</SectionTitle>
                 <p className="text-body-md text-on-surface-variant -mt-2">Everything look right? Tap the big button below to order. You can change anything first.</p>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-space-md">
                   {[
-                    ['person', 'Your details', 0, [customer.name, `${customer.phone.dialCode} ${customer.phone.number}`, customer.email]],
-                    ['home', 'We deliver to', 1, [selectedAddress.fullName, selectedAddress.addressLine1, selectedAddress.addressLine2, `${selectedAddress.city}, ${selectedAddress.state} ${selectedAddress.postalCode}`, countryName(selectedAddress.country)]],
-                    ['payments', 'Payment & delivery', 2, [selectedPayment?.label, `${summary.shippingMethod.label} · ${summary.shippingMethod.eta}`]],
+                    ['person', 'Your details', 0, [(currentCustomer?.name || user?.name || 'Customer'), `${currentCustomer?.phone?.dialCode || user?.phone?.dialCode || '+91'} ${currentCustomer?.phone?.number || user?.phone?.number || ''}`, (currentCustomer?.email || user?.email || '')]],
+                    ['home', 'We deliver to', 1, selectedAddress ? [selectedAddress.fullName, selectedAddress.addressLine1, selectedAddress.addressLine2, `${selectedAddress.city}, ${selectedAddress.state} ${selectedAddress.postalCode}`, countryName(selectedAddress.country)] : ['No address selected']],
+                    ['payments', 'Payment & delivery', 2, [selectedPayment?.label, `${summary?.shippingMethod?.label || 'Standard'} · ${summary?.shippingMethod?.eta || ''}`]],
                   ].map(([icon, title, s, lines]) => (
                     <div key={title} className="card p-space-md flex flex-col gap-1 min-w-0 break-words [overflow-wrap:anywhere]">
                       <div className="flex items-start justify-between gap-2 mb-1">
@@ -359,16 +515,29 @@ export default function Checkout() {
                     <Icon name="payments" className="text-secondary" /> Pay <strong>{money(summary.grandTotal)}</strong> in cash when your bag arrives. Nothing to pay now.
                   </p>
                 )}
+                {payment === 'razorpay' && selectedPayment?.available && (
+                  <p className="flex items-center gap-2 p-space-md rounded-xl bg-secondary-container/40 text-body-sm">
+                    <Icon name="lock" className="text-secondary" /> You will be redirected to the secure Razorpay popup to pay <strong>{money(summary.grandTotal)}</strong> via UPI, Card or Net Banking.
+                  </p>
+                )}
                 {selectedPayment && !selectedPayment.available && (
                   <p className="p-space-md rounded-xl bg-error-container text-on-error-container text-body-sm" role="alert">
                     {selectedPayment.label} isn't available for this order. <button type="button" className="underline font-semibold" onClick={() => setStep(2)}>Choose another way to pay</button>
                   </p>
                 )}
                 {hasIssues && <p className="p-space-md rounded-xl bg-error-container text-on-error-container text-body-sm" role="alert">Some items in your bag changed. <Link to="/cart" className="underline">Review your bag</Link> before ordering.</p>}
-                <Button variant="secondary" className="w-full h-14 text-body-md" icon="check_circle" loading={place.isPending} disabled={hasIssues || (selectedPayment && !selectedPayment.available)} onClick={() => place.mutate()}>
-                  Place my order · {money(summary.grandTotal)}
+                <Button variant="secondary" className="w-full h-14 text-body-md" icon={payment === 'razorpay' ? 'lock' : 'check_circle'} loading={submitting} disabled={hasIssues || submitting || (selectedPayment && !selectedPayment.available)} onClick={handlePlaceOrder}>
+                  {payment === 'razorpay' ? `Pay online · ${money(summary.grandTotal)}` : `Place my order · ${money(summary.grandTotal)}`}
                 </Button>
-                <p className="text-label-sm font-normal text-outline text-center -mt-2">You'll get an order number straight away and can track it from your account.</p>
+                <div className="flex items-center justify-between gap-3 pt-1">
+                  <Button variant="tonal" icon="arrow_back" onClick={() => setStep(2)}>
+                    Back to payment
+                  </Button>
+                  <Link to="/cart" className="btn btn-tonal text-label-md flex items-center gap-1.5 text-on-surface-variant hover:text-on-surface">
+                    <Icon name="shopping_bag" className="text-[17px] text-secondary" /> Return to bag
+                  </Link>
+                </div>
+                <p className="text-label-sm font-normal text-outline text-center">You'll get an order number straight away and can track it from your account.</p>
               </section>
             )}
           </div>
@@ -399,8 +568,8 @@ export default function Checkout() {
             <UseCoinsCard summary={summary} busy={setUseCoins.isPending} onToggle={(use) => setUseCoins.mutate(use)} />
             <SummaryRows summary={summary} />
             {step === 3 ? (
-              <Button variant="secondary" className="w-full h-12" icon="lock" loading={place.isPending} disabled={hasIssues} onClick={() => place.mutate()}>
-                Place order
+              <Button variant="secondary" className="w-full h-12" icon="lock" loading={submitting} disabled={hasIssues || submitting || (selectedPayment && !selectedPayment.available)} onClick={handlePlaceOrder}>
+                {payment === 'razorpay' ? 'Pay now' : 'Place order'}
               </Button>
             ) : (
               <p className="text-label-sm font-normal text-outline text-center">Complete the steps to place your order.</p>

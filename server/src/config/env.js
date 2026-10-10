@@ -27,6 +27,11 @@ const env = {
     email: process.env.ADMIN_EMAIL,
     password: process.env.ADMIN_PASSWORD,
   },
+  razorpay: {
+    keyId: process.env.RAZORPAY_KEY_ID || '',
+    keySecret: process.env.RAZORPAY_KEY_SECRET || '',
+    webhookSecret: process.env.RAZORPAY_WEBHOOK_SECRET || '',
+  },
   cloudinary: {
     cloudName: process.env.CLOUDINARY_CLOUD_NAME,
     apiKey: process.env.CLOUDINARY_API_KEY,
@@ -58,6 +63,7 @@ env.gemini = {
   model: process.env.GEMINI_MODEL || 'gemini-flash-lite-latest',
   enabled: Boolean(process.env.GEMINI_API_KEY),
 };
+env.razorpay.enabled = Boolean(env.razorpay.keyId && env.razorpay.keySecret);
 env.cloudinary.enabled = Boolean(env.cloudinary.cloudName && env.cloudinary.apiKey && env.cloudinary.apiSecret);
 env.whatsapp.enabled = Boolean(env.whatsapp.token && env.whatsapp.phoneNumberId);
 // A login without its password (e.g. Gmail app password not added yet) counts as not configured.

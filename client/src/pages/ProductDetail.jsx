@@ -484,12 +484,44 @@ export default function ProductDetail() {
             <QuantityStepper value={qty} onChange={setQty} max={max} disabled={soldOut} />
             <div className="flex items-center gap-2">
               <span className="relative flex h-2.5 w-2.5">
-                
-                <span className={cn('relative inline-flex rounded-full h-2.5 w-2.5', soldOut ? 'bg-error' : variant.stock <= 5 ? 'bg-on-tertiary-container' : 'bg-secondary')} />
+                {!soldOut && variant.stock <= 10 && (
+                  <span className={cn('animate-ping absolute inline-flex h-full w-full rounded-full opacity-75', variant.stock <= 5 ? 'bg-rose-400' : 'bg-amber-400')} />
+                )}
+                <span
+                  className={cn(
+                    'relative inline-flex rounded-full h-2.5 w-2.5',
+                    soldOut
+                      ? 'bg-error'
+                      : variant.stock <= 5
+                      ? 'bg-rose-600'
+                      : variant.stock <= 10
+                      ? 'bg-amber-500'
+                      : variant.stock <= 20
+                      ? 'bg-amber-400'
+                      : 'bg-emerald-600'
+                  )}
+                />
               </span>
               <span className="text-label-md">
-                {soldOut ? 'Sold out in this colour' : variant.stock <= 5 ? `Only ${variant.stock} left` : 'In stock'}
-                {!soldOut && <span className="font-normal text-on-surface-variant"> — usually dispatches in 1–2 business days</span>}
+                {soldOut ? (
+                  <span className="text-error font-semibold">Sold out in this colour</span>
+                ) : variant.stock <= 5 ? (
+                  <span className="text-rose-600 dark:text-rose-400 font-bold">
+                    🔥 Hurry! Only {variant.stock} left in stock — selling fast!
+                  </span>
+                ) : variant.stock <= 10 ? (
+                  <span className="text-amber-600 dark:text-amber-400 font-bold">
+                    ⚡ Only {variant.stock} units left — order soon!
+                  </span>
+                ) : variant.stock <= 20 ? (
+                  <span className="text-amber-700 dark:text-amber-300 font-medium">
+                    ⏱ Low Stock: Only {variant.stock} left
+                  </span>
+                ) : (
+                  <span>
+                    In stock <span className="font-normal text-on-surface-variant">— usually dispatches in 1–2 business days</span>
+                  </span>
+                )}
               </span>
             </div>
           </div>

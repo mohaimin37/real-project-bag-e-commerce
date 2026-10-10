@@ -11,7 +11,7 @@ import ApiError from '../utils/ApiError.js';
 import { resolveLines, computeTotals } from './cart.service.js';
 import { redeemCoupon, releaseCoupon } from './coupon.service.js';
 import { moveCoins, reverseOrderCoins } from './coin.service.js';
-import { getProvider } from './payment.service.js';
+import { getProvider, verifyRazorpaySignature, createRazorpayOrder } from './payment.service.js';
 import { notifyAdminOfOrder, notifyCustomerOfOrderApprovalWhatsApp, buildInvoiceCaption, buildWhatsAppChatLink } from './whatsapp.service.js';
 import { sendEmail } from './email.service.js';
 import { buildInvoiceCoverEmail } from './invoice-email.template.js';
@@ -37,7 +37,98 @@ async function resolveAddress(user, { addressId, address, saveAddress }) {
 }
 
 /**
+ * Initiates Razorpay checkout order without creating a database order.
+ * Validates stock and computes final totals before generating the Razorpay order.
+ */
+export async function initiateOnlinePayment(userId, payload = {}) {
+  const [user, cart, settings] = await Promise.all([
+    User.findById(userId),
+    Cart.findOne({ user: userId }),
+    Setting.get(),
+  ]);
+  if (!cart || !cart.items.length) throw ApiError.badRequest('Your bag is empty');
+
+  const lines = await resolveLines(cart.items);
+  const problems = lines.filter((l) => !l.available || l.issue);
+  if (problems.length) {
+    throw ApiError.conflict(
+      'Some items in your bag changed. Please review your bag before placing the order.',
+      problems.map((p) => ({ field: p.variantId, message: `${p.name || 'Item'}: ${p.issue}` }))
+    );
+  }
+
+  const totals = await computeTotals(lines, {
+    userId,
+    couponCode: cart.couponCode,
+    shippingCode: payload.shippingMethod || cart.shippingMethod || 'standard',
+    settings,
+    strictCoupon: true,
+    coinBalance: user?.coins || 0,
+    useCoins: cart.useCoins,
+  });
+
+  const provider = getProvider('razorpay');
+  const availability = provider?.isAvailable({ settings, total: totals.grandTotal });
+  if (!provider || !availability.available) {
+    throw ApiError.badRequest(availability?.reason || 'Online payment is currently unavailable');
+  }
+
+  const gatewayOrder = await createRazorpayOrder({
+    amount: totals.grandTotal,
+    currency: totals.currency || 'INR',
+    receipt: `chk_${Date.now().toString(36)}`,
+    notes: {
+      userId: String(userId),
+      customerName: user?.name || '',
+      email: user?.email || '',
+    },
+  });
+
+  return {
+    gatewayOrder,
+    keyId: env.razorpay.keyId,
+    amount: gatewayOrder.amount,
+    currency: gatewayOrder.currency,
+    grandTotal: totals.grandTotal,
+  };
+}
+
+async function checkAndNotifyLowStock(order) {
+  try {
+    const alerts = [];
+    for (const it of order.items) {
+      const prod = await Product.findById(it.productId).select('name variants stock lowStockThreshold');
+      if (!prod) continue;
+      const v = prod.variants.id(it.variant?.id);
+      const remainingVariantStock = v ? v.stock : prod.stock;
+      const threshold = prod.lowStockThreshold || 10;
+      if (remainingVariantStock <= 20) {
+        alerts.push({
+          name: prod.name,
+          variant: v?.name || 'Default',
+          remaining: remainingVariantStock,
+          threshold,
+        });
+        await Notification.create({
+          type: 'low_stock_alert',
+          channel: 'whatsapp',
+          recipient: env.whatsapp.adminNumber || '',
+          message: `⚠️ Low Stock Alert: "${prod.name}" (${v?.name || 'Default'}) has only ${remainingVariantStock} units remaining (Threshold: ${threshold}).`,
+          provider: env.whatsapp.enabled ? 'whatsapp_cloud' : 'dev_log',
+          status: 'logged',
+        });
+      }
+    }
+    return alerts;
+  } catch (err) {
+    console.error(`[inventory] Error checking low stock for order ${order.orderId}:`, err.message);
+    return [];
+  }
+}
+
+/**
  * Creates an order from the user's server cart.
+ * If paymentMethod is online (razorpay), payment must be completed and verified first.
  * Stock decrement, coupon redemption, order insert and cart clear run in one
  * MongoDB transaction, so concurrent buyers can never oversell a variant.
  * The WhatsApp admin alert is sent only after the transaction commits.
@@ -65,7 +156,7 @@ export async function placeOrder(userId, payload) {
     shippingCode: payload.shippingMethod,
     settings,
     strictCoupon: true,
-    coinBalance: user.coins || 0,
+    coinBalance: user?.coins || 0,
     useCoins: cart.useCoins,
   });
 
@@ -73,6 +164,24 @@ export async function placeOrder(userId, payload) {
   const availability = provider?.isAvailable({ settings, total: totals.grandTotal });
   if (!provider || !availability.available) {
     throw ApiError.badRequest(availability?.reason || 'Choose a valid payment method', [{ field: 'paymentMethod', message: 'Unavailable' }]);
+  }
+
+  let verifiedPayment = null;
+  if (payload.paymentMethod === 'razorpay') {
+    const { razorpayOrderId, razorpayPaymentId, razorpaySignature } = payload.paymentDetails || {};
+    if (!razorpayOrderId || !razorpayPaymentId || !razorpaySignature) {
+      throw ApiError.badRequest('Payment details are required. Complete online payment before placing your order.');
+    }
+    const valid = verifyRazorpaySignature({ razorpayOrderId, razorpayPaymentId, razorpaySignature });
+    if (!valid) {
+      throw ApiError.badRequest('Payment signature verification failed. Order was not placed.');
+    }
+    verifiedPayment = {
+      razorpayOrderId,
+      razorpayPaymentId,
+      razorpaySignature,
+      paidAt: new Date(),
+    };
   }
 
   const address = await resolveAddress(user, payload);
@@ -149,9 +258,17 @@ export async function placeOrder(userId, payload) {
             coinsEarned: totals.coins.willEarn,
             shippingMethod: { code: totals.shippingMethod.code, label: totals.shippingMethod.label, eta: totals.shippingMethod.eta },
             paymentMethod: provider.code,
-            paymentStatus: 'Pending',
-            orderStatus: 'Pending',
-            statusHistory: [{ status: 'Pending', note: 'Order placed', at: new Date() }],
+            paymentStatus: verifiedPayment ? 'Paid' : 'Pending',
+            paymentReference: verifiedPayment ? verifiedPayment.razorpayPaymentId : '',
+            paymentDetails: verifiedPayment ? { ...verifiedPayment } : undefined,
+            orderStatus: verifiedPayment ? 'Confirmed' : 'Pending',
+            statusHistory: [
+              {
+                status: verifiedPayment ? 'Confirmed' : 'Pending',
+                note: verifiedPayment ? 'Order placed and payment received online' : 'Order placed (Cash on Delivery)',
+                at: new Date(),
+              },
+            ],
             customerNote: payload.customerNote,
           },
         ],
@@ -169,17 +286,19 @@ export async function placeOrder(userId, payload) {
     await session.endSession();
   }
 
-  // Payment initiation happens after the order exists. COD simply stays Pending.
-  const payment = await provider.initiate(order);
-  if (payment.paymentStatus && payment.paymentStatus !== order.paymentStatus) {
-    order.paymentStatus = payment.paymentStatus;
-    await order.save();
-  }
+  const payment = verifiedPayment
+    ? { paymentStatus: 'Paid', reference: verifiedPayment.razorpayPaymentId }
+    : await provider.initiate(order);
 
-  // Fire-and-forget: notification outcome is logged separately and never affects the order.
-  notifyAdminOfOrder(order);
+  // Check remaining inventory and alert admin if any purchased item is low in stock
+  checkAndNotifyLowStock(order).then((alerts) => {
+    notifyAdminOfOrder(order, alerts);
+  }).catch((err) => {
+    console.error('[notification] notifyAdminOfOrder error:', err);
+    notifyAdminOfOrder(order);
+  });
 
-  return order;
+  return { order, payment };
 }
 
 const CUSTOMER_CANCELLABLE = ['Pending', 'Confirmed'];
@@ -428,4 +547,125 @@ export async function reviewableProducts(userId) {
   const reviewed = await Review.find({ user: userId, product: { $in: ids } }).select('product');
   const done = new Set(reviewed.map((r) => r.product.toString()));
   return ids.filter((id) => !done.has(id));
+}
+
+function findQuery(idOrOrderId) {
+  return mongoose.isValidObjectId(idOrOrderId) ? { _id: idOrOrderId } : { orderId: idOrOrderId };
+}
+
+export async function verifyOrderPayment(idOrOrderId, { razorpayOrderId, razorpayPaymentId, razorpaySignature, userId }) {
+  const query = findQuery(idOrOrderId);
+  if (userId) query.user = userId;
+
+  const order = await Order.findOne(query);
+  if (!order) throw ApiError.notFound('Order not found');
+
+  if (order.paymentStatus === 'Paid') {
+    return order;
+  }
+
+  const valid = verifyRazorpaySignature({
+    razorpayOrderId,
+    razorpayPaymentId,
+    razorpaySignature,
+  });
+
+  if (!valid) {
+    throw ApiError.badRequest('Payment verification failed: invalid signature');
+  }
+
+  order.paymentStatus = 'Paid';
+  order.paymentReference = razorpayPaymentId;
+  order.paymentDetails = {
+    ...(order.paymentDetails || {}),
+    razorpayOrderId,
+    razorpayPaymentId,
+    razorpaySignature,
+    verifiedAt: new Date(),
+  };
+
+  order.statusHistory.push({
+    status: order.orderStatus,
+    note: `Online payment received via Razorpay (${razorpayPaymentId})`,
+    at: new Date(),
+  });
+
+  await order.save();
+  return order;
+}
+
+export async function retryOrderPayment(idOrOrderId, userId) {
+  const query = findQuery(idOrOrderId);
+  if (userId) query.user = userId;
+
+  const order = await Order.findOne(query);
+  if (!order) throw ApiError.notFound('Order not found');
+  if (order.paymentStatus === 'Paid') throw ApiError.badRequest('Order is already paid');
+  if (['Cancelled', 'Returned'].includes(order.orderStatus)) throw ApiError.badRequest('Order has been cancelled');
+
+  const provider = getProvider(order.paymentMethod);
+  if (!provider || typeof provider.initiate !== 'function') {
+    throw ApiError.badRequest('Payment method does not support online payment');
+  }
+
+  const payment = await provider.initiate(order);
+  if (payment.reference) {
+    order.paymentReference = payment.reference;
+    order.paymentDetails = { gatewayOrder: payment.gatewayOrder };
+    await order.save();
+  }
+  return { order, payment };
+}
+
+export async function handleRazorpayWebhook(event) {
+  const eventName = event?.event;
+  const paymentEntity = event?.payload?.payment?.entity;
+  const orderEntity = event?.payload?.order?.entity;
+
+  const rzpOrderId = paymentEntity?.order_id || orderEntity?.id;
+  const rzpPaymentId = paymentEntity?.id;
+  const orderNum = paymentEntity?.notes?.orderNum || orderEntity?.notes?.orderNum;
+  const orderDbId = paymentEntity?.notes?.orderId || orderEntity?.notes?.orderId;
+
+  const query = {};
+  if (orderNum) query.orderId = orderNum;
+  else if (orderDbId && mongoose.isValidObjectId(orderDbId)) query._id = orderDbId;
+  else if (rzpOrderId) query.paymentReference = rzpOrderId;
+  else return { handled: false, reason: 'No order identifier found' };
+
+  const order = await Order.findOne(query);
+  if (!order) return { handled: false, reason: 'Order not found' };
+
+  if (eventName === 'payment.captured' || eventName === 'order.paid') {
+    if (order.paymentStatus !== 'Paid') {
+      order.paymentStatus = 'Paid';
+      if (rzpPaymentId) order.paymentReference = rzpPaymentId;
+      order.paymentDetails = {
+        ...(order.paymentDetails || {}),
+        webhookEvent: eventName,
+        paymentEntity,
+        verifiedAt: new Date(),
+      };
+      order.statusHistory.push({
+        status: order.orderStatus,
+        note: `Payment marked Paid via Razorpay Webhook (${eventName})`,
+        at: new Date(),
+      });
+      await order.save();
+    }
+    return { handled: true, orderId: order.orderId };
+  } else if (eventName === 'payment.failed') {
+    if (order.paymentStatus === 'Pending') {
+      order.paymentStatus = 'Failed';
+      order.statusHistory.push({
+        status: order.orderStatus,
+        note: `Payment failed via Razorpay (${paymentEntity?.error_description || 'failed'})`,
+        at: new Date(),
+      });
+      await order.save();
+    }
+    return { handled: true, orderId: order.orderId };
+  }
+
+  return { handled: true, ignoredEvent: eventName };
 }

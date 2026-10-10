@@ -4,7 +4,7 @@ import { formatINR } from '../utils/helpers.js';
 import { countryName } from '../utils/countries.js';
 import { generateInvoicePdfBuffer, invoiceFileName, getInvoiceToken } from './pdf-invoice.service.js';
 
-export const PAYMENT_LABELS = { cod: 'Cash on Delivery', card: 'Card', upi: 'UPI / Net Banking', wallet: 'Wallet' };
+export const PAYMENT_LABELS = { cod: 'Cash on Delivery', razorpay: 'Online Payment (Razorpay)', card: 'Card', upi: 'UPI / Net Banking', wallet: 'Wallet' };
 
 export function formatAddress(a) {
   return [
@@ -20,7 +20,7 @@ export function formatAddress(a) {
 }
 
 /** Plain-text admin alert for a new order (WhatsApp formatting: *bold*). */
-export function buildOrderMessage(order) {
+export function buildOrderMessage(order, lowStockAlerts = []) {
   const date = new Date(order.createdAt).toLocaleString('en-IN', {
     dateStyle: 'medium',
     timeStyle: 'short',
@@ -39,6 +39,16 @@ export function buildOrderMessage(order) {
     )
     .join('\n\n');
 
+  const alertsSection = lowStockAlerts?.length
+    ? [
+        '',
+        '⚠️ *INVENTORY LOW-STOCK ALERTS*',
+        ...lowStockAlerts.map(
+          (a) => `• ${a.name} (${a.variant}): ONLY ${a.remaining} UNITS LEFT! (Threshold: ${a.threshold})`
+        ),
+      ]
+    : [];
+
   return [
     '*WILDTANE - NEW ORDER*',
     '',
@@ -55,6 +65,7 @@ export function buildOrderMessage(order) {
     '',
     '*ITEMS*',
     items,
+    ...alertsSection,
     '',
     '*ORDER SUMMARY*',
     `Subtotal: ${formatINR(order.subtotal)}`,
@@ -196,14 +207,14 @@ export async function deliver(notification, invoice) {
 }
 
 /** Called after the order is committed. Failures are logged, never propagated to checkout. */
-export async function notifyAdminOfOrder(order) {
+export async function notifyAdminOfOrder(order, lowStockAlerts = []) {
   try {
     const notification = await Notification.create({
       type: 'order_created',
       channel: 'whatsapp',
       order: order._id,
       recipient: env.whatsapp.adminNumber || '',
-      message: buildOrderMessage(order),
+      message: buildOrderMessage(order, lowStockAlerts),
       provider: env.whatsapp.enabled ? 'whatsapp_cloud' : 'dev_log',
       status: 'pending',
     });

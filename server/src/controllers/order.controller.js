@@ -5,7 +5,18 @@ import Setting from '../models/Setting.js';
 import ApiError from '../utils/ApiError.js';
 import asyncHandler from '../utils/asyncHandler.js';
 import { escapeRegex, paginated, parsePagination } from '../utils/helpers.js';
-import { placeOrder, changeOrderStatus, cancelByCustomer, approveOrder, dispatchInvoice } from '../services/order.service.js';
+import {
+  placeOrder,
+  initiateOnlinePayment,
+  changeOrderStatus,
+  cancelByCustomer,
+  approveOrder,
+  dispatchInvoice,
+  verifyOrderPayment,
+  retryOrderPayment,
+  handleRazorpayWebhook,
+} from '../services/order.service.js';
+import { verifyRazorpayWebhookSignature } from '../services/payment.service.js';
 import { deliver, buildInvoiceCaption } from '../services/whatsapp.service.js';
 import { buildInvoiceCoverEmail } from '../services/invoice-email.template.js';
 import { generateInvoicePdfBuffer, invoiceFileName, getInvoiceToken } from '../services/pdf-invoice.service.js';
@@ -17,9 +28,44 @@ function findQuery(idOrOrderId) {
 
 // ── Customer ─────────────────────────────────────────────────
 
+export const initiatePayment = asyncHandler(async (req, res) => {
+  const result = await initiateOnlinePayment(req.user._id, req.body);
+  res.json({ success: true, ...result });
+});
+
 export const createOrder = asyncHandler(async (req, res) => {
-  const order = await placeOrder(req.user._id, req.body);
-  res.status(201).json({ success: true, order });
+  const result = await placeOrder(req.user._id, req.body);
+  const order = result.order || result;
+  const payment = result.payment || null;
+  res.status(201).json({ success: true, order, payment });
+});
+
+export const verifyPayment = asyncHandler(async (req, res) => {
+  const order = await verifyOrderPayment(req.params.id, {
+    razorpayOrderId: req.body.razorpayOrderId,
+    razorpayPaymentId: req.body.razorpayPaymentId,
+    razorpaySignature: req.body.razorpaySignature,
+    userId: req.user._id,
+  });
+  res.json({ success: true, order });
+});
+
+export const retryPayment = asyncHandler(async (req, res) => {
+  const { order, payment } = await retryOrderPayment(req.params.id, req.user._id);
+  res.json({ success: true, order, payment });
+});
+
+export const razorpayWebhook = asyncHandler(async (req, res) => {
+  const signature = req.headers['x-razorpay-signature'];
+  if (env.razorpay.webhookSecret && signature) {
+    const raw = req.rawBody || JSON.stringify(req.body);
+    const valid = verifyRazorpayWebhookSignature(raw, signature);
+    if (!valid) {
+      return res.status(400).json({ success: false, message: 'Invalid webhook signature' });
+    }
+  }
+  const result = await handleRazorpayWebhook(req.body);
+  res.json({ success: true, result });
 });
 
 export const myOrders = asyncHandler(async (req, res) => {
