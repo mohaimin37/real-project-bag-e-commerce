@@ -3,6 +3,15 @@ import env from '../config/env.js';
 
 const message = { success: false, message: 'Too many requests. Please wait a moment and try again.' };
 
+export const getClientIp = (req) =>
+  req.headers['x-nf-client-connection-ip'] ||
+  req.headers['x-real-ip'] ||
+  req.headers['x-client-ip'] ||
+  req.headers['client-ip'] ||
+  (typeof req.headers['x-forwarded-for'] === 'string' ? req.headers['x-forwarded-for'].split(',')[0].trim() : '') ||
+  req.ip ||
+  '127.0.0.1';
+
 // General API limit. Skipped in development, where every request arrives from the
 // Vite proxy's single IP. Login and form limits below always apply.
 export const apiLimiter = rateLimit({
@@ -10,6 +19,8 @@ export const apiLimiter = rateLimit({
   limit: 3000,
   standardHeaders: 'draft-7',
   legacyHeaders: false,
+  keyGenerator: getClientIp,
+  validate: { ip: false, default: true },
   skip: () => !env.isProd,
   message,
 });
@@ -19,6 +30,8 @@ export const authLimiter = rateLimit({
   limit: 100,
   standardHeaders: 'draft-7',
   legacyHeaders: false,
+  keyGenerator: getClientIp,
+  validate: { ip: false, default: true },
   skip: () => !env.isProd,
   message,
 });
@@ -29,6 +42,8 @@ export const adminAuthLimiter = rateLimit({
   limit: 10,
   standardHeaders: 'draft-7',
   legacyHeaders: false,
+  keyGenerator: getClientIp,
+  validate: { ip: false, default: true },
   message,
 });
 
@@ -38,6 +53,8 @@ export const trackLimiter = rateLimit({
   limit: 120,
   standardHeaders: 'draft-7',
   legacyHeaders: false,
+  keyGenerator: getClientIp,
+  validate: { ip: false, default: true },
   message,
 });
 
@@ -46,5 +63,7 @@ export const formLimiter = rateLimit({
   limit: 15,
   standardHeaders: 'draft-7',
   legacyHeaders: false,
+  keyGenerator: getClientIp,
+  validate: { ip: false, default: true },
   message,
 });

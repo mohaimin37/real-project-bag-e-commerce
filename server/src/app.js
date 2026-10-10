@@ -25,6 +25,20 @@ const app = express();
 app.set('trust proxy', Number(process.env.TRUST_PROXY) || 1);
 app.disable('x-powered-by');
 
+// Normalize client IP in serverless environments where socket remoteAddress may be unset.
+app.use((req, res, next) => {
+  if (!req.ip) {
+    req.ip =
+      req.headers['x-nf-client-connection-ip'] ||
+      req.headers['x-real-ip'] ||
+      req.headers['x-client-ip'] ||
+      req.headers['client-ip'] ||
+      (typeof req.headers['x-forwarded-for'] === 'string' ? req.headers['x-forwarded-for'].split(',')[0].trim() : '') ||
+      '127.0.0.1';
+  }
+  next();
+});
+
 app.use(
   helmet({
     // Uploaded images are embedded by the React app on another origin.
@@ -102,6 +116,7 @@ api.use('/newsletter', routes.newsletterRoutes);
 api.use('/comments', routes.commentRoutes);
 api.use('/config', routes.configRoutes);
 api.use('/banners', routes.bannerRoutes);
+api.use('/returns', routes.returnRoutes);
 api.use('/admin', adminRoutes);
 app.use('/api', api);
 

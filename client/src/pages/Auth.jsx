@@ -191,7 +191,7 @@ export function Login() {
 const registerSchema = z
   .object({
     name: z.string().trim().min(2, 'Enter your full name'),
-    email: z.email('Enter a valid email'),
+    email: z.email('Please enter a valid, working email ID'),
     phone: z.object({ dialCode: z.string(), number: z.string().trim().regex(/^[0-9\s-]{5,16}$/, 'Enter a valid phone number') }),
     password: passwordRule,
     confirm: z.string(),
@@ -221,11 +221,28 @@ export function Register() {
     <AuthShell title="Create your account." subtitle="It takes less than a minute." footer={<>Already a member? <Link to={`/login${next ? `?next=${encodeURIComponent(next)}` : ''}`} className="text-secondary font-semibold hover:underline">Sign in</Link></>}>
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-space-md" noValidate>
         {errors.root && <p className="p-space-sm rounded-lg bg-error-container text-on-error-container text-body-sm flex items-center gap-2" role="alert"><Icon name="error" /> {errors.root.message}</p>}
+        <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-500/10 border border-amber-500/25 text-amber-900 dark:text-amber-200 text-label-md">
+          <Icon name="mark_email_read" className="text-[18px] text-amber-600 dark:text-amber-400 shrink-0" />
+          <span>Please sign up with a <strong>working email ID</strong> to receive order updates &amp; tax invoices.</span>
+        </div>
         <Field label="Full name" error={errors.name?.message} htmlFor="name" required>
           <Input id="name" autoComplete="name" error={errors.name} {...register('name')} />
         </Field>
-        <Field label="Email" error={errors.email?.message} htmlFor="email" required>
-          <Input id="email" type="email" autoComplete="email" error={errors.email} {...register('email')} />
+        <Field
+          label="Email"
+          error={errors.email?.message}
+          hint="Please sign up with a working email ID (order receipts and PDFs are sent here)"
+          htmlFor="email"
+          required
+        >
+          <Input
+            id="email"
+            type="email"
+            autoComplete="email"
+            placeholder="Please enter working email ID (e.g. you@gmail.com)"
+            error={errors.email}
+            {...register('email')}
+          />
         </Field>
         <Field label="Mobile number" error={errors.phone?.number?.message} required>
           <PhoneInput dialProps={register('phone.dialCode')} numberProps={register('phone.number')} error={errors.phone?.number} />

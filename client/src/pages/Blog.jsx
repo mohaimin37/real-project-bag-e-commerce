@@ -74,7 +74,7 @@ export default function Blog() {
         </div>
       )}
       </div>
-      <aside id="live" className="lg:col-span-4 lg:sticky lg:top-28 scroll-mt-28">
+      <aside id="live" className="lg:col-span-4 lg:sticky lg:top-32 scroll-mt-32">
         <LiveFeed />
       </aside>
       </div>

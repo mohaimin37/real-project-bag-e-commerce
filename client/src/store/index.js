@@ -173,6 +173,7 @@ const uiSlice = createSlice({
     searchOpen: false,
     searchVoice: false,
     mobileNavOpen: false,
+    shopModalOpen: false,
     quickView: null, // product slug
     adminEdit: null, // product id being edited in place on the storefront (admins only)
     currency: read('wt-currency', 'INR'),
@@ -202,6 +203,7 @@ const uiSlice = createSlice({
     },
     setSearchVoice: (s, { payload }) => void (s.searchVoice = Boolean(payload)),
     setMobileNavOpen: (s, { payload }) => void (s.mobileNavOpen = payload),
+    setShopModalOpen: (s, { payload }) => void (s.shopModalOpen = Boolean(payload)),
     openQuickView: (s, { payload }) => void (s.quickView = payload),
     closeQuickView: (s) => void (s.quickView = null),
     setAdminEdit: (s, { payload }) => void (s.adminEdit = payload),
@@ -262,6 +264,7 @@ export const {
   setSearchOpen,
   setSearchVoice,
   setMobileNavOpen,
+  setShopModalOpen,
   openQuickView,
   closeQuickView,
   setAdminEdit,

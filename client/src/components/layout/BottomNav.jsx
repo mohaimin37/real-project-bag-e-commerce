@@ -1,6 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
-import { setCartOpen, setMobileNavOpen } from '../../store';
+import { setCartOpen, setShopModalOpen } from '../../store';
 import { useCart } from '../../hooks/useCart';
 import { useWishlist } from '../../hooks/useWishlist';
 import { useUser } from '../../hooks/useStore';
@@ -29,8 +29,9 @@ export default function BottomNav() {
   // The product page has its own sticky buy bar.
   if (pathname.startsWith('/product/')) return null;
 
+  const isShopActive = pathname.startsWith('/shop') || ['/offers', '/men', '/women', '/universal', '/unisex'].includes(pathname);
   const tabs = [
-    { to: '/', label: 'Home', icon: 'home', active: pathname === '/' || pathname.startsWith('/shop') || ['/offers', '/men', '/women', '/universal', '/unisex'].includes(pathname) },
+    { to: '/', label: 'Home', icon: 'home', active: pathname === '/' },
     { to: '/wishlist', label: 'Wishlist', icon: 'favorite', active: pathname === '/wishlist', badge: wishCount },
     { to: user ? '/account' : '/login', label: user ? 'Account' : 'Sign in', icon: 'person', active: pathname.startsWith('/account') || pathname === '/login' },
   ];
@@ -42,9 +43,13 @@ export default function BottomNav() {
           <Icon name="home" fill={tabs[0].active} className="text-[22px]" />
           <span className="text-[10px] font-medium leading-none">Home</span>
         </Link>
-        <button type="button" onClick={() => dispatch(setMobileNavOpen(true))} className={tabCls(false)}>
-          <Icon name="category" className="text-[22px]" />
-          <span className="text-[10px] font-medium leading-none">Categories</span>
+        <button
+          type="button"
+          onClick={() => dispatch(setShopModalOpen(true))}
+          className={tabCls(isShopActive)}
+        >
+          <Icon name="grid_view" className="text-[22px]" />
+          <span className="text-[10px] font-medium leading-none">Shop</span>
         </button>
         {tabs.slice(1).map((tab) => (
           <Link key={tab.label} to={tab.to} className={tabCls(tab.active)}>

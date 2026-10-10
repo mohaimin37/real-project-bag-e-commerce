@@ -1,11 +1,15 @@
 import mongoose from 'mongoose';
 import Order from '../models/Order.js';
 import Notification from '../models/Notification.js';
+import Setting from '../models/Setting.js';
 import ApiError from '../utils/ApiError.js';
 import asyncHandler from '../utils/asyncHandler.js';
 import { escapeRegex, paginated, parsePagination } from '../utils/helpers.js';
-import { placeOrder, changeOrderStatus, cancelByCustomer, approveOrder } from '../services/order.service.js';
-import { deliver } from '../services/whatsapp.service.js';
+import { placeOrder, changeOrderStatus, cancelByCustomer, approveOrder, dispatchInvoice } from '../services/order.service.js';
+import { deliver, buildInvoiceCaption } from '../services/whatsapp.service.js';
+import { buildInvoiceCoverEmail } from '../services/invoice-email.template.js';
+import { generateInvoicePdfBuffer, invoiceFileName, getInvoiceToken } from '../services/pdf-invoice.service.js';
+import env from '../config/env.js';
 
 function findQuery(idOrOrderId) {
   return mongoose.isValidObjectId(idOrOrderId) ? { _id: idOrOrderId } : { orderId: idOrOrderId };
@@ -107,9 +111,98 @@ export const adminResendNotification = asyncHandler(async (req, res) => {
   res.json({ success: true, notification });
 });
 
+/** Recipients the admin typed in the dispatch dialog (blank → the order's own email / phone). */
+const recipientsFrom = (body = {}) => ({
+  email: body.email === false ? false : String(body.email || '').trim() || undefined,
+  phone: body.phone === false ? false : String(body.phone || '').trim() || undefined,
+});
+
+/** Approve (Pending → Confirmed) and send the Tax Invoice PDF to the customer's email and WhatsApp. */
 export const adminApproveOrder = asyncHandler(async (req, res) => {
   const order = await Order.findOne(findQuery(req.params.id));
   if (!order) throw ApiError.notFound('Order not found');
-  const result = await approveOrder(order, req.user._id);
+  const result = await approveOrder(order, req.user._id, recipientsFrom(req.body));
   res.json({ success: true, ...result });
+});
+
+/** Sends only the email with the Tax Invoice PDF attached. */
+export const adminSendInvoiceEmail = asyncHandler(async (req, res) => {
+  const order = await Order.findOne(findQuery(req.params.id));
+  if (!order) throw ApiError.notFound('Order not found');
+  const { email = order.email } = recipientsFrom(req.body);
+  if (!email) throw ApiError.badRequest('Please enter the customer email address');
+  const delivery = await dispatchInvoice(order, await Setting.get(), { email, phone: false });
+  if (delivery.email.status === 'failed') throw ApiError.badRequest(`Email could not be sent: ${delivery.email.error}`);
+  res.json({ success: true, message: `Tax Invoice PDF emailed to ${email}`, delivery });
+});
+
+/** Sends only the WhatsApp document with the Tax Invoice PDF. */
+export const adminSendInvoiceWhatsApp = asyncHandler(async (req, res) => {
+  const order = await Order.findOne(findQuery(req.params.id));
+  if (!order) throw ApiError.notFound('Order not found');
+  const { phone = order.shippingAddress?.phone || order.phone } = recipientsFrom(req.body);
+  if (!phone) throw ApiError.badRequest('Please enter the customer WhatsApp number');
+  const delivery = await dispatchInvoice(order, await Setting.get(), { email: false, phone });
+  const sent = delivery.whatsapp.status === 'sent';
+  res.json({
+    success: true,
+    message: sent ? `Tax Invoice PDF sent on WhatsApp to ${phone}` : 'WhatsApp API is not set up - share the PDF from this device',
+    delivery,
+    whatsappLink: delivery.whatsappLink,
+  });
+});
+
+/** What the admin preview dialog shows next to the PDF: the WhatsApp caption and the covering email. */
+export const adminGetInvoicePreview = asyncHandler(async (req, res) => {
+  const order = await Order.findOne(findQuery(req.params.id));
+  if (!order) throw ApiError.notFound('Order not found');
+  const settings = await Setting.get();
+  const fileName = invoiceFileName(order);
+  const { subject, html } = buildInvoiceCoverEmail(order, settings, fileName);
+  res.json({
+    success: true,
+    orderId: order.orderId,
+    fileName,
+    customerEmail: order.email,
+    customerPhone: order.shippingAddress?.phone || order.phone || '',
+    waCaption: buildInvoiceCaption(order, settings),
+    email: { subject, html },
+    // false → there is no WhatsApp Cloud API, so the admin shares the PDF from their own WhatsApp.
+    whatsappAutoSend: env.whatsapp.enabled,
+  });
+});
+
+async function sendPdf(res, order, disposition) {
+  const pdf = await generateInvoicePdfBuffer(order, await Setting.get());
+  res.setHeader('Content-Type', 'application/pdf');
+  res.setHeader('Content-Disposition', `${disposition}; filename="${invoiceFileName(order)}"`);
+  res.setHeader('Content-Length', pdf.length);
+  res.setHeader('Cache-Control', 'private, no-store');
+  res.send(pdf);
+}
+
+/** Customer's own Tax Invoice PDF (signed in, token link from WhatsApp/Email, or admins). */
+export const downloadInvoicePdf = asyncHandler(async (req, res) => {
+  const token = req.query.token;
+  if (token) {
+    const order = await Order.findOne(findQuery(req.params.id));
+    if (!order) throw ApiError.notFound('Order not found');
+    if (token !== getInvoiceToken(order)) {
+      throw ApiError.unauthorized('Invalid or expired invoice link');
+    }
+    return await sendPdf(res, order, req.query.download ? 'attachment' : 'inline');
+  }
+
+  if (!req.user) throw ApiError.unauthorized();
+  const owner = req.user.role === 'admin' ? {} : { user: req.user._id };
+  const order = await Order.findOne({ ...findQuery(req.params.id), ...owner });
+  if (!order) throw ApiError.notFound('Order not found');
+  await sendPdf(res, order, req.query.download ? 'attachment' : 'inline');
+});
+
+/** Admin Tax Invoice PDF: shown in the preview dialog (?download=1 saves it instead). */
+export const adminDownloadInvoicePdf = asyncHandler(async (req, res) => {
+  const order = await Order.findOne(findQuery(req.params.id));
+  if (!order) throw ApiError.notFound('Order not found');
+  await sendPdf(res, order, req.query.download ? 'attachment' : 'inline');
 });

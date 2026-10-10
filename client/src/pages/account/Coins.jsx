@@ -48,9 +48,9 @@ export default function Coins() {
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
         {[
-          ['shopping_bag', 'Shop', `Every ₹100 you pay for items earns ${coins.rules.coinsPer100} coins. They're added as soon as you order.`],
+          ['shopping_bag', 'Shop & Earn', `Every ₹100 you pay for items earns ${coins.rules.coinsPer100} coins. Coins will come into your wallet after 1 week of delivery of product once the 7-day return policy expires.`],
           ['redeem', 'Use at checkout', 'Switch on “WILDTANE Coins” at checkout to take them off your next order.'],
-          ['undo', 'Cancel or return', 'Coins you used come back to you; coins that order earned are removed.'],
+          ['published_with_changes', '7-Day Policy & Cancellation Rule', 'If an order gets cancelled, coin rewards will not come. Once 7 days are complete for a specific item, no return or exchange will happen and coins permanently disburse.'],
         ].map(([icon, t, d]) => (
           <div key={t} className="card p-3.5 flex flex-col gap-1">
             <Icon name={icon} className="text-secondary text-[22px]" />
@@ -59,6 +59,34 @@ export default function Coins() {
           </div>
         ))}
       </div>
+
+      {coins.pending > 0 && (
+        <div className="card p-4 bg-amber-500/10 border border-amber-500/25 flex flex-col gap-2.5">
+          <div className="flex items-center justify-between">
+            <span className="inline-flex items-center gap-1.5 font-bold text-[14px] text-amber-800 dark:text-amber-300">
+              <Icon name="schedule" className="text-[18px]" />
+              {coins.pending.toLocaleString('en-IN')} Pending Coins in 7-Day Return Window
+            </span>
+            <span className="text-[12px] font-semibold text-amber-700 dark:text-amber-400">Disbursing Soon</span>
+          </div>
+          <p className="text-[12px] text-on-surface-variant">
+            Coins will come into your wallet after 1 week of delivery of the product, once the 7-day return policy window concludes.
+          </p>
+          {coins.pendingOrders?.length > 0 && (
+            <div className="flex flex-col gap-1.5 pt-2 border-t border-amber-500/20">
+              {coins.pendingOrders.map((po) => (
+                <div key={po.orderId} className="flex items-center justify-between text-[12px]">
+                  <span className="font-mono font-semibold">
+                    <Link to={`/account/orders/${po.orderId}`} className="underline">{po.orderId}</Link>
+                    {po.daysRemaining != null ? ` · ⏱ ${po.daysRemaining} days until disbursement` : ' · In transit'}
+                  </span>
+                  <span className="font-bold text-amber-700 dark:text-amber-400">+{po.coins} coins</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       <section className="flex flex-col gap-2">
         <h2 className="text-headline-sm">Coin history</h2>

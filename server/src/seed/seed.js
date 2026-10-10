@@ -28,6 +28,7 @@ import { CorporateEnquiry, ContactEnquiry, Subscriber } from '../models/Enquiry.
 import { slugify, round2 } from '../utils/helpers.js';
 import * as data from './data.js';
 import { sizeFromCapacity } from '../models/Product.js';
+import { seedExcelCatalogue } from './seedExcelCatalogue.js';
 
 // { variantSku: 'variants/file-name' } — written by tools/variantPhotos.mjs; optional.
 let variantPhotos = {};
@@ -388,6 +389,7 @@ async function topUp(admin) {
       authorName: 'WILDTANE Editorial',
     });
   }
+  await seedExcelCatalogue();
   console.log(`New blog posts added: ${newPosts.length}`);
   await seedLiveUpdates(admin);
 }
@@ -404,6 +406,7 @@ async function main() {
   const admin = await ensureAdmin();
   const subs = await seedCategories();
   const products = await seedProducts(subs);
+  await seedExcelCatalogue();
   const customers = await seedCustomers();
   const delivered = await seedOrders(customers, products, admin);
   await seedReviews(delivered, products);

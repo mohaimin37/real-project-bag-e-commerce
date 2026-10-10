@@ -1,6 +1,7 @@
 {
   "name": "wildtane",
   "private": true,
+  "type": "module",
   "description": "WILDTANE — MERN e-commerce store for bags and travel gear",
   "scripts": {
     "install:all": "npm install && npm install --prefix server && npm install --prefix client",
@@ -15,5 +16,8 @@
   },
   "devDependencies": {
     "concurrently": "^10.0.5"
+  },
+  "dependencies": {
+    "xlsx": "^0.18.5"
   }
 }

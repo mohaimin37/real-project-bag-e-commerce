@@ -27,45 +27,52 @@ function CategoryStrip() {
     .filter((c) => c.image?.url && c.productCount > 0)
     .sort((a, b) => b.productCount - a.productCount)
     .slice(0, 10);
-  const tile = 'group shrink-0 w-[76px] md:w-auto flex flex-col items-center gap-1.5 snap-start text-center';
-  // Story-style gradient ring around each bubble; it pops up a little on hover.
-  const ring = 'p-[2.5px] rounded-full bg-gradient-to-tr shadow-sm transition-transform duration-300 group-hover:-translate-y-1 group-hover:scale-105 group-active:scale-95';
-  const circle = 'w-[60px] h-[60px] md:w-[66px] md:h-[66px] rounded-full overflow-hidden ring-2 ring-surface-container-lowest';
-  const label = 'text-[12px] md:text-[13px] font-semibold leading-tight line-clamp-2 group-hover:text-secondary';
+
+  const tile = 'group shrink-0 flex flex-col items-center gap-1.5 snap-start text-center w-[72px] sm:w-[80px] md:w-[86px] select-none';
+  const ring = 'p-[2.5px] rounded-full bg-gradient-to-tr shadow-sm hover:shadow-md transition-all duration-300 group-hover:-translate-y-1 group-hover:scale-105 active:scale-95 ring-1 ring-black/5 dark:ring-white/10';
+  const circle = 'w-[58px] h-[58px] sm:w-[66px] sm:h-[66px] md:w-[72px] md:h-[72px] rounded-full overflow-hidden ring-2 ring-surface bg-surface-container-low flex items-center justify-center';
+  const label = 'text-[11px] sm:text-[12px] md:text-[12.5px] font-bold leading-tight tracking-tight text-on-surface/90 group-hover:text-amber-600 dark:group-hover:text-amber-400 line-clamp-1 transition-colors';
+
   return (
-    <nav aria-label="Shop by category" className="bg-surface-container-lowest border-b border-surface-container-high">
-      <ul className="container-x py-3 md:py-4 flex md:grid md:grid-cols-12 gap-2 md:gap-3 overflow-x-auto snap-x scrollbar-none">
-        {[
-          ['/offers', 'sell', 'Offers', 'from-rose-600 to-pink-500'],
-          ['/shop?newArrival=true&sort=newest', 'new_releases', 'New in', 'from-violet-600 to-fuchsia-500'],
-        ].map(([to, icon, text, colour]) => (
-          <li key={to} className="contents">
-            <Link to={to} className={tile}>
-              <span className={cn(ring, colour)}>
-                <span className={cn(circle, 'flex items-center justify-center text-white bg-gradient-to-tr', colour)}><Icon name={icon} className="text-[28px]" /></span>
-              </span>
-              <span className={label}>{text}</span>
-            </Link>
-          </li>
-        ))}
-        {cats.length
-          ? cats.map((c, i) => (
-              <li key={c._id} className="contents">
-                <Link to={`/shop/${c.slug}`} className={tile}>
-                  <span className={cn(ring, RING_TONES[i % RING_TONES.length])}>
-                    <Img src={c.image.url} alt="" w={160} className={circle} imgClassName="transition-transform duration-500 group-hover:scale-110" />
+    <nav aria-label="Shop by category" className="bg-surface-container-lowest/90 backdrop-blur-md border-b border-surface-container-high/80 shadow-xs relative z-20">
+      <div className="container-x">
+        <ul className="py-3 sm:py-4 flex items-center flex-nowrap gap-2.5 sm:gap-4 md:gap-6 overflow-x-auto scrollbar-none snap-x snap-mandatory touch-pan-x">
+          {[
+            ['/offers', 'sell', 'Offers', 'from-rose-600 via-pink-600 to-amber-500'],
+            ['/shop?newArrival=true&sort=newest', 'new_releases', 'New In', 'from-violet-600 via-purple-600 to-indigo-500'],
+          ].map(([to, icon, text, colour]) => (
+            <li key={to} className="shrink-0 snap-start">
+              <Link to={to} className={tile}>
+                <span className={cn(ring, colour)}>
+                  <span className={cn(circle, 'flex items-center justify-center text-white bg-gradient-to-tr shadow-inner', colour)}>
+                    <Icon name={icon} className="text-[26px] md:text-[30px]" />
                   </span>
-                  <span className={label}>{c.name}</span>
-                </Link>
-              </li>
-            ))
-          : Array.from({ length: 8 }, (_, i) => (
-              <li key={i} className={tile}>
-                <Skeleton className="w-16 h-16 md:w-[72px] md:h-[72px] rounded-full" />
-                <Skeleton className="h-3 w-12 rounded" />
-              </li>
-            ))}
-      </ul>
+                </span>
+                <span className={label}>{text}</span>
+              </Link>
+            </li>
+          ))}
+          {cats.length
+            ? cats.map((c, i) => (
+                <li key={c._id} className="shrink-0 snap-start">
+                  <Link to={`/shop/${c.slug}`} className={tile}>
+                    <span className={cn(ring, RING_TONES[i % RING_TONES.length])}>
+                      <Img src={c.image.url} alt="" w={160} className={circle} imgClassName="transition-transform duration-500 group-hover:scale-110 object-cover" />
+                    </span>
+                    <span className={label}>{c.name}</span>
+                  </Link>
+                </li>
+              ))
+            : Array.from({ length: 8 }, (_, i) => (
+                <li key={i} className="shrink-0 snap-start">
+                  <div className={tile}>
+                    <Skeleton className="w-[58px] h-[58px] sm:w-[66px] sm:h-[66px] md:w-[72px] md:h-[72px] rounded-full" />
+                    <Skeleton className="h-3 w-12 rounded mt-1" />
+                  </div>
+                </li>
+              ))}
+        </ul>
+      </div>
     </nav>
   );
 }

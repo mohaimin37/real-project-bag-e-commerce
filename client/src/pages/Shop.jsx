@@ -11,6 +11,7 @@ import { setCartOpen, setSearchOpen } from '../store';
 import { GRID_COLS, ProductCard, ProductCardSkeleton } from '../components/product';
 import Seo, { breadcrumbLd, itemListLd, organizationLd, websiteLd } from '../components/Seo';
 import { Drawer, EmptyState, ErrorState, Icon, Modal, Spinner, Toggle } from '../components/ui';
+import ShopWidgetsBar from '../components/layout/ShopWidgetsBar';
 
 const PAGE_SIZE = 24;
 
@@ -600,7 +601,7 @@ function CategoryRail({ tree, activeSlug, preset, selectedCategory, onSelectCate
   }
 
   const items = [
-    { key: 'all', label: 'All', to: '/', icon: 'apps', on: preset === 'home' || (!activeSlug && !['offers', 'men', 'women', 'universal', 'unisex'].includes(preset)) },
+    { key: 'all', label: 'Explore All', to: '/shop', icon: 'apps', on: (!preset || preset === 'shop') && !activeSlug && !selectedCategory },
     { key: 'men', label: 'Men', to: '/men', icon: 'man', on: preset === 'men' },
     { key: 'women', label: 'Women', to: '/women', icon: 'woman', on: preset === 'women' },
     { key: 'universal', label: 'Universal', to: '/universal', icon: 'public', tone: TAB_TONES.universal, on: preset === 'universal' || preset === 'unisex' },
@@ -630,7 +631,14 @@ function CategoryRail({ tree, activeSlug, preset, selectedCategory, onSelectCate
       {items.map((c) => {
         const tone = c.tone || (TAB_TONES && TAB_TONES[c.key]) || (TAB_TONES && TAB_TONES.bags) || (TAB_TONES && TAB_TONES.all) || defaultTone;
         return (
-          <Link key={c.key} to={c.to} className="group flex flex-col items-center gap-1 shrink-0 w-14 md:w-16">
+          <Link
+            key={c.key}
+            to={c.to}
+            onClick={() => {
+              if (c.key === 'all' && onSelectCategory) onSelectCategory('');
+            }}
+            className="group flex flex-col items-center gap-1 shrink-0 w-14 md:w-16"
+          >
             <span
               className={cn(
                 'w-12 h-12 md:w-14 md:h-14 rounded-full overflow-hidden flex items-center justify-center ring-2 transition-all',
@@ -700,6 +708,7 @@ export default function Shop({ preset }) {
   const { count: cartCount } = useCart();
   const [mobileFilters, setMobileFilters] = useState(false);
   const [sortOpen, setSortOpen] = useState(false);
+  const [viewDensity, setViewDensity] = useState('compact');
   const { data: tree } = useCategories();
   const { data: config } = useConfig();
   const isHome = preset === 'home';
@@ -1035,7 +1044,7 @@ export default function Shop({ preset }) {
       )}
 
       <div className="container-x py-2 md:py-4 flex gap-4 items-start">
-        <aside className="hidden lg:block w-60 shrink-0 sticky top-[72px] max-h-[calc(100vh/var(--zoom,1)-88px)] overflow-y-auto scrollbar-none bg-surface-container-lowest rounded-xl px-4 py-1" aria-label="Filters">
+        <aside className="hidden lg:block w-60 shrink-0 sticky top-[122px] max-h-[calc(100vh/var(--zoom,1)-138px)] overflow-y-auto scrollbar-none bg-surface-container-lowest rounded-xl px-4 py-1" aria-label="Filters">
           <div className="flex items-center justify-between pt-3 pb-1">
             <span className="text-[14px] font-semibold">Filters</span>
             {activeCount > 0 && (
@@ -1067,6 +1076,15 @@ export default function Shop({ preset }) {
             </div>
             <ActiveFilters state={state} onClear={clearAll} flatCategories={flat} />
           </div>
+
+          <ShopWidgetsBar
+            state={state}
+            activeCount={activeCount}
+            onClear={clearAll}
+            total={total}
+            viewDensity={viewDensity}
+            onViewDensityChange={setViewDensity}
+          />
 
           {products.isError ? (
             <ErrorState error={products.error} onRetry={products.refetch} />
@@ -1107,7 +1125,15 @@ export default function Shop({ preset }) {
               </button>
             </div>
           ) : (
-            <div className={cn(GRID_COLS, 'transition-opacity', products.isPlaceholderData && 'opacity-60')}>
+            <div
+              className={cn(
+                viewDensity === 'comfort'
+                  ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6'
+                  : GRID_COLS,
+                'transition-opacity',
+                products.isPlaceholderData && 'opacity-60'
+              )}
+            >
               {!products.data
                 ? Array.from({ length: 12 }, (_, i) => <ProductCardSkeleton key={i} />)
                 : items.map((p, i) => <ProductCard key={p._id} product={p} priority={i < 6} />)}

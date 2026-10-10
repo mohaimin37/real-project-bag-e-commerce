@@ -68,6 +68,9 @@ export async function buildProductFilter(query, { admin = false } = {}) {
   const colors = toList(query.colors).map((c) => c.toLowerCase());
   if (colors.length) filter['variants.colorFamily'] = { $in: colors };
 
+  const tags = toList(query.tag || query.tags);
+  if (tags.length) filter.tags = { $in: tags };
+
   const min = Number(query.minPrice);
   const max = Number(query.maxPrice);
   if (Number.isFinite(min) && query.minPrice !== undefined && query.minPrice !== '') filter.finalPrice = { ...filter.finalPrice, $gte: min };

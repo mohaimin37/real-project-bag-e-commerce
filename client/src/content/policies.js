@@ -73,7 +73,7 @@ export const POLICIES = [
         heading: 'Exchange Policy',
         list: [
           'Only one exchange is allowed per order, within 7 days of delivery, subject to availability.',
-          'Any price difference is payable by the customer or refundable to the customer accordingly.',
+          'In an exchange, you receive another unit of the same product, if eligible.',
         ],
       },
       {
@@ -138,13 +138,35 @@ export const POLICIES = [
         p: ['WILDTANE reserves the right to reject fraudulent return claims and to block accounts in case of misuse.'],
       },
       {
-        heading: 'How to Initiate a Return',
-        list: [
-          'Email: {{supportEmail}}',
-          'Provide your Order ID, product images and the reason for return.',
-          'Response time: within 48 hours.',
+        heading: 'Order Cancellation, Coins & 7-Day Window Policy',
+        p: [
+          'If an order is cancelled, coin rewards will not come (pending coins are immediately zeroed out and removed). Any coins redeemed at checkout are refunded to your wallet balance.',
+          'Once 7 days are complete following delivery for a specific item, no return or exchange will happen for that item (marked as Final Sale). Once the 7-day period completes without return or cancellation, loyalty coins are permanently disbursed to your wallet.',
         ],
-        p: [AMEND],
+      },
+      {
+        heading: 'Customer Care & Helpline',
+        p: [
+          'For any assistance regarding returns, exchanges, refunds or delivery tracking, contact our customer care team:',
+        ],
+        list: [
+          'Customer Care Phone: 8920550465 (Mon–Sat: 9:30 AM – 6:30 PM IST)',
+          'Customer Care Email: info@wildtane.com',
+          'Registered Office: A 370 Amar Puri Nabi Karim, Paharganj, New Delhi-110055',
+        ],
+      },
+      {
+        heading: 'How to Initiate a Return or Exchange',
+        p: [
+          'You can initiate a return or exchange online in seconds via our dedicated Return & Exchange Portal (/returns-exchange), or by contacting customer support.',
+        ],
+        list: [
+          'Online Portal: Visit /returns-exchange to view your delivered orders and countdown days left.',
+          'Customer Care: Call 8920550465 or email info@wildtane.com with your Order ID.',
+          'Provide your Order ID, product details, and the reason for return/exchange.',
+          'Response time: within 24 to 48 hours for courier reverse-pickup scheduling.',
+        ],
+        p2: [AMEND],
       },
     ],
   },

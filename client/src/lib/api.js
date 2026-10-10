@@ -117,6 +117,12 @@ export const api = {
   myOrder: (id) => http.get(`/orders/${id}`),
   cancelOrder: (id, reason) => http.post(`/orders/${id}/cancel`, { reason }),
 
+  // returns & exchanges
+  returnPolicy: () => http.get('/returns/policy'),
+  myReturnOrders: () => http.get('/returns/orders'),
+  orderReturnEligibility: (id, email) => http.get(`/returns/order/${encodeURIComponent(id)}${qs({ email })}`),
+  submitReturnExchange: (body) => http.post('/returns/request', body),
+
   // reviews
   reviews: (productId, params) => http.get(`/reviews/product/${productId}${qs(params)}`),
   featuredReviews: (limit) => http.get(`/reviews/featured${qs({ limit })}`),
@@ -169,10 +175,19 @@ export const adminApi = {
   orders: (params) => http.get(`/admin/orders${qs(params)}`),
   order: (id) => http.get(`/admin/orders/${id}`),
   approveOrder: (id) => http.post(`/admin/orders/${id}/approve`),
+  approveAndSendInvoice: (id, body) => http.post(`/admin/orders/${id}/approve-and-send`, body),
+  sendEmailInvoice: (id, body) => http.post(`/admin/orders/${id}/send-email-invoice`, body),
+  sendWhatsAppInvoice: (id, body) => http.post(`/admin/orders/${id}/send-whatsapp-invoice`, body),
+  invoicePreview: (id) => http.get(`/admin/orders/${id}/invoice-preview`),
+  invoicePdf: (id) => http.get(`/admin/orders/${id}/invoice.pdf`, { responseType: 'blob', timeout: 60000 }),
   orderStatus: (id, body) => http.patch(`/admin/orders/${id}/status`, body),
   orderPayment: (id, paymentStatus) => http.patch(`/admin/orders/${id}/payment`, { paymentStatus }),
   resendNotification: (id) => http.post(`/admin/notifications/${id}/resend`),
   notifications: (params) => http.get(`/admin/notifications${qs(params)}`),
+
+  returns: (params) => http.get(`/admin/returns${qs(params)}`),
+  returnRequest: (id) => http.get(`/admin/returns/${id}`),
+  updateReturnStatus: (id, body) => http.patch(`/admin/returns/${id}`, body),
 
   customers: (params) => http.get(`/admin/customers${qs(params)}`),
   customerBoard: (params) => http.get(`/admin/customers/board${qs(params)}`),

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { setCartOpen, setCurrency, setMobileNavOpen, setSearchOpen, setThemeOpen, toggleContrast, toggleTheme } from '../../store';
+import { setCartOpen, setCurrency, setMobileNavOpen, setSearchOpen, setShopModalOpen, setThemeOpen, toggleContrast, toggleTheme } from '../../store';
 import { useCategories, useConfig, useUser } from '../../hooks/useStore';
 import { useCart } from '../../hooks/useCart';
 import { useWishlist } from '../../hooks/useWishlist';
@@ -13,10 +13,9 @@ import { Drawer, Icon, Img } from '../ui';
 import { CoinIcon, useMyCoins } from '../coins';
 import { BrandLogo, LogoMark } from '../Brand';
 import { prefersReducedMotion } from '../../theme/engine';
+import { ShopMegaMenu } from './ShopMenuWidget';
 
 export { LogoMark };
-
-const IS_MAC = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
 
 // Main storefront navigation (desktop bar; the side menu repeats it on phones).
 export const MAIN_NAV = [
@@ -27,6 +26,7 @@ export const MAIN_NAV = [
   ['/shop/travel-utility', 'Travel & Utility'],
   ['/shop/accessories', 'Accessories'],
   ['/shop', 'Shop'],
+  ['/returns-exchange', 'Returns & Exchange'],
   ['/about', 'About Us'],
 ];
 
@@ -40,9 +40,11 @@ const SHOP_EDITS = [
   ['/shop?bestseller=true&sort=bestseller', 'local_fire_department', 'Best sellers'],
   ['/offers', 'sell', 'Offers'],
   ['/catalogue', 'view_carousel', 'Catalogue'],
+  ['/returns-exchange', 'assignment_return', 'Returns & Exchange'],
 ];
 const DISCOVER = [
   ['/about', 'About Us'],
+  ['/returns-exchange', 'Returns & Exchange'],
   ['/corporate', 'Corporate bulk'],
   ['/blog', 'Journal'],
   ['/help', 'Help Centre'],
@@ -94,20 +96,20 @@ function AccountMenu() {
 
   if (!user) {
     return (
-      <Link to="/login" className="hidden md:inline-flex items-center gap-1.5 h-9 ml-1 px-4 rounded-full text-[13px] font-semibold text-white bg-gradient-to-r from-indigo-600 to-violet-500 shadow-md hover:shadow-lg hover:scale-[1.03] transition-all">
+      <Link to="/login" className="hidden md:inline-flex items-center gap-1.5 h-10 ml-1 px-4 rounded-full text-[13px] font-semibold text-white bg-gradient-to-r from-amber-600 via-amber-700 to-stone-900 shadow-md ring-1 ring-amber-400/30 hover:shadow-lg hover:scale-[1.03] transition-all">
         <Icon name="person" className="text-[18px]" /> Sign in
       </Link>
     );
   }
   return (
     <div className="relative hidden md:block" ref={ref}>
-      <button type="button" onClick={() => setOpen((o) => !o)} aria-expanded={open} aria-label="Account menu" className="flex items-center gap-2 h-9 pl-1 pr-2 ml-1 rounded-full ring-1 ring-outline-variant hover:ring-indigo-400 hover:bg-indigo-500/5 transition-all">
+      <button type="button" onClick={() => setOpen((o) => !o)} aria-expanded={open} aria-label="Account menu" className="flex items-center gap-2 h-10 pl-1.5 pr-3 ml-1 rounded-full ring-1 ring-outline-variant/40 hover:ring-amber-500/50 hover:bg-amber-500/5 transition-all shadow-2xs">
         {user.avatar?.url ? (
           <img src={imgUrl(user.avatar.url)} alt="" className="w-7 h-7 rounded-full object-cover" />
         ) : (
-          <span className="w-7 h-7 rounded-full bg-gradient-to-br from-indigo-600 to-violet-500 text-white text-[11px] font-bold flex items-center justify-center">{initials(user.name)}</span>
+          <span className="w-7 h-7 rounded-full bg-gradient-to-br from-amber-600 via-amber-700 to-stone-900 text-amber-200 text-[11px] font-bold flex items-center justify-center shadow-xs">{initials(user.name)}</span>
         )}
-        <span className="text-label-lg max-w-[100px] truncate">{user.name?.split(' ')[0]}</span>
+        <span className="text-label-lg max-w-[110px] truncate font-medium">{user.name?.split(' ')[0]}</span>
         <Icon name="expand_more" className={cn('text-[18px] text-outline transition-transform', open && 'rotate-180')} />
       </button>
       {open && (
@@ -128,6 +130,7 @@ function AccountMenu() {
           {[
             ['/account', 'space_dashboard', 'My account'],
             ['/account/orders', 'receipt_long', 'Orders'],
+            ['/returns-exchange', 'assignment_return', 'Returns & Exchange'],
             ['/account/addresses', 'location_on', 'Addresses'],
             ['/wishlist', 'favorite', 'Wishlist'],
           ].map(([to, icon, label]) => (
@@ -246,6 +249,23 @@ function SideNav({ categories }) {
               <Link to="/register" onClick={close} className="btn-tonal">Register</Link>
             </div>
           )}
+
+          <div className="mt-3">
+            <Link
+              to="/returns-exchange"
+              onClick={close}
+              className="flex items-center gap-3 p-3 rounded-xl bg-teal-500/10 border border-teal-500/25 text-teal-800 dark:text-teal-200 hover:bg-teal-500/20 active:scale-[0.99] transition-all shadow-xs"
+            >
+              <span className="w-8 h-8 rounded-lg bg-teal-600 text-white flex items-center justify-center shrink-0">
+                <Icon name="assignment_return" className="text-[19px]" />
+              </span>
+              <div className="flex-1 min-w-0">
+                <span className="block text-[13px] font-bold leading-tight">Returns & Exchange</span>
+                <span className="block text-[11px] opacity-80">7-Day doorstep pickup · Coin rewards</span>
+              </div>
+              <Icon name="chevron_right" className="text-[18px] opacity-70" />
+            </Link>
+          </div>
         </div>
 
         {user?.role === 'admin' && (
@@ -260,6 +280,29 @@ function SideNav({ categories }) {
         )}
 
         <p className={heading}>Shop</p>
+        <div className="px-5 pb-2">
+          <button
+            type="button"
+            onClick={() => {
+              close();
+              dispatch(setShopModalOpen(true));
+            }}
+            className="w-full flex items-center justify-between p-3 rounded-2xl bg-gradient-to-r from-amber-500/15 via-rose-500/10 to-indigo-500/15 border border-secondary/35 text-on-surface shadow-xs active:scale-98 transition-all"
+          >
+            <div className="flex items-center gap-2.5">
+              <span className="w-8 h-8 rounded-xl bg-secondary text-on-secondary flex items-center justify-center font-bold shadow-xs">
+                <Icon name="grid_view" className="text-[18px]" />
+              </span>
+              <div className="text-left">
+                <div className="text-[13px] font-bold leading-tight flex items-center gap-1.5">
+                  Shop Modern Widgets <span className="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse" />
+                </div>
+                <div className="text-[10.5px] text-on-surface-variant">Budget, trends & collections</div>
+              </div>
+            </div>
+            <Icon name="chevron_right" className="text-secondary text-[20px]" />
+          </button>
+        </div>
         <Link to="/" onClick={close} className={row}>
           <Icon name="home" className="text-[18px] text-on-surface-variant" /> Home
         </Link>
@@ -322,133 +365,73 @@ function SideNav({ categories }) {
   );
 }
 
-/** Slim gradient strip above the header with one store promise at a time, sliding up every few seconds. */
-function PromoStrip() {
-  const { data: config } = useConfig();
-  const money = (n) => `₹${Number(n).toLocaleString('en-IN')}`;
-  const messages = [
-    config?.freeShippingThreshold > 0 && ['local_shipping', `Free delivery on orders over ${money(config.freeShippingThreshold)}`],
-    ['assignment_return', '7-day easy returns'],
-    ['payments', 'Cash on delivery available'],
-    config?.loyalty?.enabled && ['toll', 'Earn WILDTANE coins on every order'],
-  ].filter(Boolean);
-  const [i, setI] = useState(0);
-  useEffect(() => {
-    if (prefersReducedMotion() || messages.length < 2) return undefined;
-    const t = setInterval(() => setI((n) => (n + 1) % messages.length), 3500);
-    return () => clearInterval(t);
-  }, [messages.length]);
-  const [icon, text] = messages[i % messages.length];
+/** "Shop" option nav button (desktop): opens the full-screen shop experience showcase directly on click. */
+function ShopMenu() {
+  const dispatch = useDispatch();
   return (
-    <div className="bg-gradient-to-r from-indigo-700 via-violet-600 to-fuchsia-600 text-white">
-      <p key={i} className="container-x h-8 flex items-center justify-center gap-1.5 text-[12px] font-semibold animate-promo-in" aria-live="polite">
-        <Icon name={icon} className="text-[16px]" /> {text}
-      </p>
-    </div>
-  );
-}
-
-/** "Shop" mega-menu (desktop): quick links on the left, categories with thumbnails on the right. Opens on hover or click. */
-function ShopMenu({ categories }) {
-  const [open, setOpen] = useState(false);
-  const timer = useRef(null);
-  const { pathname, search } = useLocation();
-  useEffect(() => setOpen(false), [pathname, search]);
-  const show = () => {
-    clearTimeout(timer.current);
-    setOpen(true);
-  };
-  const hide = () => {
-    clearTimeout(timer.current);
-    timer.current = setTimeout(() => setOpen(false), 150);
-  };
-  const tones = ['text-sky-600', 'text-rose-600', 'text-emerald-600', 'text-violet-600', 'text-fuchsia-600', 'text-indigo-600', 'text-teal-600'];
-  return (
-    <div className="relative" onMouseEnter={show} onMouseLeave={hide} onKeyDown={(e) => e.key === 'Escape' && setOpen(false)}>
-      <button
-        type="button"
-        onClick={() => setOpen((o) => !o)}
-        aria-expanded={open}
-        className={cn('h-9 px-3.5 inline-flex items-center gap-0.5 rounded-full text-[13px] font-semibold transition-colors', open ? 'bg-surface-container text-on-surface' : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container')}
-      >
-        Shop <Icon name="expand_more" className={cn('text-[18px] transition-transform', open && 'rotate-180')} />
-      </button>
-      {open && (
-        <div className="absolute left-0 top-11 w-[640px] grid grid-cols-[200px_1fr] gap-4 p-4 rounded-2xl bg-surface-container-lowest shadow-2xl ring-1 ring-outline-variant z-50 animate-pop-in">
-          <div className="flex flex-col gap-0.5 pr-4 border-r border-surface-container-high">
-            <Link to="/shop" className="flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-[13px] font-bold text-white bg-gradient-to-r from-indigo-600 to-violet-500 mb-1">
-              <Icon name="grid_view" className="text-[18px]" /> All products
-            </Link>
-            {SHOP_EDITS.map(([to, icon, label], n) => (
-              <Link key={to} to={to} className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-xl text-[13px] font-medium hover:bg-surface-container transition-colors">
-                <Icon name={icon} className={cn('text-[18px]', tones[n % tones.length])} /> {label}
-              </Link>
-            ))}
-          </div>
-          <div className="grid grid-cols-2 gap-x-4 gap-y-3 content-start">
-            {(categories || []).slice(0, 6).map((cat) => (
-              <div key={cat._id} className="flex flex-col gap-1">
-                <Link to={`/shop/${cat.slug}`} className={cn('flex items-center gap-2 text-[13px] font-bold hover:underline', categoryTone(cat).text)}>
-                  <Thumb cat={cat} className="w-8 h-8" /> {cat.name}
-                </Link>
-                <div className="flex flex-wrap gap-1 pl-10">
-                  {cat.children.slice(0, 4).map((c) => (
-                    <Link key={c._id} to={`/shop/${c.slug}`} className={cn('px-2 py-0.5 rounded-full text-[11px] font-medium hover:brightness-95 transition', categoryTone(c).tint, categoryTone(c).text)}>
-                      {c.name}
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
+    <button
+      type="button"
+      onClick={() => dispatch(setShopModalOpen(true))}
+      aria-label="Open Full Screen Shop"
+      className="h-8 px-3.5 inline-flex items-center gap-1.5 rounded-full text-[13px] font-bold text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-all cursor-pointer whitespace-nowrap select-none"
+    >
+      <Icon name="grid_view" className="text-[16px] text-secondary" />
+      <span>Shop</span>
+      <Icon name="expand_more" className="text-[16px] text-outline opacity-70" />
+    </button>
   );
 }
 
 const SEARCH_HINTS = ['backpacks', 'tote bags', 'laptop bags', 'cabin luggage', 'wallets', 'duffle bags'];
 
-/** Pill search button with modern interactive widgets (voice search mic, rotating hints, keyboard badge). */
-function SearchPill({ onOpen, onVoiceOpen }) {
+/** Search bar with modern widgets: rotating hints, an Offers chip and voice search. */
+export function SearchPill({ onOpen, onVoiceOpen, className }) {
   const [i, setI] = useState(0);
   useEffect(() => {
     if (prefersReducedMotion()) return undefined;
     const t = setInterval(() => setI((n) => (n + 1) % SEARCH_HINTS.length), 2200);
     return () => clearInterval(t);
   }, []);
+  const widget = 'w-8 h-8 rounded-full text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high flex items-center justify-center transition-all shrink-0 active:scale-90';
   return (
     <div
       onClick={onOpen}
+      onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), onOpen())}
       role="button"
       tabIndex={0}
       aria-label="Search products"
-      className="group flex-1 md:max-w-xl md:mx-auto flex items-center gap-2 h-10 pl-1.5 pr-2 rounded-full bg-surface-container/80 text-on-surface-variant text-[13px] ring-1 ring-outline-variant/40 hover:ring-secondary/60 hover:bg-surface-container-lowest hover:shadow-lg hover:shadow-secondary/5 transition-all cursor-pointer min-w-0"
+      className={cn(
+        'group min-w-0 flex items-center gap-2 h-11 pl-1.5 pr-1.5 rounded-2xl bg-surface-container/80 hover:bg-surface-container-lowest text-[13px] ring-1 ring-outline-variant/40 hover:ring-outline-variant hover:shadow-md transition-all cursor-pointer',
+        className
+      )}
     >
-      <span className="w-7 h-7 rounded-full bg-gradient-to-br from-secondary via-amber-500 to-rose-500 text-white flex items-center justify-center shrink-0 transition-transform group-hover:scale-110 shadow-xs">
-        <Icon name="search" className="text-[17px]" />
+      <span className="w-8 h-8 rounded-xl bg-on-surface text-surface flex items-center justify-center shrink-0 transition-transform group-hover:scale-105">
+        <Icon name="search" className="text-[18px]" />
       </span>
-      <span className="truncate flex-1 min-w-0">
-        Search <span key={i} className="inline-block font-semibold text-on-surface animate-promo-in">{SEARCH_HINTS[i]}</span>…
+      <span className="flex-1 truncate min-w-0 text-on-surface-variant">
+        Search <span key={i} className="inline-block font-semibold text-on-surface animate-promo-in">{SEARCH_HINTS[i]}</span>
       </span>
 
-      {/* Voice Search Widget Button */}
+      <Link
+        to="/offers"
+        onClick={(e) => e.stopPropagation()}
+        className="hidden sm:inline-flex items-center gap-1 h-7 px-2.5 rounded-full text-[11px] font-bold bg-rose-500/10 text-rose-600 dark:text-rose-300 ring-1 ring-rose-500/25 hover:bg-rose-500/15 shrink-0"
+      >
+        <Icon name="sell" className="text-[14px]" /> Offers
+      </Link>
+      <span className="hidden sm:block w-px h-5 bg-outline-variant/60 shrink-0" aria-hidden="true" />
       <button
         type="button"
         onClick={(e) => {
           e.stopPropagation();
           onVoiceOpen?.();
         }}
-        className="w-7 h-7 rounded-full hover:bg-secondary/15 hover:text-secondary text-outline flex items-center justify-center transition-all shrink-0 active:scale-90"
-        title="Voice Search"
-        aria-label="Voice Search"
+        className={widget}
+        title="Voice search"
+        aria-label="Voice search"
       >
-        <Icon name="mic" className="text-[17px]" />
+        <Icon name="mic" className="text-[18px]" />
       </button>
-
-      <kbd className="hidden lg:inline-flex items-center h-5 px-1.5 text-[10px] rounded-md bg-surface-container-lowest text-outline font-sans ring-1 ring-outline-variant/50 shrink-0">
-        {IS_MAC ? '⌘K' : 'Ctrl K'}
-      </kbd>
     </div>
   );
 }
@@ -460,17 +443,6 @@ export default function Header() {
   const { count } = useCart();
   const { count: wishCount } = useWishlist();
   const isMobileCustomHeader = pathname === '/' || pathname.startsWith('/shop') || ['/men', '/women', '/universal', '/unisex', '/offers'].includes(pathname);
-
-  useEffect(() => {
-    const fn = (e) => {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
-        e.preventDefault();
-        dispatch(setSearchOpen(true));
-      }
-    };
-    window.addEventListener('keydown', fn);
-    return () => window.removeEventListener('keydown', fn);
-  }, [dispatch]);
 
   // A soft shadow once the page scrolls, so the sticky header lifts off the content.
   const [scrolled, setScrolled] = useState(false);
@@ -490,62 +462,126 @@ export default function Header() {
     return () => window.removeEventListener('scroll', fn);
   }, []);
 
+  const openSearch = () => dispatch(setSearchOpen(true));
+  const openVoice = () => dispatch(setSearchOpen({ open: true, voice: true }));
+  const navItem = 'h-8 px-3.5 inline-flex items-center rounded-full text-[13px] font-semibold transition-colors whitespace-nowrap';
+  const navActive = 'text-surface bg-on-surface shadow-sm';
+  const navIdle = 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container';
   const iconBtn = 'relative inline-flex items-center justify-center w-10 h-10 rounded-full text-on-surface transition-all hover:scale-105 active:scale-95';
 
   return (
     <>
-      <header className={cn('site-header sticky top-0 z-50 w-full transition-shadow duration-300', isMobileCustomHeader && 'hidden md:block', scrolled && 'shadow-[0_6px_24px_-12px_rgb(0_0_0/0.25)]')}>
-        <div className="container-x h-16 flex items-center gap-2 md:gap-4">
-          <button type="button" className={cn(iconBtn, '-ml-2 hover:bg-surface-container')} aria-label="Open menu" onClick={() => dispatch(setMobileNavOpen(true))}>
-            <Icon name="menu" className="text-[22px]" />
-          </button>
-          <Link to="/" className="flex items-center gap-2 md:gap-2.5 shrink-0" aria-label="WILDTANE home">
-            <LogoMark className="w-8 h-8 md:w-9 md:h-9 shrink-0" />
-            <h1 className="font-serif tracking-widest font-black text-xl md:text-2xl text-on-surface uppercase select-none">
-              WILDTANE
-            </h1>
-          </Link>
-
-          {/* Pill nav: the current page is a gradient pill; Shop opens the mega-menu. */}
-          <nav aria-label="Main" className="hidden lg:flex items-center gap-0.5 p-1 rounded-full bg-surface-container/60 shrink-0">
-            {MAIN_NAV.filter(([to]) => to !== '/shop').map(([to, label, end]) => (
-              <NavLink
-                key={to}
-                to={to}
-                end={end}
-                className={({ isActive }) =>
-                  cn(
-                    'h-8 px-3.5 inline-flex items-center rounded-full text-[13px] font-semibold transition-all',
-                    isActive ? 'text-white bg-gradient-to-r from-indigo-600 to-violet-500 shadow-md' : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container-lowest'
-                  )
-                }
-              >
-                {label}
-              </NavLink>
-            ))}
-            <ShopMenu categories={categories} />
-          </nav>
-
-          <SearchPill
-            onOpen={() => dispatch(setSearchOpen(true))}
-            onVoiceOpen={() => dispatch(setSearchOpen({ open: true, voice: true }))}
-          />
-
-          <div className="flex items-center gap-0.5 shrink-0">
-            <button type="button" onClick={() => dispatch(setThemeOpen(true))} aria-label="Appearance and theme" title="Appearance & theme" className={cn(iconBtn, 'hidden md:inline-flex hover:bg-violet-500/10 hover:text-violet-600')}>
-              <Icon name="palette" className="text-[20px]" />
+      <header className={cn('site-header sticky top-0 z-50 w-full transition-shadow duration-300 bg-surface/95 backdrop-blur-md border-b border-surface-container-high/60', isMobileCustomHeader && 'hidden md:block', scrolled && 'shadow-[0_8px_30px_-12px_rgb(0_0_0/0.25)]')}>
+        <div className="w-full max-w-[1920px] mx-auto px-2.5 sm:px-4 md:px-5 lg:px-6 h-14 md:h-[68px] flex items-center justify-between gap-1.5 sm:gap-2.5 md:gap-3.5">
+          {/* Logo & Mobile Menu */}
+          <div className="flex items-center gap-1 sm:gap-2 md:gap-2.5 min-w-0">
+            <button type="button" className={cn(iconBtn, '-ml-1 md:hidden hover:bg-surface-container shrink-0')} aria-label="Open menu" onClick={() => dispatch(setMobileNavOpen(true))}>
+              <Icon name="menu" className="text-[22px]" />
             </button>
-            <Link to="/wishlist" aria-label={`Wishlist, ${wishCount} items`} title="Wishlist" className={cn(iconBtn, 'hidden md:inline-flex hover:bg-rose-500/10 hover:text-rose-600')}>
-              <Icon name="favorite" className="text-[21px]" />
-              <CountBadge count={wishCount} />
+            <Link to="/" className="flex items-center gap-1.5 sm:gap-2.5 min-w-0 group active:scale-95 transition-transform" aria-label="WILDTANE home">
+              <LogoMark className="w-7 h-7 sm:w-9 sm:h-9 shrink-0 drop-shadow-sm group-hover:scale-105 transition-transform" />
+              <div className="flex flex-col min-w-0">
+                <span className="font-serif tracking-[0.12em] sm:tracking-[0.16em] font-black text-[17px] sm:text-xl md:text-[21px] text-on-surface uppercase select-none leading-none">
+                  WILDTANE
+                </span>
+                <span className="text-[8.5px] uppercase tracking-[0.22em] font-bold text-outline opacity-75 leading-tight hidden xs:block">
+                  Luxury Carry
+                </span>
+              </div>
             </Link>
-            <button type="button" onClick={() => dispatch(setCartOpen(true))} aria-label={`Bag, ${count} items`} title="Bag" className={cn(iconBtn, 'hover:bg-indigo-500/10 hover:text-indigo-600')}>
-              <Icon name="shopping_bag" className="text-[21px]" />
-              <CountBadge count={count} tone="from-indigo-600 to-violet-500" />
+          </div>
+
+          {/* Search sits inline on tablets and up; phones get it as a full-width second row below. */}
+          <SearchPill onOpen={openSearch} onVoiceOpen={openVoice} className="hidden md:flex flex-1 max-w-2xl mx-4" />
+
+          {/* Right actions: wishlist and cart always fit; theme and account join from tablet width. */}
+          <div className="flex items-center gap-1.5 sm:gap-2 md:gap-2.5 shrink-0">
+            {/* Theme Palette Toggle */}
+            <button
+              type="button"
+              onClick={() => dispatch(setThemeOpen(true))}
+              aria-label="Appearance and theme"
+              title="Appearance & theme"
+              className="relative items-center justify-center w-10 h-10 rounded-full text-on-surface hover:bg-surface-container ring-1 ring-outline-variant/30 transition-all hover:scale-105 active:scale-95 shadow-2xs hidden md:inline-flex"
+            >
+              <Icon name="palette" className="text-[19px] sm:text-[20px]" />
             </button>
+
+            {/* Heart (Wishlist) Icon */}
+            <Link
+              to="/wishlist"
+              aria-label={`Wishlist, ${wishCount} items`}
+              title="Wishlist"
+              className="relative inline-flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-full text-on-surface hover:text-rose-600 hover:bg-rose-500/10 ring-1 ring-outline-variant/35 hover:ring-rose-400/50 transition-all hover:scale-105 active:scale-95 shadow-2xs group"
+            >
+              <Icon name="favorite" className="text-[20px] sm:text-[21px] transition-transform group-hover:scale-110 text-rose-500/90" />
+              {wishCount > 0 && (
+                <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-extrabold flex items-center justify-center bg-gradient-to-r from-rose-600 to-pink-600 text-white shadow-md ring-2 ring-surface animate-pop-in">
+                  {wishCount}
+                </span>
+              )}
+            </Link>
+
+            {/* Shopping Bag Cart Icon with Count Badge */}
+            <button
+              type="button"
+              onClick={() => dispatch(setCartOpen(true))}
+              aria-label={`Bag, ${count} items`}
+              title="Shopping Cart"
+              className="relative inline-flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-full text-on-surface hover:bg-surface-container ring-1 ring-outline-variant/35 transition-all hover:scale-105 active:scale-95 shadow-2xs group"
+            >
+              <Icon name="shopping_bag" className="text-[20px] sm:text-[21px] transition-transform group-hover:scale-110" />
+              {count > 0 && (
+                <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-extrabold flex items-center justify-center bg-on-surface text-surface shadow-md ring-2 ring-surface animate-pop-in">
+                  {count}
+                </span>
+              )}
+            </button>
+
+            {/* Account Menu / Sign In */}
             <AccountMenu />
           </div>
         </div>
+        <div className="md:hidden px-2.5 sm:px-4 pb-2">
+          <SearchPill onOpen={openSearch} onVoiceOpen={openVoice} className="w-full" />
+        </div>
+        {/* Every main menu option on its own row: centred on desktop (Shop opens the mega-menu), swipeable on phones. */}
+        <nav aria-label="Main" className="border-t border-surface-container-high/60">
+          <div className="hidden md:flex items-center justify-center flex-wrap gap-1 max-w-[1920px] mx-auto px-4 lg:px-6 py-1.5">
+            {MAIN_NAV.map(([to, label, end]) =>
+              to === '/shop' ? (
+                <ShopMenu key={to} categories={categories} />
+              ) : (
+                <NavLink key={to} to={to} end={end} className={({ isActive }) => cn(navItem, isActive ? navActive : navIdle)}>
+                  {label}
+                </NavLink>
+              )
+            )}
+          </div>
+          <div className="md:hidden flex items-center gap-1.5 overflow-x-auto scrollbar-none px-2.5 sm:px-4 py-1.5">
+            {MAIN_NAV.map(([to, label, end]) =>
+              to === '/shop' ? (
+                <button
+                  key={to}
+                  type="button"
+                  onClick={() => dispatch(setShopModalOpen(true))}
+                  className={cn(
+                    navItem,
+                    'shrink-0 bg-surface-container text-on-surface font-bold flex items-center gap-1.5 border border-secondary/35 shadow-xs active:scale-95'
+                  )}
+                  aria-label="Open Full Screen Shop"
+                >
+                  <Icon name="grid_view" className="text-[14px] text-secondary" />
+                  <span>Shop</span>
+                </button>
+              ) : (
+                <NavLink key={to} to={to} end={end} className={({ isActive }) => cn(navItem, 'shrink-0', isActive ? navActive : 'bg-surface-container text-on-surface-variant')}>
+                  {label}
+                </NavLink>
+              )
+            )}
+          </div>
+        </nav>
       </header>
       <SideNav categories={categories} />
     </>

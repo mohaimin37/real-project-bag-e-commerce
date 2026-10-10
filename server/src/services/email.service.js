@@ -30,10 +30,11 @@ function getTransporter() {
 }
 
 /** Sends an email with high delivery priority, or logs to console when SMTP is disabled. */
-export async function sendEmail({ to, subject, text, html, priority = 'high' }) {
+export async function sendEmail({ to, subject, text, html, attachments, priority = 'high' }) {
   const t = getTransporter();
   if (!t) {
-    console.log(`\n[email:dev] To: ${to}\nSubject: ${subject}\n${text}\n`);
+    const attachLog = attachments?.length ? ` [Attached: ${attachments.map((a) => a.filename).join(', ')}]` : '';
+    console.log(`\n[email:dev] To: ${to}\nSubject: ${subject}${attachLog}\n${text}\n`);
     return { delivered: false, logged: true };
   }
 
@@ -44,6 +45,7 @@ export async function sendEmail({ to, subject, text, html, priority = 'high' }) 
     subject,
     text,
     html,
+    attachments,
     priority: priority === 'high' ? 'high' : 'normal',
     headers: {
       'X-Priority': '1',

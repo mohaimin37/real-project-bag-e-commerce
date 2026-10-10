@@ -73,10 +73,11 @@ export default function Inventory() {
         {summary.isLoading
           ? [1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-24 rounded-xl" />)
           : [
-              ['inventory_2', 'Units on hand', summary.data.units.toLocaleString('en-IN'), ''],
-              ['account_balance', 'Stock value', formatINR(summary.data.value), ''],
-              ['warning', 'Low stock', summary.data.lowStock, 'low'],
-              ['remove_shopping_cart', 'Out of stock', summary.data.outOfStock, 'out'],
+              // A failed summary shows dashes instead of crashing the page; the list below has its own retry.
+              ['inventory_2', 'Units on hand', summary.data ? summary.data.units.toLocaleString('en-IN') : '—', ''],
+              ['account_balance', 'Stock value', summary.data ? formatINR(summary.data.value) : '—', ''],
+              ['warning', 'Low stock', summary.data?.lowStock ?? '—', 'low'],
+              ['remove_shopping_cart', 'Out of stock', summary.data?.outOfStock ?? '—', 'out'],
             ].map(([icon, label, value, filter]) => (
               <button key={label} type="button" onClick={() => filter && set({ stockStatus: p.stockStatus === filter ? '' : filter })} className={cn('card p-space-md flex items-center gap-3 text-left transition-all', filter && 'hover:-translate-y-0.5 hover:shadow-lift', p.stockStatus === filter && filter && 'ring-2 ring-secondary')}>
                 <span className={cn('w-10 h-10 rounded-xl flex items-center justify-center', filter === 'out' ? 'bg-error-container text-on-error-container' : filter === 'low' ? 'bg-tertiary-fixed text-tertiary-container' : 'bg-secondary-container text-on-secondary-fixed')}><Icon name={icon} /></span>

@@ -13,6 +13,7 @@ import * as coupons from '../controllers/coupon.controller.js';
 import * as content from '../controllers/content.controller.js';
 import * as enquiries from '../controllers/enquiry.controller.js';
 import * as comments from '../controllers/comment.controller.js';
+import * as returns from '../controllers/return.controller.js';
 
 import { productSchema, categorySchema, stockUpdateSchema, quickProductSchema, bulkProductSchema } from '../validators/catalog.validators.js';
 import { orderStatusSchema, paymentStatusSchema, couponSchema, coinAdjustSchema } from '../validators/commerce.validators.js';
@@ -51,10 +52,20 @@ r.delete('/categories/:id', categories.deleteCategory);
 r.get('/orders', orders.adminListOrders);
 r.get('/orders/:id', orders.adminGetOrder);
 r.post('/orders/:id/approve', orders.adminApproveOrder);
+r.get('/orders/:id/invoice-preview', orders.adminGetInvoicePreview);
+r.get('/orders/:id/invoice.pdf', orders.adminDownloadInvoicePdf);
+r.post('/orders/:id/approve-and-send', orders.adminApproveOrder);
+r.post('/orders/:id/send-email-invoice', orders.adminSendInvoiceEmail);
+r.post('/orders/:id/send-whatsapp-invoice', orders.adminSendInvoiceWhatsApp);
 r.patch('/orders/:id/status', validate(orderStatusSchema), orders.adminUpdateStatus);
 r.patch('/orders/:id/payment', validate(paymentStatusSchema), orders.adminUpdatePayment);
 r.post('/notifications/:notificationId/resend', orders.adminResendNotification);
 r.get('/notifications', admin.listNotifications);
+
+// Returns & Exchanges
+r.get('/returns', returns.adminListReturns);
+r.get('/returns/:id', returns.adminGetReturn);
+r.patch('/returns/:id', returns.adminUpdateReturnStatus);
 
 // Customers
 r.get('/customers', admin.listCustomers);

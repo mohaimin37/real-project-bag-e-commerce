@@ -10,7 +10,11 @@ const run = (cmd) => execSync(cmd, { stdio: 'inherit' });
 //    They go into client/public so every build — including the one `netlify deploy` runs
 //    itself — copies them into dist. (client/public/uploads is git-ignored.)
 rmSync('client/public/uploads', { recursive: true, force: true });
-cpSync('server/uploads/seed', 'client/public/uploads/seed', { recursive: true });
+mkdirSync('client/public/uploads', { recursive: true });
+cpSync('server/uploads', 'client/public/uploads', {
+  recursive: true,
+  filter: (src) => !src.includes('.cache'),
+});
 
 // 2. Build once to bundle the edge function. With base = "client" the CLI writes the bundle to
 //    client/.netlify/ but uploads from ./.netlify/, so copy it across (otherwise it's left out).
@@ -21,4 +25,4 @@ mkdirSync('.netlify/edge-functions-dist', { recursive: true });
 cpSync(edge, '.netlify/edge-functions-dist', { recursive: true });
 
 // 3. Deploy (the CLI rebuilds, then uploads the site, the API function and the edge function).
-run('npx netlify deploy --prod --dir client/dist --functions client/netlify/functions');
+run('npx netlify deploy --prod --dir client/dist --functions client/netlify/functions --skip-functions-cache');

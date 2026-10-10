@@ -9,6 +9,8 @@ const notificationSchema = new mongoose.Schema(
     order: { type: mongoose.Schema.Types.ObjectId, ref: 'Order', index: true },
     recipient: { type: String, default: '' },
     message: { type: String, required: true },
+    // File sent with the message (the Tax Invoice PDF); regenerated from the order on resend.
+    attachment: { type: String, default: '' },
     provider: { type: String, enum: ['whatsapp_cloud', 'dev_log', 'smtp'], required: true },
     status: { type: String, enum: ['pending', 'sent', 'failed', 'logged'], default: 'pending', index: true },
     providerMessageId: String,

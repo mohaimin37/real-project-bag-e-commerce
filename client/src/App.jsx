@@ -8,6 +8,7 @@ import SearchModal from './components/layout/SearchModal';
 import BottomNav from './components/layout/BottomNav';
 import ScrollToTopFab from './components/layout/ScrollToTopFab';
 import InstallAppBanner from './components/layout/InstallAppBanner';
+import { ShopDrawerModal } from './components/layout/ShopMenuWidget';
 import { QuickViewModal } from './components/product';
 import ThemeDrawer from './components/theme/ThemePanel';
 import { PageLoader } from './components/ui';
@@ -38,14 +39,18 @@ const Policy = lazy(() => import('./pages/Policy'));
 const PoliciesIndex = lazy(() => import('./pages/Policy').then((m) => ({ default: m.PoliciesIndex })));
 const HelpCentre = lazy(() => import('./pages/Help'));
 const FaqPage = lazy(() => import('./pages/Help').then((m) => ({ default: m.FaqPage })));
+const ReturnsExchange = lazy(() => import('./pages/ReturnsExchange'));
 
 // Policy pages live at short, readable URLs; older addresses redirect so saved links keep working.
 const POLICY_SLUGS = ['return-policy', 'shipping-policy', 'privacy-policy', 'terms-and-conditions', 'csr-policy'];
 const LEGACY_PAGES = {
+  returns: '/returns-exchange',
+  'return-exchange': '/returns-exchange',
+  exchanges: '/returns-exchange',
+  'pages/returns': '/returns-exchange',
   // Refunds and cancellations are sections of the Return, Refund & Exchange Policy.
   'refund-policy': '/return-policy#refund-policy',
   'cancellation-policy': '/return-policy#order-cancellation',
-  'pages/returns': '/return-policy',
   'pages/shipping': '/shipping-policy',
   'pages/privacy': '/privacy-policy',
   'pages/terms': '/terms-and-conditions',
@@ -124,6 +129,7 @@ function StoreLayout() {
       <ScrollToTopFab />
       <CartDrawer />
       <SearchModal />
+      <ShopDrawerModal />
       <QuickViewModal />
       <ThemeDrawer />
     </div>
@@ -211,6 +217,9 @@ export default function App() {
           <Route path="contact" element={<Contact />} />
           <Route path="corporate" element={<Corporate />} />
           <Route path="about" element={<About />} />
+          <Route path="returns-exchange" element={<ReturnsExchange />} />
+          <Route path="exchange" element={<ReturnsExchange defaultTab="exchange" />} />
+          <Route path="exchanges" element={<ReturnsExchange defaultTab="exchange" />} />
           <Route path="policies" element={<PoliciesIndex />} />
           <Route path="help" element={<HelpCentre />} />
           <Route path="faq" element={<FaqPage />} />

@@ -83,6 +83,7 @@ export default function Catalogue() {
   const [q, setQ] = useState('');
   const [sort, setSort] = useState('featured');
   const [inStock, setInStock] = useState(false);
+  const [excelOnly, setExcelOnly] = useState(false);
   const [view, setView] = useState(() => {
     try {
       return localStorage.getItem('wt-catalogue-view') || 'rows';
@@ -107,6 +108,7 @@ export default function Catalogue() {
     const needle = q.trim().toLowerCase();
     const visible = products
       .filter((p) => !inStock || p.stock > 0)
+      .filter((p) => !excelOnly || p.badge === 'Excel Catalogue' || (p.tags && (p.tags.includes('catalogue') || p.tags.includes('excel-catalogue'))))
       .filter((p) => !needle || [p.name, p.tagline, p.subcategory?.name, p.category?.name, ...(p.materials || [])].join(' ').toLowerCase().includes(needle))
       .sort(SORTS[sort][1]);
     return categories
@@ -120,7 +122,7 @@ export default function Catalogue() {
         return { cat, groups, count: inCat.length };
       })
       .filter((s) => s.count);
-  }, [products, categories, q, sort, inStock]);
+  }, [products, categories, q, sort, inStock, excelOnly]);
   const total = sections.reduce((n, s) => n + s.count, 0);
 
   // Highlight the category chip for the section currently in view.
@@ -175,6 +177,19 @@ export default function Catalogue() {
               <div className="h-12 px-3 rounded-lg bg-surface-container-lowest flex items-center">
                 <Toggle checked={inStock} onChange={setInStock} label="In stock" />
               </div>
+              <button
+                type="button"
+                onClick={() => setExcelOnly((prev) => !prev)}
+                className={cn(
+                  'h-12 px-3.5 rounded-lg flex items-center gap-1.5 text-label-md font-semibold transition-colors border',
+                  excelOnly
+                    ? 'bg-secondary text-on-secondary border-secondary shadow-sm'
+                    : 'bg-surface-container-lowest text-on-surface border-surface-container-high hover:border-secondary/40'
+                )}
+              >
+                <Icon name="description" className="text-[18px]" />
+                Excel Catalogue
+              </button>
               <div className="flex p-1 rounded-lg bg-surface-container-lowest h-12" role="tablist" aria-label="Layout">
                 {[['rows', 'view_carousel', 'Rows'], ['grid', 'grid_view', 'Grid']].map(([v, icon, label]) => (
                   <button key={v} type="button" role="tab" aria-selected={view === v} onClick={() => chooseView(v)} className={cn('flex items-center gap-1.5 px-3 rounded-md text-label-md transition-colors', view === v ? 'bg-primary text-on-primary' : 'text-on-surface-variant hover:text-on-surface')}>
@@ -189,7 +204,7 @@ export default function Catalogue() {
 
       {/* Sticky category bar */}
       {sections.length > 0 && (
-        <nav aria-label="Catalogue categories" className="sticky top-16 lg:top-[72px] z-30 bg-surface/90 backdrop-blur-xl border-b border-surface-container-high">
+        <nav aria-label="Catalogue categories" className="sticky top-[154px] md:top-[114px] z-30 bg-surface/90 backdrop-blur-xl border-b border-surface-container-high">
           <div className="container-x flex gap-2 overflow-x-auto scrollbar-none py-2.5">
             {sections.map(({ cat, count }) => {
               const tone = categoryTone(cat);

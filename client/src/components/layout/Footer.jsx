@@ -35,6 +35,7 @@ const COLUMNS = [
   {
     title: 'Help',
     links: [
+      ['/returns-exchange', 'Returns & Exchange'],
       ['/help#payments', 'Payments'],
       ['/shipping-policy', 'Shipping'],
       ['/return-policy#order-cancellation', 'Cancellation & Returns'],

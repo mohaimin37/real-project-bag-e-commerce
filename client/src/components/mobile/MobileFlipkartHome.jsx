@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, NavLink } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../../lib/api';
@@ -7,20 +7,15 @@ import { cn, discountPercent, imgUrl, productImage } from '../../lib/format';
 import { useCategories, useMoney } from '../../hooks/useStore';
 import { useWishlist } from '../../hooks/useWishlist';
 import { useCart } from '../../hooks/useCart';
-import { setCartOpen, setSearchOpen } from '../../store';
+import { setCartOpen, setSearchOpen, setShopModalOpen } from '../../store';
 import { Icon, Img } from '../ui';
+import { LogoMark } from '../Brand';
+import { MAIN_NAV, SearchPill } from '../layout/Header';
 
 // ── 1. Flipkart-style Top Header & Search Bar ──
-const SEARCH_SUGGESTIONS = [
-  'Bags, Backpacks, Luggage...',
-  'Leather Laptop Sleeves...',
-  'Cabin Trolleys & Duffles...',
-  'Handcrafted Leather Totes...',
-  'Waterproof Travel Packs...',
-];
-
 const SEARCH_QUICK_WIDGETS = [
   { label: '50% OFF', icon: 'sell', to: '/offers', highlight: true },
+  { label: 'Returns & Exchange', icon: 'assignment_return', to: '/returns-exchange', highlight: false },
   { label: 'Laptop Bags', icon: 'laptop_mac', to: '/shop?q=Laptop' },
   { label: 'Under ₹1,499', icon: 'payments', to: '/shop?maxPrice=1499' },
   { label: 'Cabin Trolley', icon: 'luggage', to: '/shop?q=Cabin' },
@@ -33,45 +28,53 @@ const SEARCH_QUICK_WIDGETS = [
 function MobileTopSearchHeader() {
   const dispatch = useDispatch();
   const { count: cartCount } = useCart();
-  const [index, setIndex] = useState(0);
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setIndex((prev) => (prev + 1) % SEARCH_SUGGESTIONS.length);
-    }, 2800);
-    return () => clearInterval(timer);
-  }, []);
+  const { count: wishCount } = useWishlist();
 
   return (
-    <div className="bg-surface-container-lowest border-b border-outline-variant/30 sticky top-0 z-40 shadow-xs px-2.5 py-2">
-      {/* Brand & Assured Top Row */}
-      <div className="flex items-center justify-between mb-1.5 px-0.5">
-        <Link to="/" className="flex items-center gap-1.5 active:opacity-80">
-          <span className="font-serif tracking-wider font-bold text-[17px] text-on-surface uppercase">
+    <div className="bg-surface-container-lowest border-b border-outline-variant/30 sticky top-0 z-40 shadow-xs px-3 py-2.5">
+      {/* Brand, Offers, Heart & Cart Top Row with generous spacing */}
+      <div className="flex items-center justify-between gap-2 mb-2 px-0.5">
+        <Link to="/" className="flex items-center gap-1.5 min-w-0 active:opacity-80" aria-label="WILDTANE home">
+          <LogoMark className="w-7 h-7 shrink-0" />
+          <span className="font-serif tracking-wider font-extrabold text-[17px] text-on-surface uppercase truncate">
             WILDTANE
-          </span>
-          <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-gradient-to-r from-amber-500 to-amber-600 text-white text-[8.5px] font-black uppercase tracking-tight shadow-xs">
-            <Icon name="bolt" className="text-[10px]" /> Assured
           </span>
         </Link>
 
-        <div className="flex items-center gap-2">
+        {/* Offers, wishlist and cart: sized so the whole row fits a 320px screen. */}
+        <div className="flex items-center gap-2 shrink-0">
           <Link
             to="/offers"
-            className="text-[11px] font-bold text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 px-2 py-0.5 rounded-full border border-rose-200/50 flex items-center gap-1 active:scale-95"
+            className="text-[11px] font-bold text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 px-2.5 py-1 rounded-full border border-rose-200/50 flex items-center gap-1 active:scale-95 shadow-2xs"
           >
             <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-ping" />
             50% OFF
           </Link>
+
+          {/* Wishlist Heart with Badge & Space */}
+          <Link
+            to="/wishlist"
+            className="relative w-9 h-9 rounded-full bg-surface-container-low hover:bg-rose-50 dark:hover:bg-rose-950/30 ring-1 ring-outline-variant/30 flex items-center justify-center text-on-surface hover:text-rose-600 active:scale-90 transition-all shadow-2xs"
+            aria-label="Wishlist"
+          >
+            <Icon name="favorite" className="text-[19px] text-rose-500" />
+            {wishCount > 0 && (
+              <span className="absolute -top-1 -right-1 min-w-[17px] h-[17px] px-1 rounded-full bg-gradient-to-r from-rose-600 to-pink-600 text-white text-[9.5px] font-black flex items-center justify-center shadow-xs ring-1 ring-surface animate-pop-in">
+                {wishCount > 9 ? '9+' : wishCount}
+              </span>
+            )}
+          </Link>
+
+          {/* Shopping Bag Cart with Badge & Space */}
           <button
             type="button"
             onClick={() => dispatch(setCartOpen(true))}
-            className="relative w-8 h-8 rounded-full bg-surface-container-low flex items-center justify-center text-on-surface active:scale-90"
+            className="relative w-9 h-9 rounded-full bg-surface-container-low hover:bg-surface-container ring-1 ring-outline-variant/30 flex items-center justify-center text-on-surface active:scale-90 transition-all shadow-2xs"
             aria-label="Cart"
           >
             <Icon name="shopping_bag" className="text-[19px]" />
             {cartCount > 0 && (
-              <span className="absolute -top-1 -right-1 min-w-[17px] h-[17px] px-1 rounded-full bg-secondary text-on-secondary text-[9px] font-black flex items-center justify-center">
+              <span className="absolute -top-1 -right-1 min-w-[17px] h-[17px] px-1 rounded-full bg-on-surface text-surface text-[9.5px] font-black flex items-center justify-center shadow-xs ring-1 ring-surface animate-pop-in">
                 {cartCount > 9 ? '9+' : cartCount}
               </span>
             )}
@@ -79,46 +82,41 @@ function MobileTopSearchHeader() {
         </div>
       </div>
 
-      {/* Modern Search Input Pill with Voice Mic & Lens */}
-      <div className="w-full h-10 px-2.5 rounded-xl bg-surface-container-low border border-outline-variant/40 flex items-center justify-between text-on-surface-variant text-[12.5px] shadow-xs">
-        <div
-          onClick={() => dispatch(setSearchOpen(true))}
-          role="button"
-          tabIndex={0}
-          className="flex-1 flex items-center gap-2 overflow-hidden cursor-pointer h-full"
-        >
-          <Icon name="search" className="text-[18px] text-secondary shrink-0" />
-          <span className="text-outline text-[12px] truncate transition-opacity duration-300">
-            Search for {SEARCH_SUGGESTIONS[index]}
-          </span>
-        </div>
-        <div className="flex items-center gap-1 shrink-0">
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              dispatch(setSearchOpen({ open: true, voice: true }));
-            }}
-            className="w-7 h-7 rounded-full flex items-center justify-center text-outline hover:text-secondary active:scale-90 transition-transform"
-            aria-label="Voice Search"
-            title="Voice Search"
-          >
-            <Icon name="mic" className="text-[18px]" />
-          </button>
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              dispatch(setSearchOpen(true));
-            }}
-            className="w-7 h-7 rounded-full flex items-center justify-center text-outline hover:text-secondary active:scale-90 transition-transform"
-            aria-label="Visual Category Search"
-            title="Visual Category Search"
-          >
-            <Icon name="photo_camera" className="text-[17px]" />
-          </button>
-        </div>
-      </div>
+      {/* Same search bar as the site header: rotating hints, voice and category search. */}
+      <SearchPill
+        onOpen={() => dispatch(setSearchOpen(true))}
+        onVoiceOpen={() => dispatch(setSearchOpen({ open: true, voice: true }))}
+        className="w-full"
+      />
+
+      {/* Every main menu option, swipeable */}
+      <nav aria-label="Main" className="flex items-center gap-1.5 overflow-x-auto pt-2 scrollbar-none">
+        {MAIN_NAV.map(([to, label, end]) =>
+          to === '/shop' ? (
+            <button
+              key={to}
+              type="button"
+              onClick={() => dispatch(setShopModalOpen(true))}
+              className="h-8 px-3.5 inline-flex items-center gap-1 rounded-full text-[12.5px] font-bold whitespace-nowrap shrink-0 transition-colors bg-surface-container text-on-surface border border-secondary/35 active:scale-95 shadow-2xs"
+            >
+              <Icon name="grid_view" className="text-[13px] text-secondary" />
+              <span>Shop</span>
+              <span className="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse" />
+            </button>
+          ) : (
+            <NavLink
+              key={to}
+              to={to}
+              end={end}
+              className={({ isActive }) =>
+                cn('h-8 px-3.5 inline-flex items-center rounded-full text-[12.5px] font-semibold whitespace-nowrap shrink-0 transition-colors', isActive ? 'bg-on-surface text-surface' : 'bg-surface-container text-on-surface-variant')
+              }
+            >
+              {label}
+            </NavLink>
+          )
+        )}
+      </nav>
 
       {/* Modern Search Quick-Widgets Horizontal Strip */}
       <div className="flex items-center gap-1.5 overflow-x-auto pt-2 pb-0.5 scrollbar-none">
@@ -183,9 +181,6 @@ function MobileCategoryCircles() {
             className="flex flex-col items-center gap-1.5 w-[64px] snap-start text-center group active:scale-95 transition-transform"
           >
             <div className={cn('w-[52px] h-[52px] rounded-full p-[2px] bg-gradient-to-tr shadow-xs relative', item.color)}>
-              {idx === 0 && (
-                <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-amber-400 border-2 border-white animate-pulse" />
-              )}
               <div className="w-full h-full rounded-full overflow-hidden bg-surface-container-low flex items-center justify-center">
                 {item.img ? (
                   <Img src={item.img} alt={item.name} w={110} className="w-full h-full object-cover" />

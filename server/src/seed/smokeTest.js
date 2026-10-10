@@ -57,6 +57,12 @@ class Client {
     const json = await res.json().catch(() => ({}));
     return { ...json, status: res.status };
   }
+
+  /** GET returning the raw body (for files such as the invoice PDF). */
+  async raw(path) {
+    const res = await fetch(base + path, { headers: { Origin: env.clientUrls[0], ...(this.cookie ? { Cookie: this.cookie } : {}) } });
+    return { status: res.status, type: res.headers.get('content-type') || '', body: Buffer.from(await res.arrayBuffer()) };
+  }
 }
 
 const rand = () => Math.random().toString(36).slice(2, 8);
@@ -323,6 +329,25 @@ async function run() {
   check('analytics', Array.isArray(an.byCategory) && an.byWeekday?.length === 7);
   const adOrder = await admin.req('GET', `/api/admin/orders/${o.orderId}`);
   check('admin order detail + notifications', adOrder.order?.orderId === o.orderId && adOrder.notifications?.length >= 1);
+  // Tax Invoice PDF: preview, access control, approve → PDF by email + WhatsApp
+  const invPrev = await admin.req('GET', `/api/admin/orders/${o._id}/invoice-preview`);
+  check('invoice preview (caption + covering email)', invPrev.fileName === `WILDTANE_Tax_Invoice_${o.orderId}.pdf` && invPrev.waCaption?.includes(o.orderId) && Boolean(invPrev.email?.html));
+  const adminPdf = await admin.raw(`/api/admin/orders/${o._id}/invoice.pdf`);
+  check('admin invoice PDF', adminPdf.status === 200 && adminPdf.type.includes('application/pdf') && adminPdf.body.subarray(0, 4).toString() === '%PDF');
+  const ownPdf = await user.raw(`/api/orders/${o.orderId}/invoice.pdf`);
+  check('customer downloads own invoice PDF', ownPdf.status === 200 && ownPdf.body.subarray(0, 4).toString() === '%PDF');
+  const anonPdf = await new Client().raw(`/api/orders/${o.orderId}/invoice.pdf`);
+  const { c: stranger } = await registerClient();
+  const otherPdf = await stranger.raw(`/api/orders/${o.orderId}/invoice.pdf`);
+  check('invoice PDF hidden from guests and other customers', anonPdf.status === 401 && otherPdf.status === 404);
+  const appr = await admin.req('POST', `/api/admin/orders/${o._id}/approve-and-send`, {});
+  check(
+    'approve sends PDF to email + WhatsApp',
+    appr.approved === true && appr.order?.orderStatus === 'Confirmed' && ['sent', 'logged'].includes(appr.delivery?.email?.status) && ['sent', 'logged'].includes(appr.delivery?.whatsapp?.status),
+    JSON.stringify(appr.delivery || appr).slice(0, 300)
+  );
+  const invLogs = await Notification.find({ order: o._id, attachment: `WILDTANE_Tax_Invoice_${o.orderId}.pdf` });
+  check('invoice email + WhatsApp logged with the PDF', invLogs.some((n) => n.channel === 'email') && invLogs.some((n) => n.channel === 'whatsapp'));
   const st1 = await admin.req('PATCH', `/api/admin/orders/${o._id}/status`, { status: 'Confirmed', note: 'Verified by phone' });
   check('status → Confirmed', st1.order?.orderStatus === 'Confirmed' && st1.order.statusHistory.length === 2);
   const future = await admin.req('PATCH', `/api/admin/orders/${o._id}/status`, { status: 'Processing', at: new Date(Date.now() + 3600e3).toISOString() });

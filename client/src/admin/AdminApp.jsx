@@ -24,6 +24,7 @@ const ProductWizard = lazy(() => import('./ProductWizard'));
 const Categories = lazy(() => import('./Categories'));
 const Orders = lazy(() => import('./Orders'));
 const OrderDetail = lazy(() => import('./OrderDetail'));
+const Returns = lazy(() => import('./Returns'));
 const Customers = lazy(() => import('./Customers'));
 const CustomerDetail = lazy(() => import('./CustomerDetail'));
 const Inventory = lazy(() => import('./Inventory'));
@@ -247,6 +248,7 @@ export default function AdminApp() {
               <Route path="inventory" element={<Inventory />} />
               <Route path="orders" element={<Orders />} />
               <Route path="orders/:id" element={<OrderDetail />} />
+              <Route path="returns" element={<Returns />} />
               <Route path="customers" element={<Customers />} />
               <Route path="customers/:id" element={<CustomerDetail />} />
               <Route path="coupons" element={<Coupons />} />

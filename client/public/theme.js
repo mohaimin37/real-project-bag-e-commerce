@@ -4,6 +4,11 @@
 (function () {
   try {
     var d = document.documentElement;
+    // One-time reset (Oct 2026): dark became the default, so drop light/dark picks saved before then.
+    if (localStorage.getItem('wt-mode-reset') !== '1') {
+      localStorage.removeItem('wt-theme');
+      localStorage.setItem('wt-mode-reset', '1');
+    }
     var site = JSON.parse(localStorage.getItem('wt-site-appearance') || 'null') || {};
     var mode = localStorage.getItem('wt-theme') || site.defaultMode || 'dark';
     if (mode === 'system') mode = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';

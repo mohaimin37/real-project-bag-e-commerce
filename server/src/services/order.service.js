@@ -12,9 +12,10 @@ import { resolveLines, computeTotals } from './cart.service.js';
 import { redeemCoupon, releaseCoupon } from './coupon.service.js';
 import { moveCoins, reverseOrderCoins } from './coin.service.js';
 import { getProvider } from './payment.service.js';
-import { notifyAdminOfOrder, notifyCustomerOfOrderApprovalWhatsApp, buildCustomerOrderApprovalMessage, buildWhatsAppChatLink } from './whatsapp.service.js';
+import { notifyAdminOfOrder, notifyCustomerOfOrderApprovalWhatsApp, buildInvoiceCaption, buildWhatsAppChatLink } from './whatsapp.service.js';
 import { sendEmail } from './email.service.js';
-import { buildTaxInvoiceHtml, buildTaxInvoiceText } from './invoice-email.template.js';
+import { buildInvoiceCoverEmail } from './invoice-email.template.js';
+import { generateInvoicePdfBuffer, invoiceFileName } from './pdf-invoice.service.js';
 import env from '../config/env.js';
 
 function formatOrderId(seq) {
@@ -157,9 +158,10 @@ export async function placeOrder(userId, payload) {
         { session }
       );
 
-      // Loyalty coins: spend first (fails if the balance no longer covers it), then credit what this order earns.
+      // Loyalty coins: spend first (fails if the balance no longer covers it).
+      // Note: Coins earned on this order are not credited immediately; they disburse automatically
+      // after 1 week of delivery once the 7-day return policy expires.
       if (totals.coins.used > 0) await moveCoins(userId, -totals.coins.used, { type: 'redeemed', order, session, note: `Used on order ${order.orderId}` });
-      if (totals.coins.willEarn > 0) await moveCoins(userId, totals.coins.willEarn, { type: 'earned', order, session, note: `Earned on order ${order.orderId}` });
 
       await Cart.updateOne({ user: userId }, { $set: { items: [], couponCode: null, useCoins: false } }, { session });
     });
@@ -195,6 +197,10 @@ async function restoreInventory(order) {
   order.inventoryRestored = true;
   if (order.coupon?.code) await releaseCoupon(order.coupon.code, order._id);
   await reverseOrderCoins(order);
+  // Rule: If order gets cancelled, coins will not come
+  order.coinsEarned = 0;
+  order.coinsDisbursed = false;
+  order.coinsReversed = true;
 }
 
 export async function changeOrderStatus(order, { status, note, trackingNumber, courier, at, notifyCustomer = false }, changedBy) {
@@ -218,17 +224,19 @@ export async function changeOrderStatus(order, { status, note, trackingNumber, c
   if (trackingNumber !== undefined) order.trackingNumber = trackingNumber;
   if (courier !== undefined) order.courier = courier;
   if (RESTOCK_STATUSES.includes(status)) await restoreInventory(order);
-  if (status === 'Delivered' && order.paymentMethod === 'cod' && order.paymentStatus === 'Pending') {
-    order.paymentStatus = 'Paid';
+  if (status === 'Delivered') {
+    if (!order.deliveredAt) order.deliveredAt = when;
+    if (order.paymentMethod === 'cod' && order.paymentStatus === 'Pending') {
+      order.paymentStatus = 'Paid';
+    }
   }
   await order.save();
   // Fire-and-forget: customer gets Tax Invoice on Confirmation, or status tracking alert
   if (statusChanged && notifyCustomer) {
     if (status === 'Confirmed') {
-      Setting.get().then((st) => {
-        sendOrderTaxInvoiceEmail(order, st).catch((e) => console.error('[email] tax invoice failed:', e.message));
-        notifyCustomerOfOrderApprovalWhatsApp(order, st).catch((e) => console.error('[whatsapp] customer approval failed:', e.message));
-      });
+      Setting.get()
+        .then((st) => dispatchInvoice(order, st))
+        .catch((e) => console.error('[invoice] dispatch failed:', e.message));
     } else {
       notifyCustomerOfStatus(order, when, note).catch((e) => console.error('[email] status update failed:', e.message));
     }
@@ -236,20 +244,26 @@ export async function changeOrderStatus(order, { status, note, trackingNumber, c
   return order;
 }
 
-/** Dispatches a full Tax Invoice email with company logo to the customer. */
-export async function sendOrderTaxInvoiceEmail(order, settings) {
-  if (!order.email) return null;
+/**
+ * Emails the Tax Invoice PDF as an attachment with a short covering note.
+ * Pass `pdf` (a Buffer) to reuse a PDF already generated for WhatsApp.
+ */
+export async function sendOrderTaxInvoiceEmail(order, settings, customEmail, pdf = null) {
+  const targetEmail = (customEmail || order.email || '').trim();
+  if (!targetEmail) return null;
   const currentSettings = settings || (await Setting.get());
-  const html = buildTaxInvoiceHtml(order, currentSettings);
-  const text = buildTaxInvoiceText(order, currentSettings);
-  const subject = `Tax Invoice & Order Confirmation - ${order.orderId} [${currentSettings.storeName || 'Wildtane'}]`;
+  const fileName = invoiceFileName(order);
+  const { subject, html, text } = buildInvoiceCoverEmail(order, currentSettings, fileName);
 
   try {
+    // No PDF, no email: the bill is the attachment, so a failure here is reported instead of sending an empty note.
+    const content = pdf || (await generateInvoicePdfBuffer(order, currentSettings));
     const outcome = await sendEmail({
-      to: order.email,
+      to: targetEmail,
       subject,
       html,
       text,
+      attachments: [{ filename: fileName, content, contentType: 'application/pdf' }],
       priority: 'high',
     });
 
@@ -257,8 +271,9 @@ export async function sendOrderTaxInvoiceEmail(order, settings) {
       type: 'customer_invoice',
       channel: 'email',
       order: order._id,
-      recipient: order.email,
-      message: `Tax Invoice emailed to ${order.email} (Order ${order.orderId})`,
+      recipient: targetEmail,
+      message: `${subject}\n\n${text}`,
+      attachment: fileName,
       provider: outcome?.delivered ? 'smtp' : 'dev_log',
       status: outcome?.delivered ? 'sent' : 'logged',
       providerMessageId: outcome?.messageId,
@@ -271,45 +286,74 @@ export async function sendOrderTaxInvoiceEmail(order, settings) {
       type: 'customer_invoice',
       channel: 'email',
       order: order._id,
-      recipient: order.email,
-      message: `Tax Invoice delivery failed: ${err.message}`,
+      recipient: targetEmail,
+      message: `Tax Invoice email failed: ${err.message}`,
+      attachment: fileName,
       provider: 'smtp',
       status: 'failed',
       error: err.message,
     }).catch(() => {});
-    return null;
+    throw err;
   }
 }
 
-/** Explicit admin approval: marks order Confirmed, dispatches Tax Invoice to email and WhatsApp. */
-export async function approveOrder(order, adminUserId) {
+/**
+ * Generates the Tax Invoice PDF once and sends that same file by email (attachment) and WhatsApp (document).
+ * Either channel can be skipped with `email: false` / `phone: false`. Never throws for a failed channel.
+ */
+export async function dispatchInvoice(order, settings, { email, phone } = {}) {
+  const st = settings || (await Setting.get());
+  const pdf = await generateInvoicePdfBuffer(order, st);
+  const targetEmail = email === false ? '' : (email || order.email || '').trim();
+  const targetPhone = phone === false ? '' : (phone || order.shippingAddress?.phone || order.phone || '').trim();
+
+  const [emailRes, waRes] = await Promise.allSettled([
+    targetEmail ? sendOrderTaxInvoiceEmail(order, st, targetEmail, pdf) : null,
+    targetPhone ? notifyCustomerOfOrderApprovalWhatsApp(order, st, targetPhone, pdf) : null,
+  ]);
+  const wa = waRes.value;
+  const result = {
+    email: !targetEmail
+      ? null
+      : emailRes.status === 'fulfilled'
+        ? { to: targetEmail, status: emailRes.value?.delivered ? 'sent' : 'logged' }
+        : { to: targetEmail, status: 'failed', error: emailRes.reason?.message },
+    whatsapp: !targetPhone ? null : { to: targetPhone, status: wa?.status || 'failed', error: wa?.error },
+    fileName: invoiceFileName(order),
+    // Only used when the WhatsApp Cloud API is not set up: a chat the admin can attach the PDF to.
+    whatsappLink: targetPhone ? buildWhatsAppChatLink(targetPhone, buildInvoiceCaption(order, st)) : '',
+  };
+
+  if (result.email?.status !== 'failed' || result.whatsapp?.status === 'sent') {
+    order.invoiceSentAt = new Date();
+    await order.save().catch(() => {});
+  }
+  return result;
+}
+
+/**
+ * Admin approval: a Pending order becomes Confirmed, then the Tax Invoice PDF goes to email and WhatsApp.
+ * On an order that is already past Pending it only re-sends the invoice.
+ */
+export async function approveOrder(order, adminUserId, recipients = {}) {
+  if (['Cancelled', 'Returned'].includes(order.orderStatus)) {
+    throw ApiError.badRequest(`This order is ${order.orderStatus.toLowerCase()}; its invoice cannot be sent`);
+  }
   const settings = await Setting.get();
-  order.orderStatus = 'Confirmed';
-  order.approvedAt = new Date();
-  if (adminUserId) order.approvedBy = adminUserId;
-  order.invoiceSentAt = new Date();
+  const approved = order.orderStatus === 'Pending';
+  if (approved) {
+    const now = new Date();
+    order.orderStatus = 'Confirmed';
+    order.approvedAt = now;
+    if (adminUserId) order.approvedBy = adminUserId;
+    order.statusHistory.push({ status: 'Confirmed', note: 'Approved by admin - Tax Invoice PDF sent to customer', changedBy: adminUserId, at: now });
+    await order.save();
+  }
 
-  order.statusHistory.push({
-    status: 'Confirmed',
-    note: 'Approved by admin - Official Tax Invoice dispatched to email and WhatsApp',
-    changedBy: adminUserId,
-    at: new Date(),
-  });
-
-  await order.save();
-
-  // Send Tax Invoice email with company logo and all details
-  const emailPromise = sendOrderTaxInvoiceEmail(order, settings);
-  // Send customer WhatsApp confirmation
-  const waPromise = notifyCustomerOfOrderApprovalWhatsApp(order, settings);
-
-  await Promise.allSettled([emailPromise, waPromise]);
-
-  const customerPhone = order.shippingAddress?.phone || order.phone || '';
-  const waMessage = buildCustomerOrderApprovalMessage(order, settings);
-  const whatsappLink = buildWhatsAppChatLink(customerPhone, waMessage);
-
-  return { order, whatsappLink, message: 'Order approved successfully. Tax invoice sent to email and WhatsApp.' };
+  const delivery = await dispatchInvoice(order, settings, recipients);
+  const sentTo = [delivery.email?.status !== 'failed' && delivery.email?.to, delivery.whatsapp?.status === 'sent' && 'WhatsApp'].filter(Boolean);
+  const message = `${approved ? 'Order approved. ' : ''}${sentTo.length ? `Tax Invoice PDF sent to ${sentTo.join(' and ')}.` : 'Tax Invoice PDF could not be sent.'}`;
+  return { order, approved, delivery, whatsappLink: delivery.whatsappLink, message };
 }
 
 const STATUS_MESSAGES = {

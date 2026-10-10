@@ -38,6 +38,10 @@ const env = {
     phoneNumberId: process.env.WHATSAPP_PHONE_NUMBER_ID,
     apiVersion: process.env.WHATSAPP_API_VERSION || 'v21.0',
     adminNumber: (process.env.ADMIN_WHATSAPP_NUMBER || '').replace(/\D/g, ''),
+    // Approved Meta template with a DOCUMENT header (body: {{1}} name, {{2}} order id, {{3}} amount).
+    // Needed to send the invoice to customers who have not messaged you in the last 24 hours.
+    invoiceTemplate: process.env.WHATSAPP_INVOICE_TEMPLATE || '',
+    templateLang: process.env.WHATSAPP_TEMPLATE_LANG || 'en',
   },
   smtp: {
     host: process.env.SMTP_HOST,
@@ -54,8 +58,8 @@ env.gemini = {
   model: process.env.GEMINI_MODEL || 'gemini-flash-lite-latest',
   enabled: Boolean(process.env.GEMINI_API_KEY),
 };
-env.cloudinary.enabled =Boolean(env.cloudinary.cloudName && env.cloudinary.apiKey && env.cloudinary.apiSecret);
-env.whatsapp.enabled = Boolean(env.whatsapp.token && env.whatsapp.phoneNumberId && env.whatsapp.adminNumber);
+env.cloudinary.enabled = Boolean(env.cloudinary.cloudName && env.cloudinary.apiKey && env.cloudinary.apiSecret);
+env.whatsapp.enabled = Boolean(env.whatsapp.token && env.whatsapp.phoneNumberId);
 // A login without its password (e.g. Gmail app password not added yet) counts as not configured.
 env.smtp.enabled = Boolean(env.smtp.host && (!env.smtp.user || env.smtp.pass));
 

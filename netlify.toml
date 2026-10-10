@@ -13,7 +13,7 @@
   VITE_IMAGE_CDN = "netlify"
 
 [functions]
-  directory = "netlify/functions"
+  directory = "client/netlify/functions"
   node_bundler = "esbuild"
   # sharp is a native module only used for local image resizing; the image CDN does that here.
   ignored_node_modules = ["sharp"]

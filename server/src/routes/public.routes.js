@@ -18,6 +18,7 @@ import * as coupons from '../controllers/coupon.controller.js';
 import * as content from '../controllers/content.controller.js';
 import * as enquiries from '../controllers/enquiry.controller.js';
 import * as comments from '../controllers/comment.controller.js';
+import * as returns from '../controllers/return.controller.js';
 
 import * as av from '../validators/auth.validators.js';
 import * as cv from '../validators/commerce.validators.js';
@@ -96,6 +97,7 @@ export const wishlistRoutes = Router()
 
 // ── /api/orders ──────────────────────────────────────────────
 export const orderRoutes = Router()
+  .get('/:id/invoice.pdf', optionalAuth, orders.downloadInvoicePdf)
   .use(protect)
   .post('/', validate(cv.checkoutSchema), orders.createOrder)
   .get('/', orders.myOrders)
@@ -145,3 +147,11 @@ export const newsletterRoutes =Router().post('/', formLimiter, validate(subscrib
 // ── /api/config, /api/banners ────────────────────────────────
 export const configRoutes = Router().get('/', content.publicConfig);
 export const bannerRoutes = Router().get('/', content.activeBanners);
+
+// ── /api/returns (Return & Exchange Portal) ───────────────────
+export const returnRoutes = Router()
+  .get('/policy', returns.getPolicyInfo)
+  .get('/orders', protect, returns.getMyReturnOrders)
+  .get('/order/:id', formLimiter, optionalAuth, returns.getOrderEligibility)
+  .post('/request', protect, formLimiter, returns.submitRequest);
+

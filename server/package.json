@@ -9,6 +9,7 @@
     "start": "node src/server.js",
     "seed": "node src/seed/seed.js",
     "test:email": "node src/seed/testEmail.js",
+    "test:whatsapp": "node src/seed/testWhatsApp.js",
     "seed:fresh": "node src/seed/seed.js --fresh",
     "admin:sync": "node src/seed/syncAdmin.js",
     "test:api": "node src/seed/smokeTest.js"
@@ -32,6 +33,7 @@
     "morgan": "^1.12.1",
     "multer": "^2.4.0",
     "nodemailer": "^10.0.13",
+    "pdfkit": "^0.20.2",
     "serverless-http": "^4.0.0",
     "sharp": "^0.34.5",
     "xss": "^1.0.15",

@@ -169,7 +169,7 @@ export const FAQ = [
     icon: 'assignment_return',
     items: [
       { q: 'What is the return policy?', a: 'Returns are accepted within 7 days of delivery only for damaged products, wrong items, manufacturing defects, or products significantly different from their description.' },
-      { q: 'Can I exchange a product?', a: 'Yes. One exchange per order is allowed within 7 days of delivery, subject to product availability.' },
+      { q: 'Can I exchange a product?', a: 'Yes. One exchange per order is allowed within 7 days of delivery, subject to product availability. In an exchange, you receive another unit of the same product, if eligible.' },
     ],
   },
   {
