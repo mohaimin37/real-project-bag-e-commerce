@@ -142,6 +142,9 @@ function Topbar({ onMenu, onCollapse }) {
   const navigate = useNavigate();
   const [q, setQ] = useState('');
   const [searching, setSearching] = useState(false);
+  const inv = useQuery({ queryKey: ['admin', 'inventory-summary'], queryFn: adminApi.inventorySummary, select: (d) => d.summary, staleTime: 60 * 1000 });
+  const stockAlerts = (inv.data?.outOfStock || 0) + (inv.data?.lowStock || 0);
+
   return (
     <header className="print:hidden sticky top-0 z-30 h-16 site-header flex items-center gap-3 px-margin-sm md:px-margin border-b border-surface-container-high">
       <button type="button" className="btn-icon lg:hidden" onClick={onMenu} aria-label="Open menu"><Icon name="menu" /></button>
@@ -166,6 +169,17 @@ function Topbar({ onMenu, onCollapse }) {
         {searching && <button type="button" className="btn-icon" onClick={() => setSearching(false)} aria-label="Close search"><Icon name="close" /></button>}
       </form>
       <div className="flex items-center gap-1.5 ml-auto">
+        {stockAlerts > 0 && (
+          <Link
+            to="/admin/inventory?stockStatus=low"
+            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-700 dark:text-amber-300 text-[11.5px] font-bold hover:bg-amber-500/25 transition-colors shadow-xs"
+            title="Click to view and restock low-stock products"
+          >
+            <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+            <span className="hidden sm:inline">{stockAlerts} Stock Alerts</span>
+            <span className="sm:hidden">{stockAlerts}</span>
+          </Link>
+        )}
         <Link to="/" className="btn-tonal btn-sm gap-1.5" title="Go to the store home page">
           <Icon name="storefront" className="text-[18px] text-secondary" /> <span className="hidden sm:inline">Storefront</span>
         </Link>

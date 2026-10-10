@@ -77,6 +77,7 @@ export const categorySchema = z.object({
 
 export const stockUpdateSchema = z.object({
   variants: z.array(z.object({ _id: objectId, stock: z.coerce.number().int().min(0) })).min(1),
+  lowStockThreshold: z.coerce.number().int().min(0).max(1000).optional(),
 });
 
 export const reviewSchema = z.object({

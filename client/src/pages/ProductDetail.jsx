@@ -338,6 +338,131 @@ function Faq({ faqs }) {
   );
 }
 
+function StockShowcaseBox({ variant }) {
+  if (!variant) return null;
+  const stock = Number(variant.stock || 0);
+  const soldOut = stock <= 0;
+  const isCritical = !soldOut && stock <= 5;
+  const isLow = !soldOut && stock > 5 && stock <= 10;
+  const isNotice = !soldOut && stock > 10 && stock <= 20;
+
+  // Visual meter percentage scaled against 25 units
+  const barPercent = soldOut ? 0 : Math.min(100, Math.max(12, Math.round((stock / 25) * 100)));
+
+  return (
+    <div
+      className={cn(
+        'rounded-2xl p-3.5 sm:p-4 transition-all duration-300 border shadow-xs flex flex-col gap-2.5 my-1.5',
+        soldOut
+          ? 'bg-surface-container-high/40 border-outline-variant/60'
+          : isCritical
+          ? 'bg-rose-500/10 dark:bg-rose-950/25 border-rose-500/35 ring-1 ring-rose-500/20'
+          : isLow
+          ? 'bg-amber-500/10 dark:bg-amber-950/25 border-amber-500/35 ring-1 ring-amber-500/20'
+          : isNotice
+          ? 'bg-amber-500/5 dark:bg-amber-950/15 border-amber-500/20'
+          : 'bg-emerald-500/5 dark:bg-emerald-950/15 border-emerald-500/20'
+      )}
+    >
+      <div className="flex items-center justify-between gap-2 flex-wrap">
+        <div className="flex items-center gap-2">
+          <span className="relative flex h-3 w-3">
+            {!soldOut && (isCritical || isLow) && (
+              <span className={cn('animate-ping absolute inline-flex h-full w-full rounded-full opacity-75', isCritical ? 'bg-rose-500' : 'bg-amber-500')} />
+            )}
+            <span
+              className={cn(
+                'relative inline-flex rounded-full h-3 w-3 shadow-xs',
+                soldOut
+                  ? 'bg-error'
+                  : isCritical
+                  ? 'bg-rose-600'
+                  : isLow
+                  ? 'bg-amber-500'
+                  : isNotice
+                  ? 'bg-amber-400'
+                  : 'bg-emerald-600'
+              )}
+            />
+          </span>
+
+          <span className="text-[13px] sm:text-[14px] font-bold">
+            {soldOut ? (
+              <span className="text-error font-semibold">Sold out in this colour</span>
+            ) : isCritical ? (
+              <span className="text-rose-600 dark:text-rose-400 font-extrabold flex items-center gap-1">
+                🔥 CRITICAL STOCK: Only {stock} {stock === 1 ? 'item' : 'items'} left!
+              </span>
+            ) : isLow ? (
+              <span className="text-amber-600 dark:text-amber-400 font-bold flex items-center gap-1">
+                ⚡ HIGH DEMAND: Only {stock} units left in stock!
+              </span>
+            ) : isNotice ? (
+              <span className="text-amber-700 dark:text-amber-300 font-semibold flex items-center gap-1">
+                ⏱ Low Inventory: Only {stock} available
+              </span>
+            ) : (
+              <span className="text-emerald-700 dark:text-emerald-400 font-semibold flex items-center gap-1">
+                ✓ In Stock & Ready to Dispatch
+              </span>
+            )}
+          </span>
+        </div>
+
+        {!soldOut && (
+          <span
+            className={cn(
+              'text-[11px] font-bold px-2.5 py-0.5 rounded-full border shadow-2xs',
+              isCritical
+                ? 'bg-rose-600 text-white border-rose-700'
+                : isLow
+                ? 'bg-amber-500 text-white border-amber-600'
+                : 'bg-surface-container-lowest text-on-surface border-surface-container-highest'
+            )}
+          >
+            {stock} in stock
+          </span>
+        )}
+      </div>
+
+      {!soldOut && (
+        <div className="flex flex-col gap-1">
+          <div className="w-full h-2 rounded-full bg-surface-container-highest/60 overflow-hidden">
+            <div
+              className={cn(
+                'h-full rounded-full transition-all duration-700 ease-out',
+                isCritical
+                  ? 'bg-gradient-to-r from-rose-600 via-rose-500 to-pink-500 animate-pulse'
+                  : isLow
+                  ? 'bg-gradient-to-r from-amber-500 to-orange-500'
+                  : isNotice
+                  ? 'bg-gradient-to-r from-amber-400 to-yellow-500'
+                  : 'bg-gradient-to-r from-emerald-500 to-teal-500'
+              )}
+              style={{ width: `${barPercent}%` }}
+            />
+          </div>
+          <div className="flex items-center justify-between text-[11px] text-outline font-medium">
+            <span>Stock meter</span>
+            <span>{isCritical ? 'Order now before sold out' : isLow ? 'High order volume today' : 'Dispatches within 24–48 hours'}</span>
+          </div>
+        </div>
+      )}
+
+      {/* Shopper live activity pulse div */}
+      <div className="pt-2 border-t border-outline-variant/15 flex items-center justify-between gap-2 text-[11px] sm:text-[11.5px] text-on-surface-variant flex-wrap">
+        <span className="flex items-center gap-1.5 font-medium">
+          <Icon name="visibility" className="text-[15px] text-secondary" />
+          <span><strong>6 people</strong> viewing this bag right now</span>
+        </span>
+        <span className="flex items-center gap-1 text-secondary font-medium">
+          <Icon name="verified_user" className="text-[13px]" /> 7-Day Returns
+        </span>
+      </div>
+    </div>
+  );
+}
+
 export default function ProductDetail() {
   const { slug } = useParams();
   const navigate = useNavigate();
@@ -479,51 +604,12 @@ export default function ProductDetail() {
             </div>
           )}
 
-          <span className="text-label-lg -mb-2">Quantity</span>
-          <div className="flex items-center justify-between gap-3 flex-wrap">
+          {/* Dedicated Stock Management & Live Notification Urgency Div */}
+          <StockShowcaseBox variant={variant} />
+
+          <div className="flex items-center justify-between gap-3 pt-1">
+            <span className="text-label-lg">Select Quantity</span>
             <QuantityStepper value={qty} onChange={setQty} max={max} disabled={soldOut} />
-            <div className="flex items-center gap-2">
-              <span className="relative flex h-2.5 w-2.5">
-                {!soldOut && variant.stock <= 10 && (
-                  <span className={cn('animate-ping absolute inline-flex h-full w-full rounded-full opacity-75', variant.stock <= 5 ? 'bg-rose-400' : 'bg-amber-400')} />
-                )}
-                <span
-                  className={cn(
-                    'relative inline-flex rounded-full h-2.5 w-2.5',
-                    soldOut
-                      ? 'bg-error'
-                      : variant.stock <= 5
-                      ? 'bg-rose-600'
-                      : variant.stock <= 10
-                      ? 'bg-amber-500'
-                      : variant.stock <= 20
-                      ? 'bg-amber-400'
-                      : 'bg-emerald-600'
-                  )}
-                />
-              </span>
-              <span className="text-label-md">
-                {soldOut ? (
-                  <span className="text-error font-semibold">Sold out in this colour</span>
-                ) : variant.stock <= 5 ? (
-                  <span className="text-rose-600 dark:text-rose-400 font-bold">
-                    🔥 Hurry! Only {variant.stock} left in stock — selling fast!
-                  </span>
-                ) : variant.stock <= 10 ? (
-                  <span className="text-amber-600 dark:text-amber-400 font-bold">
-                    ⚡ Only {variant.stock} units left — order soon!
-                  </span>
-                ) : variant.stock <= 20 ? (
-                  <span className="text-amber-700 dark:text-amber-300 font-medium">
-                    ⏱ Low Stock: Only {variant.stock} left
-                  </span>
-                ) : (
-                  <span>
-                    In stock <span className="font-normal text-on-surface-variant">— usually dispatches in 1–2 business days</span>
-                  </span>
-                )}
-              </span>
-            </div>
           </div>
 
           <div ref={ctaRef} className="flex flex-col gap-space-sm pt-space-xs">

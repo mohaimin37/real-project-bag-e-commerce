@@ -412,10 +412,20 @@ export const inventorySummary = asyncHandler(async (req, res) => {
         units: { $sum: '$stock' },
         value: { $sum: { $multiply: ['$stock', '$finalPrice'] } },
         outOfStock: { $sum: { $cond: [{ $eq: ['$stock', 0] }, 1, 0] } },
+        criticalStock: { $sum: { $cond: [{ $and: [{ $gt: ['$stock', 0] }, { $lte: ['$stock', 5] }] }, 1, 0] } },
         lowStock: { $sum: { $cond: [{ $and: [{ $gt: ['$stock', 0] }, { $lte: ['$stock', '$lowStockThreshold'] }] }, 1, 0] } },
       },
     },
   ]);
+
+  const urgentItems = await Product.find({
+    $or: [{ stock: 0 }, { stock: { $lte: 20 } }],
+  })
+    .select('name slug stock lowStockThreshold variants finalPrice images')
+    .sort({ stock: 1 })
+    .limit(10)
+    .lean();
+
   res.json({
     success: true,
     summary: {
@@ -423,7 +433,18 @@ export const inventorySummary = asyncHandler(async (req, res) => {
       units: row?.units || 0,
       value: round2(row?.value || 0),
       outOfStock: row?.outOfStock || 0,
+      criticalStock: row?.criticalStock || 0,
       lowStock: row?.lowStock || 0,
+      urgentItems: urgentItems.map((p) => ({
+        _id: p._id,
+        name: p.name,
+        slug: p.slug,
+        stock: p.stock,
+        threshold: p.lowStockThreshold || 10,
+        finalPrice: p.finalPrice,
+        image: p.images?.[0]?.url,
+        variants: p.variants.map((v) => ({ _id: v._id, name: v.name, stock: v.stock })),
+      })),
     },
   });
 });

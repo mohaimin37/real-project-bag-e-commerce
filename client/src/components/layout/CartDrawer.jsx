@@ -110,8 +110,16 @@ export default function CartDrawer() {
       }
     >
       {summary && items.length > 0 && (
-        <div className="px-space-lg py-3 bg-surface-container-low/60">
+        <div className="px-space-lg py-3 bg-surface-container-low/60 flex flex-col gap-2">
           <FreeShippingMeter summary={summary} />
+          {items.some((l) => l.stock != null && l.stock > 0 && l.stock <= 10) && (
+            <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-900 dark:text-amber-200 text-[12px] flex items-center gap-2">
+              <Icon name="bolt" className="text-amber-500 text-[18px] shrink-0 animate-pulse" />
+              <span>
+                <strong>Limited stock:</strong> Item in your bag has only {items.find((l) => l.stock != null && l.stock > 0 && l.stock <= 10)?.stock} units left. Order soon!
+              </span>
+            </div>
+          )}
         </div>
       )}
       <div className="p-space-lg flex flex-col gap-space-md">

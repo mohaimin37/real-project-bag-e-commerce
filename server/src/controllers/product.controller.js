@@ -387,6 +387,9 @@ export const updateStock = asyncHandler(async (req, res) => {
     const variant = product.variants.id(_id);
     if (variant) variant.stock = stock;
   }
+  if (req.body.lowStockThreshold !== undefined) {
+    product.lowStockThreshold = Number(req.body.lowStockThreshold);
+  }
   await product.save();
   res.json({ success: true, product });
 });
