@@ -511,8 +511,8 @@ export default function ProductDetail() {
     );
   }
 
-  const max = Math.max(1, Math.min(99, variant.stock));
-  const soldOut = variant.stock <= 0;
+  const max = Math.max(1, Math.min(99, Number(variant?.stock ?? 0)));
+  const soldOut = Number(variant?.stock ?? 0) <= 0;
   const fx = (config?.currencies || []).filter((c) => c.code !== money.currency.code && ['USD', 'EUR', 'AED', 'INR'].includes(c.code)).slice(0, 3);
   const crumbs = [{ label: 'Home', to: '/' }, { label: 'Shop', to: '/shop' }];
   if (product.category) crumbs.push({ label: product.category.name, to: `/shop/${product.category.slug}` });

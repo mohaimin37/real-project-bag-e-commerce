@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { setCartOpen } from '../../store';
 import { useCart } from '../../hooks/useCart';
 import { useMoney } from '../../hooks/useStore';
+import { cn } from '../../lib/format';
 import { Button, Drawer, EmptyState, Icon, Img, QuantityStepper, Skeleton } from '../ui';
 
 export function FreeShippingMeter({ summary }) {
