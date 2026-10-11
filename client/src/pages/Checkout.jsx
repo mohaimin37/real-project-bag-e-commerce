@@ -302,6 +302,8 @@ export default function Checkout() {
           shippingMethod: summary?.shippingMethod?.code || 'standard',
           paymentMethod: 'giftcard',
           customerNote: note,
+          giftCardCode: giftCardData.code,
+          giftCardPin,
           giftCard: { code: giftCardData.code, pin: giftCardPin },
         });
         qc.invalidateQueries({ queryKey: ['cart'] });

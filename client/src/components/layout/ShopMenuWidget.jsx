@@ -483,7 +483,7 @@ export function ShopDrawerModal() {
                 >
                   All Categories
                 </button>
-                {(categories || []).map((cat) => (
+                {(categories || []).filter((cat) => cat.productCount === undefined || cat.productCount > 0).map((cat) => (
                   <button
                     key={cat._id}
                     type="button"
@@ -815,7 +815,7 @@ export function ShopDrawerModal() {
                   </h2>
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5">
-                  {(categories || []).map((cat) => (
+                  {(categories || []).filter((cat) => cat.productCount === undefined || cat.productCount > 0).map((cat) => (
                     <Link
                       key={cat._id}
                       to={`/shop/${cat.slug}`}

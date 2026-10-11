@@ -331,11 +331,11 @@ function SideNav({ categories }) {
                   <Link to={`/shop/${cat.slug}`} onClick={close} className={cn('block px-5 py-2 text-label-lg font-semibold', categoryTone(cat).text)}>
                     Shop all {cat.name}
                   </Link>
-                  {cat.children.map((c) => (
+                  {(cat.children || []).filter((c) => c.productCount > 0).map((c) => (
                     <Link key={c._id} to={`/shop/${c.slug}`} onClick={close} className="flex items-center gap-3 px-5 py-1.5 text-body-sm">
                       <Thumb cat={c} className="w-8 h-8" />
                       <span className="flex-1">{c.name}</span>
-                      {c.productCount > 0 && <span className="text-[11px] text-outline">{c.productCount}</span>}
+                      <span className="text-[11px] text-outline">{c.productCount}</span>
                     </Link>
                   ))}
                 </div>

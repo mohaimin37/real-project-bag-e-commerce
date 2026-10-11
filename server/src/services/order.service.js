@@ -76,9 +76,14 @@ export async function initiateOnlinePayment(userId, payload = {}) {
 
   let netGrandTotal = totals.grandTotal;
   let giftCardDiscount = 0;
-  if (payload.giftCardCode) {
-    const card = await GiftCard.findOne({ code: payload.giftCardCode.trim().toUpperCase(), isActive: true });
+  const gcCodeOnline = payload.giftCardCode || payload.giftCard?.code;
+  const gcPinOnline = payload.giftCardPin || payload.giftCard?.pin;
+  if (gcCodeOnline) {
+    const card = await GiftCard.findOne({ code: gcCodeOnline.trim().toUpperCase(), isActive: true });
     if (card && card.currentBalance > 0 && (!card.expiryDate || new Date(card.expiryDate) > new Date())) {
+      if (card.pin && card.pin !== (gcPinOnline || '').trim()) {
+        throw ApiError.badRequest('Incorrect gift card PIN.');
+      }
       giftCardDiscount = Math.min(card.currentBalance, totals.grandTotal);
       netGrandTotal = Math.max(0, totals.grandTotal - giftCardDiscount);
     }
@@ -175,12 +180,33 @@ export async function placeOrder(userId, payload) {
   });
 
   let giftCardApplied = null;
-  if (payload.giftCardCode) {
-    const card = await GiftCard.findOne({ code: payload.giftCardCode.trim().toUpperCase(), isActive: true });
-    if (card && card.currentBalance > 0 && (!card.expiryDate || new Date(card.expiryDate) > new Date())) {
-      const discount = Math.min(card.currentBalance, totals.grandTotal);
-      giftCardApplied = { card, discount };
-      totals.grandTotal = Math.max(0, totals.grandTotal - discount);
+  const gcCode = payload.giftCardCode || payload.giftCard?.code;
+  const gcPin = payload.giftCardPin || payload.giftCard?.pin;
+  if (gcCode) {
+    const card = await GiftCard.findOne({ code: gcCode.trim().toUpperCase(), isActive: true });
+    if (!card) {
+      throw ApiError.badRequest('Invalid gift card code.');
+    }
+    if (card.expiryDate && new Date(card.expiryDate) <= new Date()) {
+      throw ApiError.badRequest('Gift card has expired.');
+    }
+    if (card.currentBalance <= 0) {
+      throw ApiError.badRequest('Gift card balance is ₹0.');
+    }
+    if (card.pin && card.pin !== (gcPin || '').trim()) {
+      throw ApiError.badRequest('Incorrect gift card PIN.');
+    }
+    const discount = Math.min(card.currentBalance, totals.grandTotal);
+    giftCardApplied = { card, discount };
+    totals.grandTotal = Math.max(0, totals.grandTotal - discount);
+  }
+
+  if (payload.paymentMethod === 'giftcard') {
+    if (!giftCardApplied) {
+      throw ApiError.badRequest('A valid gift card code is required to pay with gift card.');
+    }
+    if (totals.grandTotal > 0) {
+      throw ApiError.badRequest(`Gift card covers ₹${giftCardApplied.discount}, but ₹${totals.grandTotal} is still due. Please select Online Payment or Cash on Delivery.`);
     }
   }
 
