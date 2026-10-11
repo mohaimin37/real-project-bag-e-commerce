@@ -152,7 +152,6 @@ function Overview() {
   const s = data.stats;
   const tiles = [
     ['receipt_long', 'Orders placed', s.orders, '/account/orders'],
-    ['payments', 'Total spent', money(s.spent), '/account/orders?group=delivered'],
     ['local_shipping', 'On the way', s.active, '/account/orders?group=active'],
     ['favorite', 'In wishlist', s.wishlist, '/wishlist'],
     ['location_on', 'Saved addresses', s.addresses, '/account/addresses'],
@@ -460,7 +459,7 @@ function OrderDetail() {
   const cancel = useMutation({
     mutationFn: () => api.cancelOrder(id, reason),
     onSuccess: () => {
-      toast.success('Order cancelled');
+      toast.success('Order cancelled. Refund will be issued within 5–7 working days.');
       setCancelOpen(false);
       qc.invalidateQueries({ queryKey: ['order', id] });
       qc.invalidateQueries({ queryKey: ['orders'] });
@@ -603,17 +602,35 @@ function OrderDetail() {
             <div className="flex justify-between text-headline-sm pt-1 border-t border-surface-container-high mt-1"><span>Total</span><span className="font-black font-sans">{money(o.grandTotal)}</span></div>
             <p className="text-label-sm font-normal text-outline mt-0.5">Paid via {PAYMENT_LABELS[o.paymentMethod] || o.paymentMethod}</p>
             {o.orderStatus === 'Cancelled' ? (
-              <div className="mt-3 p-3.5 rounded-2xl bg-rose-500/10 border border-rose-500/25 text-on-surface flex items-start gap-3 shadow-xs">
-                <span className="w-8 h-8 rounded-xl bg-rose-500/20 text-rose-700 dark:text-rose-400 flex items-center justify-center shrink-0">
-                  <Icon name="block" className="text-[20px]" />
-                </span>
-                <div className="flex-1">
-                  <p className="font-bold text-[13.5px] text-rose-800 dark:text-rose-300">
-                    Order Cancelled — 0 Coins Credited
-                  </p>
-                  <p className="text-on-surface-variant text-[12px] leading-relaxed mt-0.5">
-                    If an order gets cancelled, coin rewards will not come. Any coins redeemed at checkout have been restored to your wallet balance. Returns or exchanges cannot happen.
-                  </p>
+              <div className="mt-3 p-4 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-on-surface flex flex-col gap-2.5 shadow-xs">
+                <div className="flex items-start gap-3">
+                  <span className="w-9 h-9 rounded-xl bg-rose-500/20 text-rose-700 dark:text-rose-400 flex items-center justify-center shrink-0">
+                    <Icon name="check_circle" className="text-[22px]" />
+                  </span>
+                  <div className="flex-1">
+                    <p className="font-bold text-[14px] text-rose-800 dark:text-rose-300">
+                      Cancellation Confirmed
+                    </p>
+                    <p className="text-on-surface-variant text-[12.5px] leading-relaxed mt-0.5">
+                      Your order has been cancelled successfully.{' '}
+                      {o.paymentStatus === 'Refunded' || o.paymentMethod === 'razorpay' ? (
+                        <span className="font-semibold text-emerald-700 dark:text-emerald-300">
+                          Refund of {money(o.grandTotal)} will be issued within 5–7 working days to your original payment method.
+                        </span>
+                      ) : (
+                        <span>For Cash on Delivery orders, no payment was charged.</span>
+                      )}{' '}
+                      Any coins used at checkout have been restored to your wallet balance.
+                    </p>
+                  </div>
+                </div>
+                <div className="p-2.5 rounded-xl bg-surface-container-low border border-outline-variant/40 flex items-center justify-between text-[12px]">
+                  <span className="text-outline font-medium">Refund Status</span>
+                  <span className="font-bold text-secondary">
+                    {o.paymentStatus === 'Refunded' || o.paymentMethod === 'razorpay'
+                      ? `${o.refundDetails?.status || 'Initiated'} · Refund will be issued within 5–7 working days`
+                      : 'Completed (No payment charged)'}
+                  </span>
                 </div>
               </div>
             ) : o.coinsEarned > 0 ? (
@@ -665,13 +682,21 @@ function OrderDetail() {
       </div>
       <Modal open={cancelOpen} onClose={() => setCancelOpen(false)} title="Cancel this order?" size="sm">
         <div className="flex flex-col gap-space-md">
-          <p className="text-body-sm text-on-surface-variant">Items will be released back to stock. This can't be undone.</p>
+          <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-900 dark:text-amber-200 text-body-sm flex items-start gap-2.5">
+            <Icon name="info" className="text-[20px] text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-bold">Cancellation & Refund Notice</p>
+              <p className="text-[12.5px] leading-relaxed mt-0.5">
+                Items will be released back to stock. {o.paymentStatus === 'Paid' || o.paymentMethod === 'razorpay' ? `Your refund of ${money(o.grandTotal)} will be issued within 5–7 working days to your original payment method.` : 'For Cash on Delivery orders, no payment was collected.'} Any coins used will be restored to your wallet.
+              </p>
+            </div>
+          </div>
           <Field label="Reason (optional)">
-            <Textarea rows={3} value={reason} onChange={(e) => setReason(e.target.value)} maxLength={300} />
+            <Textarea rows={3} value={reason} onChange={(e) => setReason(e.target.value)} maxLength={300} placeholder="Please tell us why you are cancelling..." />
           </Field>
           <div className="flex justify-end gap-2">
             <Button variant="tonal" onClick={() => setCancelOpen(false)}>Keep order</Button>
-            <Button variant="danger" loading={cancel.isPending} onClick={() => cancel.mutate()}>Cancel order</Button>
+            <Button variant="danger" loading={cancel.isPending} onClick={() => cancel.mutate()}>Confirm cancellation</Button>
           </div>
         </div>
       </Modal>

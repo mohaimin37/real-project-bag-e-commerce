@@ -82,9 +82,26 @@ const comingSoon = (code, label, description, icon) => ({
   },
 });
 
+const giftcard = {
+  code: 'giftcard',
+  label: 'Gift Card',
+  description: 'Redeem a WILDTANE gift card code at checkout',
+  icon: 'card_giftcard',
+  isAvailable({ settings }) {
+    if (settings?.giftCardsEnabled === false) {
+      return { available: false, reason: 'Gift cards are currently unavailable' };
+    }
+    return { available: true };
+  },
+  async initiate() {
+    return { paymentStatus: 'Pending' };
+  },
+};
+
 const providers = [
   razorpay,
   cod,
+  giftcard,
   comingSoon('card', 'Credit / Debit Card', 'Visa, Mastercard, RuPay, Amex via secure gateway', 'credit_card'),
   comingSoon('upi', 'UPI / Net Banking', 'Google Pay, PhonePe, Paytm and all major banks', 'account_balance'),
   comingSoon('wallet', 'Apple Pay / Google Pay', 'One-tap express wallet checkout', 'contactless'),

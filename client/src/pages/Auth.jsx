@@ -195,6 +195,7 @@ const registerSchema = z
     phone: z.object({ dialCode: z.string(), number: z.string().trim().regex(/^[0-9\s-]{5,16}$/, 'Enter a valid phone number') }),
     password: passwordRule,
     confirm: z.string(),
+    referralCode: z.string().trim().optional(),
     terms: z.literal(true, { message: 'Please accept the terms' }),
   })
   .refine((d) => d.password === d.confirm, { message: 'Passwords do not match', path: ['confirm'] });
@@ -203,14 +204,20 @@ export function Register() {
   const { register: signUp } = useAuthActions();
   const navigate = useNavigate();
   const next = useNext();
+  const [searchParams] = useSearchParams();
+  const refCodeFromUrl = searchParams.get('ref') || '';
+
   const { register, handleSubmit, setError, formState: { errors, isSubmitting } } = useForm({
     resolver: zodResolver(registerSchema),
-    defaultValues: { phone: { dialCode: '+91', number: '' } },
+    defaultValues: {
+      phone: { dialCode: '+91', number: '' },
+      referralCode: refCodeFromUrl,
+    },
   });
   const onSubmit = async ({ confirm, terms, ...values }) => {
     try {
       const user = await signUp({ ...values, country: 'IN', nationality: 'IN' });
-      toast.success(`Registration successful. Welcome to WILDTANE, ${user.name.split(' ')[0]}!`);
+      toast.success(`🎉 +50 Welcome Coins added to your wallet! Welcome to WILDTANE, ${user.name.split(' ')[0]}!`, { duration: 5000 });
       navigate(next || '/', { replace: true });
     } catch (err) {
       applyServerErrors(err, setError);
@@ -218,13 +225,20 @@ export function Register() {
     }
   };
   return (
-    <AuthShell title="Create your account." subtitle="It takes less than a minute." footer={<>Already a member? <Link to={`/login${next ? `?next=${encodeURIComponent(next)}` : ''}`} className="text-secondary font-semibold hover:underline">Sign in</Link></>}>
+    <AuthShell title="Create your account." subtitle="Get 50 Welcome Coins immediately upon joining." footer={<>Already a member? <Link to={`/login${next ? `?next=${encodeURIComponent(next)}` : ''}`} className="text-secondary font-semibold hover:underline">Sign in</Link></>}>
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-space-md" noValidate>
         {errors.root && <p className="p-space-sm rounded-lg bg-error-container text-on-error-container text-body-sm flex items-center gap-2" role="alert"><Icon name="error" /> {errors.root.message}</p>}
-        <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-500/10 border border-amber-500/25 text-amber-900 dark:text-amber-200 text-label-md">
-          <Icon name="mark_email_read" className="text-[18px] text-amber-600 dark:text-amber-400 shrink-0" />
-          <span>Please sign up with a <strong>working email ID</strong> to receive order updates &amp; tax invoices.</span>
+        
+        {/* Signup Bonus 50 Coins Banner */}
+        <div className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-2xl bg-gradient-to-r from-amber-500/15 via-amber-500/10 to-amber-600/10 border border-amber-500/30 text-amber-900 dark:text-amber-200 text-label-md shadow-2xs">
+          <span className="w-7 h-7 rounded-lg bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+            <Icon name="savings" className="text-[18px]" />
+          </span>
+          <span className="text-[12px] leading-tight">
+            <strong>Welcome Bonus:</strong> +50 Loyalty Coins credited instantly to your wallet upon registration!
+          </span>
         </div>
+
         <Field label="Full name" error={errors.name?.message} htmlFor="name" required>
           <Input id="name" autoComplete="name" error={errors.name} {...register('name')} />
         </Field>
@@ -252,6 +266,20 @@ export function Register() {
         </Field>
         <Field label="Confirm password" error={errors.confirm?.message} htmlFor="confirm" required>
           <PasswordInput id="confirm" autoComplete="new-password" error={errors.confirm} {...register('confirm')} />
+        </Field>
+        <Field
+          label="Referral Code (Optional)"
+          error={errors.referralCode?.message}
+          hint="Enter friend's referral code to give them +100 bonus coins"
+          htmlFor="referralCode"
+        >
+          <Input
+            id="referralCode"
+            placeholder="e.g. WT-ABC123"
+            className="uppercase font-mono"
+            error={errors.referralCode}
+            {...register('referralCode')}
+          />
         </Field>
         <label className="flex items-start gap-2 text-body-sm text-on-surface-variant">
           <input type="checkbox" className="mt-1 accent-secondary" {...register('terms')} />

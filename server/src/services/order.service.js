@@ -7,6 +7,7 @@ import Review from '../models/Review.js';
 import Setting from '../models/Setting.js';
 import Notification from '../models/Notification.js';
 import { nextSequence } from '../models/Counter.js';
+import GiftCard from '../models/GiftCard.js';
 import ApiError from '../utils/ApiError.js';
 import { resolveLines, computeTotals } from './cart.service.js';
 import { redeemCoupon, releaseCoupon } from './coupon.service.js';
@@ -73,23 +74,36 @@ export async function initiateOnlinePayment(userId, payload = {}) {
     throw ApiError.badRequest(availability?.reason || 'Online payment is currently unavailable');
   }
 
-  const gatewayOrder = await createRazorpayOrder({
-    amount: totals.grandTotal,
-    currency: totals.currency || 'INR',
-    receipt: `chk_${Date.now().toString(36)}`,
-    notes: {
-      userId: String(userId),
-      customerName: user?.name || '',
-      email: user?.email || '',
-    },
-  });
+  let netGrandTotal = totals.grandTotal;
+  let giftCardDiscount = 0;
+  if (payload.giftCardCode) {
+    const card = await GiftCard.findOne({ code: payload.giftCardCode.trim().toUpperCase(), isActive: true });
+    if (card && card.currentBalance > 0 && (!card.expiryDate || new Date(card.expiryDate) > new Date())) {
+      giftCardDiscount = Math.min(card.currentBalance, totals.grandTotal);
+      netGrandTotal = Math.max(0, totals.grandTotal - giftCardDiscount);
+    }
+  }
+
+  const gatewayOrder = netGrandTotal > 0
+    ? await createRazorpayOrder({
+        amount: netGrandTotal,
+        currency: totals.currency || 'INR',
+        receipt: `chk_${Date.now().toString(36)}`,
+        notes: {
+          userId: String(userId),
+          customerName: user?.name || '',
+          email: user?.email || '',
+        },
+      })
+    : { id: `free_${Date.now()}`, amount: 0, currency: 'INR' };
 
   return {
     gatewayOrder,
     keyId: env.razorpay.keyId,
     amount: gatewayOrder.amount,
     currency: gatewayOrder.currency,
-    grandTotal: totals.grandTotal,
+    grandTotal: netGrandTotal,
+    giftCardDiscount,
   };
 }
 
@@ -160,6 +174,16 @@ export async function placeOrder(userId, payload) {
     useCoins: cart.useCoins,
   });
 
+  let giftCardApplied = null;
+  if (payload.giftCardCode) {
+    const card = await GiftCard.findOne({ code: payload.giftCardCode.trim().toUpperCase(), isActive: true });
+    if (card && card.currentBalance > 0 && (!card.expiryDate || new Date(card.expiryDate) > new Date())) {
+      const discount = Math.min(card.currentBalance, totals.grandTotal);
+      giftCardApplied = { card, discount };
+      totals.grandTotal = Math.max(0, totals.grandTotal - discount);
+    }
+  }
+
   const provider = getProvider(payload.paymentMethod);
   const availability = provider?.isAvailable({ settings, total: totals.grandTotal });
   if (!provider || !availability.available) {
@@ -167,7 +191,12 @@ export async function placeOrder(userId, payload) {
   }
 
   let verifiedPayment = null;
-  if (payload.paymentMethod === 'razorpay') {
+  if (totals.grandTotal === 0 && giftCardApplied) {
+    verifiedPayment = {
+      paidAt: new Date(),
+      method: 'gift_card',
+    };
+  } else if (payload.paymentMethod === 'razorpay') {
     const { razorpayOrderId, razorpayPaymentId, razorpaySignature } = payload.paymentDetails || {};
     if (!razorpayOrderId || !razorpayPaymentId || !razorpaySignature) {
       throw ApiError.badRequest('Payment details are required. Complete online payment before placing your order.');
@@ -259,9 +288,10 @@ export async function placeOrder(userId, payload) {
             shippingMethod: { code: totals.shippingMethod.code, label: totals.shippingMethod.label, eta: totals.shippingMethod.eta },
             paymentMethod: provider.code,
             paymentStatus: verifiedPayment ? 'Paid' : 'Pending',
-            paymentReference: verifiedPayment ? verifiedPayment.razorpayPaymentId : '',
+            paymentReference: verifiedPayment ? (verifiedPayment.razorpayPaymentId || 'GIFT_CARD') : '',
             paymentDetails: verifiedPayment ? { ...verifiedPayment } : undefined,
             orderStatus: verifiedPayment ? 'Confirmed' : 'Pending',
+            giftCard: giftCardApplied ? { code: giftCardApplied.card.code, amount: giftCardApplied.discount } : undefined,
             statusHistory: [
               {
                 status: verifiedPayment ? 'Confirmed' : 'Pending',
@@ -274,6 +304,18 @@ export async function placeOrder(userId, payload) {
         ],
         { session }
       );
+
+      // Decrement gift card balance and record redemption
+      if (giftCardApplied) {
+        giftCardApplied.card.currentBalance -= giftCardApplied.discount;
+        giftCardApplied.card.redeemedBy.push({
+          user: userId,
+          order: orderObjectId,
+          amount: giftCardApplied.discount,
+          redeemedAt: new Date(),
+        });
+        await giftCardApplied.card.save({ session });
+      }
 
       // Loyalty coins: spend first (fails if the balance no longer covers it).
       // Note: Coins earned on this order are not credited immediately; they disburse automatically
@@ -482,8 +524,8 @@ const STATUS_MESSAGES = {
   Shipped: 'Your order is on its way.',
   'Out for Delivery': 'Your order is out for delivery today. Please keep your phone handy.',
   Delivered: 'Your order has been delivered. We hope you love it!',
-  Cancelled: 'Your order has been cancelled. Any payment made will be refunded to the original method.',
-  Returned: 'Your return has been received. Your refund is being processed.',
+  Cancelled: 'Your order has been cancelled. Confirmation: Refund will be issued within 5–7 working days to your original payment method.',
+  Returned: 'Your return has been received. Your refund is being processed within 5–7 working days.',
 };
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
@@ -533,7 +575,33 @@ export async function cancelByCustomer(order, userId, reason) {
   if (!CUSTOMER_CANCELLABLE.includes(order.orderStatus)) {
     throw ApiError.badRequest('This order is already being prepared and can no longer be cancelled online. Please contact support.');
   }
-  return changeOrderStatus(order, { status: 'Cancelled', note: reason || 'Cancelled by customer' }, userId);
+  const cancelNote = reason
+    ? `${reason} (Cancellation confirmed. Refund will be issued within 5–7 working days)`
+    : 'Cancelled by customer (Cancellation confirmed. Refund will be issued within 5–7 working days)';
+
+  const updated = await changeOrderStatus(order, { status: 'Cancelled', note: cancelNote, notifyCustomer: true }, userId);
+
+  // Set refund details and update payment status to Refunded if already paid
+  if (order.paymentStatus === 'Paid') {
+    updated.paymentStatus = 'Refunded';
+    updated.refundDetails = {
+      status: 'Initiated',
+      amount: order.grandTotal,
+      eta: '5–7 working days',
+      initiatedAt: new Date(),
+    };
+    await updated.save();
+  } else {
+    updated.refundDetails = {
+      status: 'None (COD/Pending)',
+      amount: 0,
+      eta: 'No payment made',
+      initiatedAt: new Date(),
+    };
+    await updated.save();
+  }
+
+  return updated;
 }
 
 /** True when the user has a delivered order containing this product (for verified reviews). */

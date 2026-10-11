@@ -618,6 +618,34 @@ export default function ProductDetail() {
                 {soldOut ? 'Sold out' : `Add to Bag — ${money(product.finalPrice * qty)}`}
               </Button>
               <WishlistButton product={product} className="w-12 h-12 rounded-lg border border-surface-container-high" />
+              <button
+                type="button"
+                onClick={async () => {
+                  const shareData = {
+                    title: `${product.name} — WILDTANE`,
+                    text: `Discover ${product.name} at WILDTANE: ${product.tagline || 'Modern luxury carry'}`,
+                    url: window.location.href,
+                  };
+                  if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
+                    try {
+                      await navigator.share(shareData);
+                    } catch (err) {
+                      if (err.name !== 'AbortError') {
+                        await navigator.clipboard.writeText(window.location.href);
+                        toast.success('Product link copied to clipboard!');
+                      }
+                    }
+                  } else {
+                    await navigator.clipboard.writeText(window.location.href);
+                    toast.success('Product link copied to clipboard!', { icon: '🔗' });
+                  }
+                }}
+                aria-label="Share this product"
+                title="Share product with friends"
+                className="w-12 h-12 rounded-lg border border-surface-container-high flex items-center justify-center text-on-surface hover:text-secondary hover:bg-surface-container transition-all active:scale-95 shadow-2xs cursor-pointer shrink-0"
+              >
+                <Icon name="share" className="text-[20px]" />
+              </button>
             </div>
             <Button variant="secondary" icon="bolt" className="w-full h-12" disabled={soldOut} onClick={() => addToBag(() => navigate('/checkout'))}>
               Buy now

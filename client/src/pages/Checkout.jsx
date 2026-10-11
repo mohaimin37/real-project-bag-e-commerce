@@ -129,6 +129,10 @@ export default function Checkout() {
   const [adding, setAdding] = useState(false);
   const [payment, setPayment] = useState('razorpay');
   const [note, setNote] = useState('');
+  const [giftCardCode, setGiftCardCode] = useState('');
+  const [giftCardPin, setGiftCardPin] = useState('');
+  const [giftCardData, setGiftCardData] = useState(null); // verified gift card info
+  const [giftCardVerifying, setGiftCardVerifying] = useState(false);
 
   const addresses = useQuery({ queryKey: ['addresses'], queryFn: api.addresses, select: (d) => d.addresses });
   const methods = useQuery({ queryKey: ['payment-methods', summary?.grandTotal], queryFn: api.paymentMethods, select: (d) => d.methods, enabled: Boolean(summary) });
@@ -285,6 +289,27 @@ export default function Checkout() {
           toast.error(response.error?.description || 'Payment was declined or failed. Please try again.');
         });
         rzp.open();
+      } else if (payment === 'giftcard') {
+        // Gift Card: validate code first, then place order
+        if (!giftCardData) {
+          toast.error('Please verify your gift card code first.');
+          setSubmitting(false);
+          return;
+        }
+        const orderRes = await api.placeOrder({
+          customer: resolvedCustomer,
+          ...addressChoice,
+          shippingMethod: summary?.shippingMethod?.code || 'standard',
+          paymentMethod: 'giftcard',
+          customerNote: note,
+          giftCard: { code: giftCardData.code, pin: giftCardPin },
+        });
+        qc.invalidateQueries({ queryKey: ['cart'] });
+        qc.invalidateQueries({ queryKey: ['addresses'] });
+        qc.invalidateQueries({ queryKey: ['orders'] });
+        qc.invalidateQueries({ queryKey: ['my-coins'] });
+        toast.success('Order placed with gift card!');
+        navigate(`/order/${orderRes.order.orderId}/success`, { replace: true });
       } else {
         // COD: Place order directly
         const orderRes = await api.placeOrder({
@@ -480,7 +505,68 @@ export default function Checkout() {
                     <p>Pay securely via UPI (Google Pay, PhonePe, Paytm), Credit / Debit Cards, Net Banking or Wallets through Razorpay with 256-bit encryption.</p>
                   </div>
                 )}
+                {selectedPayment?.code === 'giftcard' && (
+                  <div className="flex flex-col gap-3">
+                    <div className="p-space-md rounded-2xl bg-secondary-container/30 flex items-start gap-3 text-body-sm">
+                      <Icon name="card_giftcard" className="text-secondary" />
+                      <p>Enter your WILDTANE gift card code to check available balance and pay.</p>
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <Field label="Gift Card Code" htmlFor="gc-code">
+                        <div className="flex gap-2">
+                          <Input
+                            id="gc-code"
+                            placeholder="e.g. GIFT-XXXX-XXXX"
+                            value={giftCardCode}
+                            onChange={(e) => { setGiftCardCode(e.target.value.toUpperCase()); setGiftCardData(null); }}
+                            className="flex-1"
+                          />
+                          <button
+                            type="button"
+                            disabled={!giftCardCode.trim() || giftCardVerifying}
+                            onClick={async () => {
+                              setGiftCardVerifying(true);
+                              try {
+                                const res = await api.verifyGiftCard({ code: giftCardCode.trim(), pin: giftCardPin });
+                                setGiftCardData(res.giftCard);
+                                toast.success(res.message || 'Gift card verified!');
+                              } catch (err) {
+                                setGiftCardData(null);
+                                toast.error(err.message || 'Invalid gift card code');
+                              } finally {
+                                setGiftCardVerifying(false);
+                              }
+                            }}
+                            className="btn-primary px-4 h-11 rounded-xl text-[13px] font-bold shrink-0 disabled:opacity-50"
+                          >
+                            {giftCardVerifying ? 'Checking…' : 'Verify'}
+                          </button>
+                        </div>
+                      </Field>
+                      <Field label="PIN (if set)" htmlFor="gc-pin">
+                        <Input
+                          id="gc-pin"
+                          type="password"
+                          placeholder="4-digit PIN (optional)"
+                          value={giftCardPin}
+                          onChange={(e) => { setGiftCardPin(e.target.value); setGiftCardData(null); }}
+                          maxLength={6}
+                        />
+                      </Field>
+                      {giftCardData && (
+                        <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/25 flex items-center gap-3">
+                          <Icon name="check_circle" className="text-[22px] text-emerald-600 dark:text-emerald-400 shrink-0" />
+                          <div>
+                            <p className="font-bold text-[13px] text-emerald-900 dark:text-emerald-200">Gift Card Verified ✓</p>
+                            <p className="text-[12px] text-on-surface-variant mt-0.5">Available balance: <strong className="text-emerald-700 dark:text-emerald-300">₹{giftCardData.balance?.toLocaleString('en-IN')}</strong></p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
                 <Field label="Order note (optional)" htmlFor="note">
+
                   <Textarea id="note" rows={3} maxLength={500} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Delivery instructions, gift message…" />
                 </Field>
                 <div className="flex justify-between">

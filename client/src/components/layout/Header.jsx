@@ -442,6 +442,7 @@ export default function Header() {
   const { data: categories } = useCategories();
   const { count } = useCart();
   const { count: wishCount } = useWishlist();
+  const coins = useMyCoins();
   const isMobileCustomHeader = pathname === '/' || pathname.startsWith('/shop') || ['/men', '/women', '/universal', '/unisex', '/offers'].includes(pathname);
 
   // A soft shadow once the page scrolls, so the sticky header lifts off the content.
@@ -471,6 +472,23 @@ export default function Header() {
 
   return (
     <>
+      {/* ── TOP ANNOUNCEMENT & SALES OFFERS RIBBON (Requirement 7 & Notification Bar) ── */}
+      <div className="bg-gradient-to-r from-stone-950 via-amber-950 to-stone-950 text-amber-200 border-b border-amber-500/25 text-[11px] sm:text-[12px] py-1.5 px-3 select-none relative z-50">
+        <div className="w-full max-w-[1920px] mx-auto flex items-center justify-between gap-2.5">
+          <div className="flex items-center gap-2 overflow-hidden mx-auto text-center truncate">
+            <span className="inline-flex items-center gap-1 font-black uppercase tracking-wider text-amber-400 bg-amber-500/20 border border-amber-500/30 px-2 py-0.5 rounded-full text-[9.5px] sm:text-[10px]">
+              <Icon name="local_fire_department" className="text-[12px] text-amber-400" /> LIVE OFFERS
+            </span>
+            <span className="font-medium text-amber-100/90 truncate">
+              🎁 50 Free Welcome Coins on Signup • Flat 10% Extra Off with Code <strong className="font-mono text-amber-300">WILD10</strong> • Doorstep Courier Pickup for Returns
+            </span>
+            <Link to="/offers" className="font-bold underline text-amber-300 hover:text-white shrink-0 ml-1.5">
+              Explore Offers & Sales →
+            </Link>
+          </div>
+        </div>
+      </div>
+
       <header className={cn('site-header sticky top-0 z-50 w-full transition-shadow duration-300 bg-surface/95 backdrop-blur-md border-b border-surface-container-high/60', isMobileCustomHeader && 'hidden md:block', scrolled && 'shadow-[0_8px_30px_-12px_rgb(0_0_0/0.25)]')}>
         <div className="w-full max-w-[1920px] mx-auto px-2.5 sm:px-4 md:px-5 lg:px-6 h-14 md:h-[68px] flex items-center justify-between gap-1.5 sm:gap-2.5 md:gap-3.5">
           {/* Logo & Mobile Menu */}
@@ -506,6 +524,22 @@ export default function Header() {
             >
               <Icon name="palette" className="text-[19px] sm:text-[20px]" />
             </button>
+
+            {/* Wallet (Coins Balance) Badge (Requirement 15) */}
+            <Link
+              to="/account/coins"
+              aria-label={`Wallet balance, ${coins?.data?.balance ?? 0} coins`}
+              title="WILDTANE Wallet & Reward Coins"
+              className="relative inline-flex items-center gap-1.5 h-9 sm:h-10 px-2.5 sm:px-3 rounded-full text-on-surface hover:bg-amber-500/10 ring-1 ring-amber-500/30 hover:ring-amber-500/60 transition-all hover:scale-105 active:scale-95 shadow-2xs group"
+            >
+              <CoinIcon className="w-4 h-4 text-amber-500 shrink-0 group-hover:scale-110 transition-transform" />
+              <span className="text-[12px] sm:text-[13px] font-black text-amber-700 dark:text-amber-300 tabular-nums">
+                {coins?.data?.balance ?? 0}
+              </span>
+              <span className="text-[10px] uppercase font-bold text-outline opacity-75 hidden xs:inline">
+                Coins
+              </span>
+            </Link>
 
             {/* Heart (Wishlist) Icon */}
             <Link

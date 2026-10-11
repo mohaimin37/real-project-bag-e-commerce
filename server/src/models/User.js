@@ -39,6 +39,8 @@ const userSchema = new mongoose.Schema(
     role: { type: String, enum: ['customer', 'admin'], default: 'customer', index: true },
     isActive: { type: Boolean, default: true },
     coins: { type: Number, default: 0, min: 0 }, // loyalty coin balance (history in CoinTransaction)
+    referralCode: { type: String, unique: true, sparse: true, uppercase: true, trim: true },
+    referredBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
     addresses: [addressSchema],
     recentlyViewed: [
       {

@@ -46,6 +46,8 @@ function lookupStatus(e = {}) {
 // ── WIDGETS ────────────────────────────────────────────────────
 
 function TrackRequestsWidget({ activeRequests, phone, onOpenExchange }) {
+  const [helpTarget, setHelpTarget] = useState(null);
+
   if (!activeRequests || activeRequests.length === 0) {
     return (
       <div className="card p-8 text-center flex flex-col items-center gap-3 bg-surface-container-lowest border border-surface-container-high">
@@ -99,8 +101,21 @@ function TrackRequestsWidget({ activeRequests, phone, onOpenExchange }) {
                 <p className="text-[13px] font-semibold text-on-surface mt-0.5">{formatDate(request.requestedAt)}</p>
               </div>
               <div className="p-3 rounded-xl bg-surface-container-low">
-                <span className="text-[11px] uppercase font-bold text-outline">Pickup Location</span>
+                <span className="text-[11px] uppercase font-bold text-outline">Doorstep Pickup</span>
                 <p className="text-[13px] font-semibold text-on-surface mt-0.5 truncate">{order.shippingAddress?.city}, {order.shippingAddress?.postalCode}</p>
+              </div>
+            </div>
+
+            {/* Automated Doorstep Courier Pickup Integration Banner */}
+            <div className="p-3.5 rounded-xl bg-teal-500/10 border border-teal-500/25 flex items-start gap-3">
+              <Icon name="local_shipping" className="text-[20px] text-teal-600 dark:text-teal-400 shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <p className="font-bold text-[13px] text-teal-900 dark:text-teal-200">
+                  Automated Doorstep Courier Pickup Integration
+                </p>
+                <p className="text-[12px] text-on-surface-variant leading-relaxed mt-0.5">
+                  Once your request is approved, our courier partner (Delhivery / BlueDart Express) automatically visits your address (<strong>{order.shippingAddress?.addressLine1}, {order.shippingAddress?.city}</strong>) within <strong>24–48 hours</strong> to receive the product.
+                </p>
               </div>
             </div>
 
@@ -108,13 +123,83 @@ function TrackRequestsWidget({ activeRequests, phone, onOpenExchange }) {
               <Link to={`/account/orders/${order.orderId}`} className="text-[12.5px] font-bold text-secondary hover:underline flex items-center gap-1">
                 View Full Order Details <Icon name="chevron_right" className="text-[16px]" />
               </Link>
-              <a href={`tel:${phone}`} className="text-[12px] font-bold text-outline hover:text-secondary flex items-center gap-1">
-                <Icon name="support_agent" className="text-[15px]" /> Help with this request
-              </a>
+              <button
+                type="button"
+                onClick={() => setHelpTarget({ order, request })}
+                className="btn bg-secondary/15 hover:bg-secondary/25 text-secondary font-bold text-[12px] h-8 px-3 rounded-xl flex items-center gap-1.5 shadow-xs transition-all active:scale-95 cursor-pointer"
+              >
+                <Icon name="support_agent" className="text-[16px]" /> Help with this request
+              </button>
             </div>
           </div>
         ))}
       </div>
+
+      {helpTarget && (
+        <Modal
+          open={Boolean(helpTarget)}
+          onClose={() => setHelpTarget(null)}
+          title="Help with Return & Exchange Request"
+          size="md"
+        >
+          <div className="flex flex-col gap-4">
+            <div className="p-3.5 rounded-xl bg-surface-container-low border border-outline-variant/50">
+              <span className="text-[11px] uppercase font-bold text-outline">Request Reference</span>
+              <p className="text-[15px] font-mono font-bold text-secondary mt-0.5">
+                {helpTarget.request.requestId} · Order #{helpTarget.order.orderId}
+              </p>
+              <p className="text-[12px] text-on-surface-variant mt-1">
+                Type: <strong className="capitalize">{helpTarget.request.type}</strong> · Reason: {helpTarget.request.reason}
+              </p>
+            </div>
+
+            {/* Doorstep Pickup courier explanation */}
+            <div className="p-3.5 rounded-xl bg-teal-500/10 border border-teal-500/25 flex items-start gap-3">
+              <Icon name="local_shipping" className="text-[22px] text-teal-600 dark:text-teal-400 shrink-0 mt-0.5" />
+              <div>
+                <p className="font-bold text-[13px] text-teal-900 dark:text-teal-200">
+                  How Doorstep Courier Pickup Works
+                </p>
+                <ul className="text-[12px] text-on-surface-variant list-disc list-inside mt-1 space-y-1">
+                  <li><strong>Doorstep Collection:</strong> Our logistics partner automatically arrives at your doorstep within 24–48 hours.</li>
+                  <li><strong>Pickup Address:</strong> {helpTarget.order.shippingAddress?.addressLine1}, {helpTarget.order.shippingAddress?.city} {helpTarget.order.shippingAddress?.postalCode}.</li>
+                  <li><strong>Immediate Replacement:</strong> If this is an exchange, your replacement item is dispatched right away upon courier verification.</li>
+                </ul>
+              </div>
+            </div>
+
+            {/* Action buttons */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+              <button
+                type="button"
+                onClick={() => {
+                  const msg = `Hi WILDTANE Support, I need help with my ${helpTarget.request.type === 'exchange' ? 'Exchange' : 'Return'} Request (Ref: ${helpTarget.request.requestId}) for Order #${helpTarget.order.orderId}.\nStatus: ${helpTarget.request.status || 'Requested'}`;
+                  window.open(`https://wa.me/918920550465?text=${encodeURIComponent(msg)}`, '_blank', 'noopener');
+                }}
+                className="btn bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[13px] h-11 rounded-xl flex items-center justify-center gap-2 shadow-xs transition-all active:scale-95 cursor-pointer"
+              >
+                <Icon name="chat" className="text-[18px]" /> Instant WhatsApp Support
+              </button>
+
+              <a
+                href={`tel:${phone}`}
+                className="btn bg-surface-container-high hover:bg-surface-container-highest text-on-surface font-bold text-[13px] h-11 rounded-xl flex items-center justify-center gap-2 border border-outline-variant/60 shadow-xs transition-all"
+              >
+                <Icon name="call" className="text-[18px] text-secondary" /> Call Support (+91 89205 50465)
+              </a>
+            </div>
+
+            <div className="text-center pt-1 border-t border-surface-container-high">
+              <a
+                href={`mailto:info@wildtane.com?subject=${encodeURIComponent(`Support for ${helpTarget.request.type} Request ${helpTarget.request.requestId} - Order ${helpTarget.order.orderId}`)}`}
+                className="text-[12px] font-semibold text-secondary hover:underline inline-flex items-center gap-1"
+              >
+                <Icon name="mail" className="text-[14px]" /> Email Support (info@wildtane.com)
+              </a>
+            </div>
+          </div>
+        </Modal>
+      )}
     </div>
   );
 }

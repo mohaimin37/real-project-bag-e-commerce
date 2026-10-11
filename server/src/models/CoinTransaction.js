@@ -4,7 +4,7 @@ import mongoose from 'mongoose';
  * Ledger of loyalty coin movements. User.coins is the running balance;
  * this keeps the "why" for the customer's history and for admins.
  */
-export const COIN_TYPES = ['earned', 'redeemed', 'refunded', 'reversed', 'adjusted'];
+export const COIN_TYPES = ['earned', 'redeemed', 'refunded', 'reversed', 'adjusted', 'bonus'];
 
 const coinTransactionSchema = new mongoose.Schema(
   {

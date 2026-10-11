@@ -295,13 +295,18 @@ export function ShopDrawerModal() {
       <header className="sticky top-0 z-30 bg-surface/95 backdrop-blur-md border-b border-surface-container-high/80 shrink-0">
         <div className="w-full max-w-[1920px] mx-auto px-3 sm:px-6 py-2.5 flex items-center justify-between gap-3">
           {/* Brand & Title */}
-          <div className="flex items-center gap-2.5 min-w-0">
-            <span className="w-8 h-8 rounded-xl bg-secondary/15 text-secondary flex items-center justify-center shrink-0">
+          <Link
+            to="/"
+            onClick={close}
+            className="flex items-center gap-2.5 min-w-0 group hover:opacity-85 transition-opacity cursor-pointer"
+            aria-label="Return to WILDTANE Home"
+          >
+            <span className="w-8 h-8 rounded-xl bg-secondary/15 text-secondary flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
               <Icon name="grid_view" className="text-[20px]" />
             </span>
             <div className="min-w-0">
               <div className="flex items-center gap-2">
-                <span className="font-serif tracking-[0.14em] font-black text-[15px] sm:text-[17px] text-on-surface uppercase leading-none">
+                <span className="font-serif tracking-[0.14em] font-black text-[15px] sm:text-[17px] text-on-surface uppercase leading-none group-hover:text-secondary transition-colors">
                   WILDTANE
                 </span>
                 <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-secondary/10 text-secondary border border-secondary/20 uppercase tracking-wider hidden sm:inline-flex">
@@ -312,7 +317,7 @@ export function ShopDrawerModal() {
                 Modern Luxury Carry • Architectural Design
               </p>
             </div>
-          </div>
+          </Link>
 
           {/* Tab Navigation Switcher */}
           <div className="flex items-center gap-1 bg-surface-container-low p-1 rounded-2xl border border-outline-variant/30 overflow-x-auto scrollbar-none max-w-[55vw] sm:max-w-none">

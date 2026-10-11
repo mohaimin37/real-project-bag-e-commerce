@@ -120,6 +120,9 @@ export const api = {
   myOrder: (id) => http.get(`/orders/${id}`),
   cancelOrder: (id, reason) => http.post(`/orders/${id}/cancel`, { reason }),
 
+  // gift cards
+  verifyGiftCard: (body) => http.post('/giftcards/verify', body),
+
   // returns & exchanges
   returnPolicy: () => http.get('/returns/policy'),
   myReturnOrders: () => http.get('/returns/orders'),

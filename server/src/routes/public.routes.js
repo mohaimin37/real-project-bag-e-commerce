@@ -19,6 +19,7 @@ import * as content from '../controllers/content.controller.js';
 import * as enquiries from '../controllers/enquiry.controller.js';
 import * as comments from '../controllers/comment.controller.js';
 import * as returns from '../controllers/return.controller.js';
+import * as giftcards from '../controllers/giftcard.controller.js';
 
 import * as av from '../validators/auth.validators.js';
 import * as cv from '../validators/commerce.validators.js';
@@ -158,3 +159,9 @@ export const returnRoutes = Router()
   .get('/orders', protect, returns.getMyReturnOrders)
   .get('/order/:id', formLimiter, optionalAuth, returns.getOrderEligibility)
   .post('/request', protect, formLimiter, returns.submitRequest);
+
+// ── /api/giftcards (Gift Card Verification & Balance) ────────
+export const giftcardRoutes = Router()
+  .post('/verify', formLimiter, giftcards.verifyGiftCard)
+  .get('/balance', formLimiter, giftcards.verifyGiftCard);
+

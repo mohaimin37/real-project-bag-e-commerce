@@ -125,6 +125,7 @@ api.use('/comments', routes.commentRoutes);
 api.use('/config', routes.configRoutes);
 api.use('/banners', routes.bannerRoutes);
 api.use('/returns', routes.returnRoutes);
+api.use('/giftcards', routes.giftcardRoutes);
 api.use('/admin', adminRoutes);
 app.use('/api', api);
 

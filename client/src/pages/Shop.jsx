@@ -427,7 +427,14 @@ function Filters({ facets, state, categoryTree, activeCategory, lockedGender }) 
     setMax(get('maxPrice'));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.params]);
-  const subcats = activeCategory?.children?.length ? activeCategory.children : activeCategory?.parent ? categoryTree?.find((c) => c._id === activeCategory.parent)?.children : null;
+  const parentId = activeCategory?.parent?._id || activeCategory?.parent;
+  const parentCat = parentId ? categoryTree?.find((c) => String(c._id) === String(parentId)) : null;
+  const subcats = (activeCategory?.children?.length
+    ? activeCategory.children
+    : parentCat?.children?.length
+      ? parentCat.children
+      : null
+  )?.filter((c) => c.productCount > 0);
 
   return (
     <div className="flex flex-col">
@@ -435,7 +442,8 @@ function Filters({ facets, state, categoryTree, activeCategory, lockedGender }) 
         <Section title="Category">
           <div className="flex flex-col">
             {subcats.map((c) => {
-              const isSelected = activeCategory?._id === c._id || activeCategory?.slug === c.slug;
+              const isSelected = String(activeCategory?._id) === String(c._id) || activeCategory?.slug === c.slug;
+              const targetTo = isSelected && parentCat ? `/shop/${parentCat.slug}` : `/shop/${c.slug}`;
               return lockedGender ? (
                 <button
                   key={c._id}
@@ -447,9 +455,9 @@ function Filters({ facets, state, categoryTree, activeCategory, lockedGender }) 
                   {c.productCount > 0 && <span className="text-[11px] text-outline">{c.productCount}</span>}
                 </button>
               ) : (
-                <Link key={c._id} to={`/shop/${c.slug}`} className={cn('flex items-center justify-between py-1.5 text-[13px] hover:text-secondary', isSelected && 'text-secondary font-semibold')}>
+                <Link key={c._id} to={targetTo} className={cn('flex items-center justify-between py-1.5 text-[13px] hover:text-secondary', isSelected && 'text-secondary font-semibold')}>
                   <span>{c.name}</span>
-                  <span className="text-[11px] text-outline">{c.productCount}</span>
+                  {c.productCount > 0 && <span className="text-[11px] text-outline">{c.productCount}</span>}
                 </Link>
               );
             })}
@@ -727,7 +735,7 @@ export default function Shop({ preset }) {
     ? (selectedCatParam || 'travel-utility')
     : (selectedCatParam || categorySlug);
   const activeCategory = flat.find((c) => c.slug === effectiveCategory);
-  const parent = activeCategory?.parent ? flat.find((c) => c._id === activeCategory.parent) : null;
+  const parent = activeCategory?.parent ? flat.find((c) => String(c._id) === String(activeCategory.parent?._id || activeCategory.parent)) : null;
 
   const query = useMemo(() => {
     const q = Object.fromEntries(params.entries());
@@ -837,6 +845,15 @@ export default function Shop({ preset }) {
       <div className="md:hidden sticky top-0 z-40 bg-surface-container-lowest border-b border-outline-variant/30 shadow-xs">
         {/* Top Search & Nav Row */}
         <div className="px-2.5 py-2 flex items-center gap-2">
+          <Link
+            to="/"
+            className="flex items-center gap-1.5 shrink-0 group active:scale-95 transition-transform mr-0.5"
+            aria-label="WILDTANE home"
+          >
+            <span className="font-serif tracking-[0.14em] font-black text-[14.5px] text-on-surface uppercase leading-none hover:text-secondary transition-colors">
+              WILDTANE
+            </span>
+          </Link>
           <button
             type="button"
             onClick={() => {
@@ -848,10 +865,10 @@ export default function Shop({ preset }) {
                 navigate('/');
               }
             }}
-            className="w-9 h-9 rounded-full bg-surface-container-low flex items-center justify-center text-on-surface active:scale-90 transition-transform shrink-0"
+            className="w-8 h-8 rounded-full bg-surface-container-low flex items-center justify-center text-on-surface active:scale-90 transition-transform shrink-0"
             aria-label="Back"
           >
-            <Icon name="arrow_back" className="text-[20px]" />
+            <Icon name="arrow_back" className="text-[18px]" />
           </button>
 
           {/* Flipkart Interactive Search Pill */}

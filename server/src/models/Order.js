@@ -97,6 +97,16 @@ const orderSchema = new mongoose.Schema(
     approvedAt: Date,
     approvedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     invoiceSentAt: Date,
+    refundDetails: {
+      status: { type: String, default: 'None' },
+      amount: { type: Number, default: 0 },
+      eta: { type: String, default: '5–7 working days' },
+      initiatedAt: Date,
+    },
+    giftCard: {
+      code: String,
+      amount: { type: Number, default: 0 },
+    },
   },
   { timestamps: true }
 );

@@ -5,6 +5,7 @@ import asyncHandler from '../utils/asyncHandler.js';
 import { hashToken, randomToken } from '../utils/helpers.js';
 import { issueAuthCookie, clearAuthCookie } from '../middleware/auth.js';
 import { sendEmail } from '../services/email.service.js';
+import { moveCoins } from '../services/coin.service.js';
 
 const RESET_TTL_MS = 30 * 60 * 1000;
 
@@ -20,7 +21,47 @@ async function signIn(res, user) {
 export const register = asyncHandler(async (req, res) => {
   const exists = await User.exists({ email: req.body.email });
   if (exists) throw ApiError.conflict('An account with this email already exists', [{ field: 'email', message: 'Already registered' }]);
-  const user = await User.create({ ...req.body, role: 'customer' });
+
+  // Generate unique uppercase referral code for the user
+  const randomSuffix = Math.random().toString(36).substring(2, 8).toUpperCase();
+  const referralCode = `WT${randomSuffix}`;
+
+  // Check if user was referred by an existing user
+  let referrer = null;
+  if (req.body.referralCode) {
+    referrer = await User.findOne({ referralCode: req.body.referralCode.trim().toUpperCase() });
+  }
+
+  const user = await User.create({
+    ...req.body,
+    referralCode,
+    referredBy: referrer?._id || null,
+    role: 'customer',
+  });
+
+  // Award Signup Bonus: 50 coins (Requirement 12)
+  try {
+    await moveCoins(user._id, 50, {
+      type: 'bonus',
+      note: 'Welcome Signup Bonus: +50 Coins',
+    });
+    user.coins = 50;
+  } catch (err) {
+    console.error('[coins] Failed to credit signup bonus:', err.message);
+  }
+
+  // Award Referral Bonus: 100 coins to referrer (Requirement 13)
+  if (referrer) {
+    try {
+      await moveCoins(referrer._id, 100, {
+        type: 'bonus',
+        note: `Referral Bonus: +100 Coins for referring ${user.name}`,
+      });
+    } catch (err) {
+      console.error('[coins] Failed to credit referral bonus:', err.message);
+    }
+  }
+
   const token = await signIn(res, user);
   res.status(201).json({ success: true, user, token });
 });
@@ -129,33 +170,40 @@ export const forgotPassword = asyncHandler(async (req, res) => {
   console.log(`Expires: ${user.passwordResetOtpExpires.toLocaleTimeString()} (Valid for 10 minutes)`);
   console.log(`=============================================================\n`);
 
-  // Send high-priority email via SMTP
-  sendEmail({
-    to: user.email,
-    subject: `Your WILDTANE verification code: ${otp}`,
-    priority: 'high',
-    text: `Hi ${user.name},\n\nYour 6-digit verification code to access your WILDTANE account is:\n\n${otp}\n\nThis code is valid for 10 minutes.\n\nIf you did not request this, you can safely ignore this email.\n\n— The WILDTANE Team`,
-    html: `
-      <div style="font-family: system-ui, -apple-system, sans-serif; max-width: 480px; margin: auto; padding: 28px; border: 1px solid #e5e5e5; border-radius: 16px; background: #fafafa;">
-        <div style="text-align: center; margin-bottom: 20px;">
-          <h2 style="margin: 0; color: #111; font-size: 24px; letter-spacing: 2px;">WILDTANE</h2>
-          <p style="margin: 4px 0 0; font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; color: #666;">Security Verification</p>
+  // Send high-priority email via SMTP with await so serverless/cloud environments do not abort the socket
+  let emailDelivered = false;
+  try {
+    const outcome = await sendEmail({
+      to: user.email,
+      subject: `Your WILDTANE verification code: ${otp}`,
+      priority: 'high',
+      text: `Hi ${user.name},\n\nYour 6-digit verification code to access your WILDTANE account is:\n\n${otp}\n\nThis code is valid for 10 minutes.\n\nIf you did not request this, you can safely ignore this email.\n\n— The WILDTANE Team`,
+      html: `
+        <div style="font-family: system-ui, -apple-system, sans-serif; max-width: 480px; margin: auto; padding: 28px; border: 1px solid #e5e5e5; border-radius: 16px; background: #fafafa;">
+          <div style="text-align: center; margin-bottom: 20px;">
+            <h2 style="margin: 0; color: #111; font-size: 24px; letter-spacing: 2px;">WILDTANE</h2>
+            <p style="margin: 4px 0 0; font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; color: #666;">Security Verification</p>
+          </div>
+          <p style="font-size: 15px; color: #333; margin-bottom: 8px;">Hi <b>${user.name}</b>,</p>
+          <p style="font-size: 14px; color: #555; line-height: 1.5;">Use the one-time verification code below to verify your identity and access your account:</p>
+          <div style="text-align: center; margin: 24px 0;">
+            <div style="font-size: 34px; font-weight: 800; letter-spacing: 8px; padding: 14px 28px; background: #111; color: #fff; border-radius: 12px; display: inline-block; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">${otp}</div>
+          </div>
+          <p style="font-size: 13px; color: #2e7d32; font-weight: 600; text-align: center; margin: 0 0 16px;">⏱️ Code is valid for 10 minutes. Delivered fast to your inbox.</p>
+          <p style="font-size: 12px; color: #777; text-align: center;">Never share this code with anyone. WILDTANE staff will never ask for your code.</p>
+          <hr style="border: none; border-top: 1px solid #e5e5e5; margin: 20px 0;" />
+          <p style="font-size: 11px; color: #999; text-align: center; margin: 0;">If you did not request this code, you can safely ignore this email.</p>
         </div>
-        <p style="font-size: 15px; color: #333; margin-bottom: 8px;">Hi <b>${user.name}</b>,</p>
-        <p style="font-size: 14px; color: #555; line-height: 1.5;">Use the one-time verification code below to verify your identity and access your account:</p>
-        <div style="text-align: center; margin: 24px 0;">
-          <div style="font-size: 34px; font-weight: 800; letter-spacing: 8px; padding: 14px 28px; background: #111; color: #fff; border-radius: 12px; display: inline-block; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">${otp}</div>
-        </div>
-        <p style="font-size: 13px; color: #2e7d32; font-weight: 600; text-align: center; margin: 0 0 16px;">⏱️ Code is valid for 10 minutes. Delivered fast to your inbox.</p>
-        <p style="font-size: 12px; color: #777; text-align: center;">Never share this code with anyone. WILDTANE staff will never ask for your code.</p>
-        <hr style="border: none; border-top: 1px solid #e5e5e5; margin: 20px 0;" />
-        <p style="font-size: 11px; color: #999; text-align: center; margin: 0;">If you did not request this code, you can safely ignore this email.</p>
-      </div>
-    `,
-  }).catch((err) => console.error(`[email] OTP send to ${user.email} failed: ${err.message}`));
+      `,
+    });
+    emailDelivered = outcome?.delivered || outcome?.logged;
+  } catch (err) {
+    console.error(`[email] OTP send to ${user.email} failed: ${err.message}`);
+  }
 
   res.json({
     success: true,
+    emailSent: emailDelivered,
     message: `A 6-digit verification code has been sent to ${user.email}. Please check your inbox or spam folder.`,
     devOtp: !env.isProd ? otp : undefined,
     expiresInSeconds: 600,
