@@ -7,12 +7,16 @@ import Review from '../models/Review.js';
 import Setting from '../models/Setting.js';
 import Notification from '../models/Notification.js';
 import { nextSequence } from '../models/Counter.js';
-import GiftCard from '../models/GiftCard.js';
 import ApiError from '../utils/ApiError.js';
 import { resolveLines, computeTotals } from './cart.service.js';
 import { redeemCoupon, releaseCoupon } from './coupon.service.js';
 import { moveCoins, reverseOrderCoins } from './coin.service.js';
-import { getProvider, verifyRazorpaySignature, createRazorpayOrder } from './payment.service.js';
+import { getProvider, verifyRazorpaySignature, createRazorpayOrder, confirmRazorpayPayment, refundUnusedPayment } from './payment.service.js';
+import { findUsableCard, redeemGiftCard } from './giftcard.service.js';
+import { moveWallet, walletApplicable } from './wallet.service.js';
+import { refundCancelledOrder, refundLines, applyRefundWebhook, refundOwed } from './refund.service.js';
+import { createForwardShipment, shippingConfigured } from './shipping.service.js';
+import { qualifyReferralOnDelivery } from './referral.service.js';
 import { notifyAdminOfOrder, notifyCustomerOfOrderApprovalWhatsApp, buildInvoiceCaption, buildWhatsAppChatLink } from './whatsapp.service.js';
 import { sendEmail } from './email.service.js';
 import { buildInvoiceCoverEmail } from './invoice-email.template.js';
@@ -37,16 +41,34 @@ async function resolveAddress(user, { addressId, address, saveAddress }) {
   return address;
 }
 
+const round2 = (n) => Math.round(Number(n) * 100) / 100;
+
 /**
- * Initiates Razorpay checkout order without creating a database order.
- * Validates stock and computes final totals before generating the Razorpay order.
+ * Stored value applied before the payment method: gift card first, then the WILDTANE Wallet.
+ * Everything is recomputed on the server from the card and the customer's real balance;
+ * amounts sent by the browser are ignored.
  */
-export async function initiateOnlinePayment(userId, payload = {}) {
-  const [user, cart, settings] = await Promise.all([
-    User.findById(userId),
-    Cart.findOne({ user: userId }),
-    Setting.get(),
-  ]);
+async function applyStoredValue(user, orderTotal, payload, settings) {
+  let payable = round2(orderTotal);
+  let giftCard = null;
+  const gcCode = payload.giftCardCode || payload.giftCard?.code;
+  if (gcCode) {
+    if (settings.giftCardsEnabled === false) throw ApiError.badRequest('Gift cards are currently unavailable.');
+    const card = await findUsableCard(gcCode, payload.giftCardPin || payload.giftCard?.pin);
+    const amount = round2(Math.min(card.currentBalance, payable));
+    giftCard = { card, amount };
+    payable = round2(payable - amount);
+  }
+  let walletAmount = 0;
+  if (payload.useWallet && payable > 0) {
+    walletAmount = walletApplicable(user?.wallet || 0, payable, settings);
+    payable = round2(payable - walletAmount);
+  }
+  return { giftCard, walletAmount, payable };
+}
+
+async function loadCheckout(userId, shippingCode) {
+  const [user, cart, settings] = await Promise.all([User.findById(userId), Cart.findOne({ user: userId }), Setting.get()]);
   if (!cart || !cart.items.length) throw ApiError.badRequest('Your bag is empty');
 
   const lines = await resolveLines(cart.items);
@@ -57,58 +79,48 @@ export async function initiateOnlinePayment(userId, payload = {}) {
       problems.map((p) => ({ field: p.variantId, message: `${p.name || 'Item'}: ${p.issue}` }))
     );
   }
-
   const totals = await computeTotals(lines, {
     userId,
     couponCode: cart.couponCode,
-    shippingCode: payload.shippingMethod || cart.shippingMethod || 'standard',
+    shippingCode: shippingCode || cart.shippingMethod || 'standard',
     settings,
     strictCoupon: true,
     coinBalance: user?.coins || 0,
     useCoins: cart.useCoins,
   });
+  return { user, cart, settings, lines, totals };
+}
+
+/**
+ * Initiates Razorpay checkout order without creating a database order.
+ * Validates stock and computes final totals (after gift card and wallet) before creating the gateway order.
+ */
+export async function initiateOnlinePayment(userId, payload = {}) {
+  const { user, settings, totals } = await loadCheckout(userId, payload.shippingMethod);
+  const { giftCard, walletAmount, payable } = await applyStoredValue(user, totals.grandTotal, payload, settings);
 
   const provider = getProvider('razorpay');
-  const availability = provider?.isAvailable({ settings, total: totals.grandTotal });
+  const availability = provider?.isAvailable({ settings, total: payable });
   if (!provider || !availability.available) {
     throw ApiError.badRequest(availability?.reason || 'Online payment is currently unavailable');
   }
+  if (payable <= 0) throw ApiError.badRequest('Nothing is left to pay online. Place the order with your gift card or wallet.');
 
-  let netGrandTotal = totals.grandTotal;
-  let giftCardDiscount = 0;
-  const gcCodeOnline = payload.giftCardCode || payload.giftCard?.code;
-  const gcPinOnline = payload.giftCardPin || payload.giftCard?.pin;
-  if (gcCodeOnline) {
-    const card = await GiftCard.findOne({ code: gcCodeOnline.trim().toUpperCase(), isActive: true });
-    if (card && card.currentBalance > 0 && (!card.expiryDate || new Date(card.expiryDate) > new Date())) {
-      if (card.pin && card.pin !== (gcPinOnline || '').trim()) {
-        throw ApiError.badRequest('Incorrect gift card PIN.');
-      }
-      giftCardDiscount = Math.min(card.currentBalance, totals.grandTotal);
-      netGrandTotal = Math.max(0, totals.grandTotal - giftCardDiscount);
-    }
-  }
-
-  const gatewayOrder = netGrandTotal > 0
-    ? await createRazorpayOrder({
-        amount: netGrandTotal,
-        currency: totals.currency || 'INR',
-        receipt: `chk_${Date.now().toString(36)}`,
-        notes: {
-          userId: String(userId),
-          customerName: user?.name || '',
-          email: user?.email || '',
-        },
-      })
-    : { id: `free_${Date.now()}`, amount: 0, currency: 'INR' };
+  const gatewayOrder = await createRazorpayOrder({
+    amount: payable,
+    currency: totals.currency || 'INR',
+    receipt: `chk_${Date.now().toString(36)}`,
+    notes: { userId: String(userId) },
+  });
 
   return {
     gatewayOrder,
     keyId: env.razorpay.keyId,
     amount: gatewayOrder.amount,
     currency: gatewayOrder.currency,
-    grandTotal: netGrandTotal,
-    giftCardDiscount,
+    grandTotal: payable,
+    giftCardDiscount: giftCard?.amount || 0,
+    walletAmount,
   };
 }
 
@@ -153,88 +165,57 @@ async function checkAndNotifyLowStock(order) {
  * The WhatsApp admin alert is sent only after the transaction commits.
  */
 export async function placeOrder(userId, payload) {
-  const [user, cart, settings] = await Promise.all([
-    User.findById(userId),
-    Cart.findOne({ user: userId }),
-    Setting.get(),
-  ]);
-  if (!cart || !cart.items.length) throw ApiError.badRequest('Your bag is empty');
+  const { user, settings, lines, totals } = await loadCheckout(userId, payload.shippingMethod);
+  const orderTotal = totals.grandTotal; // before gift card / wallet
+  const { giftCard: giftCardApplied, walletAmount, payable } = await applyStoredValue(user, orderTotal, payload, settings);
+  totals.grandTotal = payable; // what is left for the payment method
 
-  const lines = await resolveLines(cart.items);
-  const problems = lines.filter((l) => !l.available || l.issue);
-  if (problems.length) {
-    throw ApiError.conflict(
-      'Some items in your bag changed. Please review your bag before placing the order.',
-      problems.map((p) => ({ field: p.variantId, message: `${p.name || 'Item'}: ${p.issue}` }))
-    );
+  // Gift card / wallet covering everything: no gateway, no cash. Otherwise the chosen method pays the rest.
+  const fullyCovered = payable <= 0 && (giftCardApplied || walletAmount > 0);
+  const methodCode = fullyCovered ? (giftCardApplied ? 'giftcard' : 'wtwallet') : payload.paymentMethod;
+  if (!fullyCovered && ['giftcard', 'wtwallet'].includes(methodCode)) {
+    throw ApiError.badRequest(`₹${payable.toLocaleString('en-IN')} is still due. Choose Pay Online or Cash on Delivery for the rest.`);
   }
 
-  const totals = await computeTotals(lines, {
-    userId,
-    couponCode: cart.couponCode,
-    shippingCode: payload.shippingMethod,
-    settings,
-    strictCoupon: true,
-    coinBalance: user?.coins || 0,
-    useCoins: cart.useCoins,
-  });
-
-  let giftCardApplied = null;
-  const gcCode = payload.giftCardCode || payload.giftCard?.code;
-  const gcPin = payload.giftCardPin || payload.giftCard?.pin;
-  if (gcCode) {
-    const card = await GiftCard.findOne({ code: gcCode.trim().toUpperCase(), isActive: true });
-    if (!card) {
-      throw ApiError.badRequest('Invalid gift card code.');
-    }
-    if (card.expiryDate && new Date(card.expiryDate) <= new Date()) {
-      throw ApiError.badRequest('Gift card has expired.');
-    }
-    if (card.currentBalance <= 0) {
-      throw ApiError.badRequest('Gift card balance is ₹0.');
-    }
-    if (card.pin && card.pin !== (gcPin || '').trim()) {
-      throw ApiError.badRequest('Incorrect gift card PIN.');
-    }
-    const discount = Math.min(card.currentBalance, totals.grandTotal);
-    giftCardApplied = { card, discount };
-    totals.grandTotal = Math.max(0, totals.grandTotal - discount);
-  }
-
-  if (payload.paymentMethod === 'giftcard') {
-    if (!giftCardApplied) {
-      throw ApiError.badRequest('A valid gift card code is required to pay with gift card.');
-    }
-    if (totals.grandTotal > 0) {
-      throw ApiError.badRequest(`Gift card covers ₹${giftCardApplied.discount}, but ₹${totals.grandTotal} is still due. Please select Online Payment or Cash on Delivery.`);
-    }
-  }
-
-  const provider = getProvider(payload.paymentMethod);
-  const availability = provider?.isAvailable({ settings, total: totals.grandTotal });
+  const provider = getProvider(methodCode);
+  const availability = fullyCovered ? { available: true } : provider?.isAvailable({ settings, total: payable });
   if (!provider || !availability.available) {
     throw ApiError.badRequest(availability?.reason || 'Choose a valid payment method', [{ field: 'paymentMethod', message: 'Unavailable' }]);
   }
 
   let verifiedPayment = null;
-  if (totals.grandTotal === 0 && giftCardApplied) {
-    verifiedPayment = {
-      paidAt: new Date(),
-      method: 'gift_card',
-    };
-  } else if (payload.paymentMethod === 'razorpay') {
+  let capturedPayment = null; // the Razorpay payment, kept so it can be refunded if the order can't be created
+  if (fullyCovered) {
+    verifiedPayment = { paidAt: new Date(), method: methodCode };
+  } else if (methodCode === 'razorpay') {
     const { razorpayOrderId, razorpayPaymentId, razorpaySignature } = payload.paymentDetails || {};
     if (!razorpayOrderId || !razorpayPaymentId || !razorpaySignature) {
       throw ApiError.badRequest('Payment details are required. Complete online payment before placing your order.');
     }
-    const valid = verifyRazorpaySignature({ razorpayOrderId, razorpayPaymentId, razorpaySignature });
-    if (!valid) {
+    if (!verifyRazorpaySignature({ razorpayOrderId, razorpayPaymentId, razorpaySignature })) {
       throw ApiError.badRequest('Payment signature verification failed. Order was not placed.');
     }
+    if (await Order.exists({ 'paymentDetails.razorpayPaymentId': razorpayPaymentId })) {
+      throw ApiError.conflict('This payment has already been used for an order.');
+    }
+    // The amount actually paid must equal what is due now (the bag may have changed after paying).
+    const check = await confirmRazorpayPayment({ razorpayOrderId, razorpayPaymentId }, payable);
+    if (!check.ok) {
+      // A captured payment for the wrong amount (e.g. the bag changed after paying) goes straight back.
+      const refund = await refundUnusedPayment(check.payment, check.reason);
+      throw ApiError.badRequest(
+        refund
+          ? `${check.reason} Your order was not placed and the payment has been refunded (refund ${refund.id}).`
+          : `${check.reason} Your order was not placed. If money was taken, contact support with payment ID ${razorpayPaymentId}.`
+      );
+    }
+    capturedPayment = check.payment;
     verifiedPayment = {
       razorpayOrderId,
       razorpayPaymentId,
       razorpaySignature,
+      capturedAmountPaise: Number(check.payment.amount),
+      gatewayStatus: check.payment.status,
       paidAt: new Date(),
     };
   }
@@ -314,14 +295,17 @@ export async function placeOrder(userId, payload) {
             shippingMethod: { code: totals.shippingMethod.code, label: totals.shippingMethod.label, eta: totals.shippingMethod.eta },
             paymentMethod: provider.code,
             paymentStatus: verifiedPayment ? 'Paid' : 'Pending',
-            paymentReference: verifiedPayment ? (verifiedPayment.razorpayPaymentId || 'GIFT_CARD') : '',
+            paymentReference: verifiedPayment ? (verifiedPayment.razorpayPaymentId || methodCode.toUpperCase()) : '',
             paymentDetails: verifiedPayment ? { ...verifiedPayment } : undefined,
             orderStatus: verifiedPayment ? 'Confirmed' : 'Pending',
-            giftCard: giftCardApplied ? { code: giftCardApplied.card.code, amount: giftCardApplied.discount } : undefined,
+            giftCard: giftCardApplied ? { code: giftCardApplied.card.code, amount: giftCardApplied.amount } : undefined,
+            walletAmount,
             statusHistory: [
               {
                 status: verifiedPayment ? 'Confirmed' : 'Pending',
-                note: verifiedPayment ? 'Order placed and payment received online' : 'Order placed (Cash on Delivery)',
+                note: verifiedPayment
+                  ? fullyCovered ? `Order placed and paid with ${giftCardApplied ? 'gift card' : ''}${giftCardApplied && walletAmount ? ' and ' : ''}${walletAmount ? 'wallet' : ''}` : 'Order placed and payment received online'
+                  : 'Order placed (Cash on Delivery)',
                 at: new Date(),
               },
             ],
@@ -331,16 +315,11 @@ export async function placeOrder(userId, payload) {
         { session }
       );
 
-      // Decrement gift card balance and record redemption
-      if (giftCardApplied) {
-        giftCardApplied.card.currentBalance -= giftCardApplied.discount;
-        giftCardApplied.card.redeemedBy.push({
-          user: userId,
-          order: orderObjectId,
-          amount: giftCardApplied.discount,
-          redeemedAt: new Date(),
-        });
-        await giftCardApplied.card.save({ session });
+      // Gift card and wallet are spent with conditional updates inside the transaction:
+      // if either balance changed since checkout, the whole order rolls back.
+      if (giftCardApplied) await redeemGiftCard(giftCardApplied.card, giftCardApplied.amount, { order, userId, session });
+      if (walletAmount > 0) {
+        await moveWallet(userId, -walletAmount, { type: 'order_debit', key: `order_debit:${order.orderId}`, order, description: `Paid towards order ${order.orderId}`, session });
       }
 
       // Loyalty coins: spend first (fails if the balance no longer covers it).
@@ -350,6 +329,20 @@ export async function placeOrder(userId, payload) {
 
       await Cart.updateOne({ user: userId }, { $set: { items: [], couponCode: null, useCoins: false } }, { session });
     });
+  } catch (err) {
+    // The customer has paid but the order could not be saved (e.g. the last unit sold a moment ago):
+    // return the money at once instead of leaving them charged without an order.
+    if (capturedPayment) {
+      const refund = await refundUnusedPayment(capturedPayment, `Order not created: ${err.message}`);
+      const base = err instanceof ApiError ? err.message : 'Your order could not be created.';
+      throw new ApiError(
+        err.statusCode || 409,
+        refund
+          ? `${base} Your payment of ₹${(Number(capturedPayment.amount) / 100).toLocaleString('en-IN')} has been refunded (refund ${refund.id}); it reaches your account as per your bank's timelines.`
+          : `${base} We could not refund the payment automatically — please contact support with payment ID ${capturedPayment.id}.`
+      );
+    }
+    throw err;
   } finally {
     await session.endSession();
   }
@@ -417,7 +410,33 @@ export async function changeOrderStatus(order, { status, note, trackingNumber, c
       order.paymentStatus = 'Paid';
     }
   }
+  if (statusChanged && status === 'Cancelled') {
+    const c = order.cancellation || {};
+    order.set('cancellation.status', 'Confirmed');
+    order.set('cancellation.confirmedAt', new Date());
+    if (!c.requestedAt) order.set('cancellation.requestedAt', new Date());
+    if (!c.reason) order.set('cancellation.reason', note || '');
+    if (!c.by) order.set('cancellation.by', changedBy && String(changedBy) !== String(order.user) ? 'admin' : 'customer');
+  }
   await order.save();
+
+  if (statusChanged && status === 'Cancelled') {
+    const owed = refundOwed(order);
+    const automatic = (await Setting.get()).cancellationRefunds?.automatic !== false;
+    if (!automatic && owed > 0 && !(order.refundDetails?.parts || []).length) {
+      // Settings → "Approve refunds first": hold the refund until the team presses Refund now.
+      await Order.updateOne({ _id: order._id }, { $set: { 'refundDetails.status': 'Awaiting approval', 'refundDetails.amount': owed } });
+      order.set('refundDetails.status', 'Awaiting approval');
+      order.set('refundDetails.amount', owed);
+    } else {
+      // Refund whatever was paid (gateway, gift card, wallet). Awaited so the response shows the real refund state.
+      const refunded = await refundCancelledOrder(order._id);
+      if (refunded) order.set({ refundDetails: refunded.refundDetails, paymentStatus: refunded.paymentStatus });
+    }
+  }
+  if (statusChanged && status === 'Delivered') qualifyReferralOnDelivery(order);
+  if (statusChanged && status === 'Confirmed') autoCreateShipment(order);
+
   // Fire-and-forget: customer gets Tax Invoice on Confirmation, or status tracking alert
   if (statusChanged && notifyCustomer) {
     if (status === 'Confirmed') {
@@ -428,6 +447,39 @@ export async function changeOrderStatus(order, { status, note, trackingNumber, c
       notifyCustomerOfStatus(order, when, note).catch((e) => console.error('[email] status update failed:', e.message));
     }
   }
+  return order;
+}
+
+/** Books the shipment with the provider when one is configured. Never blocks or fails the status change. */
+export async function autoCreateShipment(order) {
+  try {
+    if (!shippingConfigured() || order.shipment?.shipmentId) return;
+    const settings = await Setting.get();
+    if (settings.shippingPackage?.autoCreateOnConfirm === false) return;
+    await createShipmentForOrder(order);
+  } catch (err) {
+    console.error(`[shipping] auto shipment for ${order.orderId} failed: ${err.message}`);
+  }
+}
+
+/** Creates the provider shipment and stores exactly what the provider returned. */
+export async function createShipmentForOrder(order) {
+  if (['Cancelled', 'Returned', 'Delivered'].includes(order.orderStatus)) throw ApiError.badRequest(`This order is ${order.orderStatus.toLowerCase()}`);
+  if (order.shipment?.shipmentId && order.shipment?.awb) throw ApiError.badRequest('A shipment already exists for this order');
+  try {
+    const shipment = await createForwardShipment(order);
+    order.shipment = shipment;
+    if (shipment.awb) {
+      order.trackingNumber = shipment.awb;
+      order.courier = shipment.courier || order.courier;
+    }
+    order.statusHistory.push({ status: order.orderStatus, note: `Shipment booked with Shiprocket${shipment.awb ? ` (AWB ${shipment.awb})` : ''}`, at: new Date() });
+  } catch (err) {
+    order.shipment = { ...(order.shipment?.toObject?.() || {}), provider: 'shiprocket', error: err.message, lastSyncedAt: new Date() };
+    await order.save();
+    throw ApiError.badRequest(`Shipment could not be created: ${err.message}`);
+  }
+  await order.save();
   return order;
 }
 
@@ -550,8 +602,8 @@ const STATUS_MESSAGES = {
   Shipped: 'Your order is on its way.',
   'Out for Delivery': 'Your order is out for delivery today. Please keep your phone handy.',
   Delivered: 'Your order has been delivered. We hope you love it!',
-  Cancelled: 'Your order has been cancelled. Confirmation: Refund will be issued within 5–7 working days to your original payment method.',
-  Returned: 'Your return has been received. Your refund is being processed within 5–7 working days.',
+  Cancelled: 'Your order has been cancelled.',
+  Returned: 'Your return has been received and checked.',
 };
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
@@ -562,10 +614,13 @@ async function notifyCustomerOfStatus(order, when, note) {
   const time = when.toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Kolkata' });
   const link = `${env.siteUrl}/account/orders/${order.orderId}`;
   const tracking = order.trackingNumber ? `${order.courier ? `${order.courier} · ` : ''}${order.trackingNumber}` : '';
+  // Cancellation emails state the refund exactly as it stands (initiated, processed, failed or not needed).
+  const refund = status === 'Cancelled' ? refundLines(order) : [];
   const lines = [
     `Hi ${order.customerName},`,
     '',
     `${STATUS_MESSAGES[status] || `Your order status is now ${status}.`}`,
+    ...(refund.length ? ['', 'Refund:', ...refund.map((l) => `• ${l}`)] : []),
     '',
     `Order: ${order.orderId}`,
     `Status: ${status}`,
@@ -580,6 +635,7 @@ async function notifyCustomerOfStatus(order, when, note) {
     subject: `Order ${order.orderId}: ${status}`,
     text: lines.join('\n'),
     html: `<p>Hi ${esc(order.customerName)},</p><p>${esc(STATUS_MESSAGES[status] || `Your order status is now ${status}.`)}</p>
+${refund.length ? `<p><b>Refund</b></p><ul>${refund.map((l) => `<li>${esc(l)}</li>`).join('')}</ul>` : ''}
 <table style="border-collapse:collapse;font-size:14px">
 <tr><td style="padding:4px 12px 4px 0;color:#666">Order</td><td><b>${esc(order.orderId)}</b></td></tr>
 <tr><td style="padding:4px 12px 4px 0;color:#666">Status</td><td><b>${esc(status)}</b></td></tr>
@@ -594,41 +650,53 @@ ${note ? `<tr><td style="padding:4px 12px 4px 0;color:#666">Note</td><td>${esc(n
 // Cancellation policy: within 24 hours of placing the order, and never once it has shipped.
 export const CANCEL_WINDOW_MS = 24 * 60 * 60 * 1000;
 
+/**
+ * Customer cancellation. The request is recorded first with a conditional update, so a double
+ * click or two tabs can't both cancel (or refund) the same order. The server re-checks the rules:
+ * within 24 hours of ordering and before the order is processed/shipped.
+ */
 export async function cancelByCustomer(order, userId, reason) {
-  if (Date.now() - new Date(order.createdAt).getTime() > CANCEL_WINDOW_MS) {
-    throw ApiError.badRequest('Orders can only be cancelled within 24 hours of being placed. Please contact info@wildtane.com for help.');
-  }
+  if (order.orderStatus === 'Cancelled') throw ApiError.conflict('This order is already cancelled.');
   if (!CUSTOMER_CANCELLABLE.includes(order.orderStatus)) {
     throw ApiError.badRequest('This order is already being prepared and can no longer be cancelled online. Please contact support.');
   }
-  const cancelNote = reason
-    ? `${reason} (Cancellation confirmed. Refund will be issued within 5–7 working days)`
-    : 'Cancelled by customer (Cancellation confirmed. Refund will be issued within 5–7 working days)';
-
-  const updated = await changeOrderStatus(order, { status: 'Cancelled', note: cancelNote, notifyCustomer: true }, userId);
-
-  // Set refund details and update payment status to Refunded if already paid
-  if (order.paymentStatus === 'Paid') {
-    updated.paymentStatus = 'Refunded';
-    updated.refundDetails = {
-      status: 'Initiated',
-      amount: order.grandTotal,
-      eta: '5–7 working days',
-      initiatedAt: new Date(),
-    };
-    await updated.save();
-  } else {
-    updated.refundDetails = {
-      status: 'None (COD/Pending)',
-      amount: 0,
-      eta: 'No payment made',
-      initiatedAt: new Date(),
-    };
-    await updated.save();
+  if (Date.now() - new Date(order.createdAt).getTime() > CANCEL_WINDOW_MS) {
+    throw ApiError.badRequest('Orders can only be cancelled within 24 hours of being placed. Please contact support for help.');
   }
 
-  return updated;
+  const claimed = await Order.findOneAndUpdate(
+    {
+      _id: order._id,
+      user: userId,
+      orderStatus: { $in: CUSTOMER_CANCELLABLE },
+      'cancellation.status': { $nin: ['Requested', 'Confirmed'] },
+    },
+    { $set: { cancellation: { status: 'Requested', reason, requestedAt: new Date(), by: 'customer' } } },
+    { returnDocument: 'after' }
+  );
+  if (!claimed) throw ApiError.conflict('A cancellation for this order is already in progress or the order has changed. Please refresh.');
+
+  try {
+    const note = reason ? `Cancelled by customer: ${reason}` : 'Cancelled by customer';
+    return await changeOrderStatus(claimed, { status: 'Cancelled', note, notifyCustomer: true }, userId);
+  } catch (err) {
+    // Rules changed between the check and the update: release the request so the page shows the truth.
+    await Order.updateOne({ _id: order._id, 'cancellation.status': 'Requested' }, { $set: { 'cancellation.status': 'Rejected' } });
+    throw err;
+  }
 }
+
+/**
+ * Admin: send a refund that is awaiting approval, or retry a failed one
+ * (checks Razorpay first so nothing is ever refunded twice).
+ */
+export async function retryOrderRefund(order) {
+  if (order.orderStatus !== 'Cancelled') throw ApiError.badRequest('Only cancelled orders can be refunded from here.');
+  if (!['Failed', 'Awaiting approval'].includes(order.refundDetails?.status)) throw ApiError.badRequest('There is no refund waiting to be sent on this order.');
+  return refundCancelledOrder(order._id, { retryFailed: true, notify: true });
+}
+
+export { applyRefundWebhook };
 
 /** True when the user has a delivered order containing this product (for verified reviews). */
 export async function findVerifiedPurchase(userId, productId) {
@@ -667,6 +735,23 @@ export async function verifyOrderPayment(idOrOrderId, { razorpayOrderId, razorpa
   if (!valid) {
     throw ApiError.badRequest('Payment verification failed: invalid signature');
   }
+  // The payment must be for the gateway order created for THIS order ("Pay now"), for its full amount.
+  const expectedGatewayOrder = order.paymentDetails?.gatewayOrder?.id || order.paymentReference;
+  if (expectedGatewayOrder && expectedGatewayOrder !== razorpayOrderId) {
+    throw ApiError.badRequest('This payment does not belong to this order.');
+  }
+  if (await Order.exists({ _id: { $ne: order._id }, 'paymentDetails.razorpayPaymentId': razorpayPaymentId })) {
+    throw ApiError.conflict('This payment has already been used for another order.');
+  }
+  const check = await confirmRazorpayPayment({ razorpayOrderId, razorpayPaymentId }, order.grandTotal);
+  if (!check.ok) {
+    const refund = ['Cancelled', 'Returned'].includes(order.orderStatus) || !check.gatewayError ? await refundUnusedPayment(check.payment, check.reason) : null;
+    throw ApiError.badRequest(refund ? `${check.reason} The payment has been refunded (refund ${refund.id}).` : `${check.reason} If money was taken, contact support with payment ID ${razorpayPaymentId}.`);
+  }
+  if (['Cancelled', 'Returned'].includes(order.orderStatus)) {
+    const refund = await refundUnusedPayment(check.payment, 'Order was cancelled before payment completed');
+    throw ApiError.badRequest(`This order was cancelled, so the payment ${refund ? `has been refunded (refund ${refund.id})` : 'will be refunded by our team'}.`);
+  }
 
   order.paymentStatus = 'Paid';
   order.paymentReference = razorpayPaymentId;
@@ -675,6 +760,8 @@ export async function verifyOrderPayment(idOrOrderId, { razorpayOrderId, razorpa
     razorpayOrderId,
     razorpayPaymentId,
     razorpaySignature,
+    capturedAmountPaise: Number(check.payment.amount),
+    gatewayStatus: check.payment.status,
     verifiedAt: new Date(),
   };
 
@@ -713,6 +800,7 @@ export async function retryOrderPayment(idOrOrderId, userId) {
 
 export async function handleRazorpayWebhook(event) {
   const eventName = event?.event;
+  if (String(eventName).startsWith('refund.')) return applyRefundWebhook(eventName, event?.payload?.refund?.entity);
   const paymentEntity = event?.payload?.payment?.entity;
   const orderEntity = event?.payload?.order?.entity;
 
@@ -736,6 +824,8 @@ export async function handleRazorpayWebhook(event) {
       if (rzpPaymentId) order.paymentReference = rzpPaymentId;
       order.paymentDetails = {
         ...(order.paymentDetails || {}),
+        ...(rzpPaymentId ? { razorpayPaymentId: rzpPaymentId } : {}),
+        ...(paymentEntity?.amount ? { capturedAmountPaise: Number(paymentEntity.amount) } : {}),
         webhookEvent: eventName,
         paymentEntity,
         verifiedAt: new Date(),

@@ -26,6 +26,27 @@ export const coinAdjustSchema = z.object({
   note: z.string().trim().min(3, 'Add a short reason').max(200),
 });
 
+// Admin wallet adjustment: ₹ amount (+ credit / − debit) with a reason for the audit log.
+export const walletAdjustSchema = z.object({
+  amount: z.coerce.number().refine((n) => n !== 0, 'Enter an amount').refine((n) => Math.abs(n) <= 100000, 'Amount is too large'),
+  type: z.enum(['admin_credit', 'promo']).optional().default('admin_credit'),
+  note: z.string().trim().min(3, 'Add a short reason').max(200),
+  expiresAt: z.preprocess((v) => (v === '' || v == null ? null : v), z.coerce.date().nullable().optional()),
+});
+
+export const giftCardIssueSchema = z.object({
+  amount: z.coerce.number().positive('Enter an amount above ₹0').max(100000),
+  expiryDate: z.preprocess((v) => (v === '' || v == null ? undefined : v), z.coerce.date().optional()),
+  withPin: z.boolean().optional().default(false),
+  note: z.string().trim().max(200).optional().default(''),
+});
+
+export const giftCardAdjustSchema = z.object({
+  amount: z.coerce.number().optional().default(0),
+  isActive: z.boolean().optional(),
+  note: z.string().trim().min(3, 'Add a short reason').max(200),
+});
+
 export const checkoutSchema = z
   .object({
     customer: z.object({
@@ -42,6 +63,10 @@ export const checkoutSchema = z
     shippingMethod: z.string().trim().min(2).max(30).default('standard'),
     paymentMethod: z.string().trim().min(2).max(30),
     customerNote: z.string().trim().max(500).optional().default(''),
+    // Stored value applied before the payment method. Amounts are always worked out on the server.
+    giftCardCode: z.string().trim().max(40).optional(),
+    giftCardPin: z.string().trim().max(10).optional(),
+    useWallet: z.boolean().optional().default(false),
     paymentDetails: z
       .object({
         razorpayOrderId: z.string().trim().optional(),

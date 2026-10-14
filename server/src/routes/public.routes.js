@@ -20,6 +20,7 @@ import * as enquiries from '../controllers/enquiry.controller.js';
 import * as comments from '../controllers/comment.controller.js';
 import * as returns from '../controllers/return.controller.js';
 import * as giftcards from '../controllers/giftcard.controller.js';
+import * as growth from '../controllers/growth.controller.js';
 
 import * as av from '../validators/auth.validators.js';
 import * as cv from '../validators/commerce.validators.js';
@@ -53,6 +54,8 @@ export const userRoutes = Router()
   .patch('/me/addresses/:id/default', users.setDefaultAddress)
   .get('/me/overview', users.overview)
   .get('/me/coins', users.myCoins)
+  .get('/me/wallet', users.myWallet)
+  .get('/me/referrals', users.myReferrals)
   .get('/me/recently-viewed', users.getRecentlyViewed)
   .post('/me/recently-viewed/:productId', users.trackRecentlyViewed)
   .get('/me/reviews', reviews.myReviews);
@@ -63,12 +66,15 @@ export const productRoutes = Router()
   .get('/facets', products.productFacets)
   .get('/suggest', products.suggest)
   .get('/collections', products.getCollections)
+  .get('/collection-counts', products.collectionCounts)
   .get('/by-ids', products.getProductsByIds)
+  .post('/:productId/back-in-stock', formLimiter, growth.registerBackInStock)
   .get('/:slug', products.getProduct);
 
 // ── /api/categories ──────────────────────────────────────────
 export const categoryRoutes = Router()
   .get('/', optionalAuth, categories.getCategoryTree)
+  .get('/set-counts', categories.setCounts)
   .get('/:slug', categories.getCategory);
 
 // ── /api/cart ────────────────────────────────────────────────
@@ -99,6 +105,7 @@ export const wishlistRoutes = Router()
 // ── /api/orders ──────────────────────────────────────────────
 export const orderRoutes = Router()
   .get('/:id/invoice.pdf', optionalAuth, orders.downloadInvoicePdf)
+  .post('/track', formLimiter, optionalAuth, growth.trackOrderPublic)
   .post('/razorpay/webhook', orders.razorpayWebhook)
   .use(protect)
   .post('/initiate-payment', orders.initiatePayment)
@@ -120,7 +127,7 @@ export const reviewRoutes = Router()
   .post('/:id/helpful', formLimiter, reviews.markHelpful);
 
 // ── /api/coupons ─────────────────────────────────────────────
-export const couponRoutes = Router().get('/', coupons.publicCoupons);
+export const couponRoutes = Router().get('/', coupons.publicCoupons).get('/mine', protect, coupons.myCoupons);
 
 // ── /api/blogs ───────────────────────────────────────────────
 export const blogRoutes = Router().get('/', content.listPosts).get('/:slug', content.getPost);
@@ -157,6 +164,10 @@ export const bannerRoutes = Router().get('/', content.activeBanners);
 export const returnRoutes = Router()
   .get('/policy', returns.getPolicyInfo)
   .get('/orders', protect, returns.getMyReturnOrders)
+  .get('/requests', protect, returns.getMyRequests)
+  .get('/requests/:requestId', protect, returns.getMyRequest)
+  .post('/requests/:requestId/cancel', protect, formLimiter, returns.cancelMyRequest)
+  .put('/requests/:requestId/refund', protect, formLimiter, returns.setMyRefundDestination)
   .get('/order/:id', formLimiter, optionalAuth, returns.getOrderEligibility)
   .post('/request', protect, formLimiter, returns.submitRequest);
 
@@ -164,4 +175,15 @@ export const returnRoutes = Router()
 export const giftcardRoutes = Router()
   .post('/verify', formLimiter, giftcards.verifyGiftCard)
   .get('/balance', formLimiter, giftcards.verifyGiftCard);
+
+// ── /api/spin (Spin-to-Win Wheel) ────────────────────────────
+export const spinRoutes = Router()
+  .get('/status', optionalAuth, growth.getSpinStatus)
+  .post('/play', formLimiter, optionalAuth, growth.spinWheel);
+
+// ── /api/shipping (PIN code delivery estimate) ───────────────
+export const shippingRoutes = Router()
+  .get('/estimate-pincode', formLimiter, growth.estimatePincode)
+  .post('/webhook/shiprocket', orders.shiprocketWebhook);
+
 

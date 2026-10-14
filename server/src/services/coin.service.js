@@ -14,6 +14,9 @@ export function loyaltyRules(settings) {
     coinsPer100: l.coinsPer100 ?? 5,
     rupeesPerCoin: l.rupeesPerCoin ?? 1,
     maxRedeemPercent: l.maxRedeemPercent ?? 50,
+    signupBonus: l.signupBonus ?? 50,
+    referralBonus: l.referralBonus ?? 100,
+    referralQualifyOn: l.referralQualifyOn || 'first_delivery',
   };
 }
 
@@ -25,8 +28,13 @@ export const coinsFor = (amount, rules) => (rules.enabled ? Math.floor(Math.max(
  * balance covers it, so two checkouts can never spend the same coins. Pass `clamp` to take
  * back "up to" delta coins (used when reversing coins the shopper may already have spent).
  */
-export async function moveCoins(userId, delta, { type, order, note = '', by = null, session, clamp = false }) {
+export async function moveCoins(userId, delta, { type, order, note = '', by = null, session, clamp = false, key }) {
   if (!delta) return null;
+  // One-time rewards pass a key; a second attempt with the same key changes nothing.
+  if (key) {
+    const done = await CoinTransaction.findOne({ key }).session(session || null);
+    if (done) return null;
+  }
   let user;
   if (delta < 0 && clamp) {
     user = await User.findOneAndUpdate(
@@ -40,11 +48,31 @@ export async function moveCoins(userId, delta, { type, order, note = '', by = nu
     if (!user && delta < 0) throw ApiError.conflict('Your coin balance changed. Please review your order and try again.');
   }
   if (!user) return null;
-  const [tx] = await CoinTransaction.create(
-    [{ user: userId, type, coins: delta, balanceAfter: user.coins, order: order?._id || null, orderId: order?.orderId || '', note, by }],
-    { session }
-  );
-  return tx;
+  try {
+    const [tx] = await CoinTransaction.create(
+      [{ user: userId, type, coins: delta, balanceAfter: user.coins, order: order?._id || null, orderId: order?.orderId || '', note, by, key }],
+      { session }
+    );
+    return tx;
+  } catch (err) {
+    // Lost a race on the same one-time key: undo our change (a transaction abort does it for us).
+    if (err?.code === 11000 && key && !session) {
+      await User.updateOne({ _id: userId }, { $inc: { coins: -delta } });
+      return null;
+    }
+    throw err;
+  }
+}
+
+/** Store loyalty bonus amounts (configurable in Admin → Settings → Loyalty). */
+export function bonusRules(settings) {
+  const l = settings?.loyalty || {};
+  return {
+    signupBonus: l.signupBonus ?? 50,
+    referralBonus: l.referralBonus ?? 100,
+    referralQualifyOn: l.referralQualifyOn || 'first_delivery',
+    maxReferralsPerUser: l.maxReferralsPerUser ?? 50,
+  };
 }
 
 /**

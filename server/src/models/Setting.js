@@ -51,14 +51,121 @@ const settingSchema = new mongoose.Schema(
         },
       ],
     },
-    // Loyalty coins (like Flipkart SuperCoins): earned on every order, spent as a discount on the next one.
+    // Loyalty coins: earned on every order, spent as a discount on the next one.
     loyalty: {
       enabled: { type: Boolean, default: true },
       coinsPer100: { type: Number, default: 5, min: 0, max: 100 }, // coins earned per full ₹100 paid for items
       rupeesPerCoin: { type: Number, default: 1, min: 0.01, max: 100 }, // value of one coin at checkout
+      minRedeemCoins: { type: Number, default: 100, min: 1 }, // min coins required to redeem
       maxRedeemPercent: { type: Number, default: 50, min: 1, max: 100 }, // max share of the item total payable with coins
+      signupBonus: { type: Number, default: 50, min: 0 }, // coins for a completed registration (once per account)
+      birthdayBonus: { type: Number, default: 100 },
+      reviewBonus: { type: Number, default: 20 },
+      referralBonus: { type: Number, default: 100, min: 0 }, // coins to the referrer when a referral qualifies
+      // 'signup': pays when the friend registers. 'first_delivery': pays when the friend's first order is delivered (harder to abuse).
+      referralQualifyOn: { type: String, enum: ['signup', 'first_delivery'], default: 'first_delivery' },
+      maxReferralsPerUser: { type: Number, default: 50, min: 0 },
+      referredFriendDiscount: { type: Number, default: 100 },
+      vipTiers: {
+        silver: { minSpend: { type: Number, default: 0 }, coinsPer100: { type: Number, default: 5 }, label: { type: String, default: 'Silver' } },
+        gold: { minSpend: { type: Number, default: 25000 }, coinsPer100: { type: Number, default: 7 }, label: { type: String, default: 'Gold' }, freeShipping: { type: Boolean, default: true } },
+        platinum: { minSpend: { type: Number, default: 60000 }, coinsPer100: { type: Number, default: 10 }, label: { type: String, default: 'Platinum' }, freeShipping: { type: Boolean, default: true } },
+      },
+    },
+    // Cancelled prepaid orders: refund at once (default), or wait for the team to press "Refund now".
+    cancellationRefunds: {
+      automatic: { type: Boolean, default: true },
+    },
+    spinToWin: {
+      enabled: { type: Boolean, default: true },
+      cooldownHours: { type: Number, default: 24 },
+      // Prizes on the wheel, clockwise from the top. Admin → Settings → Spin wheel.
+      slices: {
+        type: [
+          {
+            _id: false,
+            label: { type: String, trim: true, maxlength: 60 }, // shown on the prize card
+            short: { type: String, trim: true, maxlength: 12 }, // printed on the wheel
+            type: { type: String, enum: ['fixed', 'percentage', 'free_shipping'] },
+            value: { type: Number, min: 0, default: 0 },
+            minOrder: { type: Number, min: 0, default: 0 },
+            weight: { type: Number, min: 0, default: 10 }, // chance relative to the other prizes
+            color: { type: String, trim: true, default: '#0284c7' },
+            isActive: { type: Boolean, default: true },
+          },
+        ],
+        default: [
+          { label: '₹50 Off', short: '₹50 Off', type: 'fixed', value: 50, minOrder: 0, weight: 35, color: '#0284c7', isActive: true },
+          { label: '10% Extra Off', short: '10% Off', type: 'percentage', value: 10, minOrder: 0, weight: 30, color: '#7c3aed', isActive: true },
+          { label: '₹150 Off (orders over ₹1,499)', short: '₹150 Off', type: 'fixed', value: 150, minOrder: 1499, weight: 20, color: '#059669', isActive: true },
+          { label: 'Free Shipping', short: 'Free Ship', type: 'free_shipping', value: 0, minOrder: 0, weight: 15, color: '#e11d48', isActive: true },
+        ],
+      },
+    },
+    // Ways a customer may choose to get money back for an approved return (refund page).
+    returnRefundMethods: {
+      type: [String],
+      default: ['Original Payment Method', 'UPI', 'Bank Transfer', 'Store Coins Wallet'],
+    },
+    // Content of the full-screen "Shop" menu. Empty / not customised = the built-in content
+    // (client/src/components/layout/ShopMenuWidget.jsx). Admin → Settings → Shop menu.
+    shopShowcase: { type: mongoose.Schema.Types.Mixed, default: null },
+    // Homepage text, images, links and section order (desktop + phone) and footer link columns.
+    // null / missing keys = built-in content (client/src/content/homepage.js). Admin → Settings → Homepage / Footer.
+    homepage: { type: mongoose.Schema.Types.Mixed, default: null },
+    footer: { type: mongoose.Schema.Types.Mixed, default: null },
+    exitIntent: {
+      enabled: { type: Boolean, default: true },
+      couponCode: { type: String, default: 'WILD10' },
+      discountText: { type: String, default: 'Flat 10% Extra Off' },
+    },
+    // Offer links in the strip above the search bar. Only active entries inside their dates are shown.
+    promoRibbon: {
+      type: [
+        {
+          _id: false,
+          label: { type: String, trim: true, maxlength: 40 },
+          to: { type: String, trim: true, maxlength: 200 }, // storefront path, e.g. /offers
+          icon: { type: String, trim: true, default: '' },
+          isActive: { type: Boolean, default: true },
+          startsAt: { type: Date, default: null },
+          endsAt: { type: Date, default: null },
+        },
+      ],
+      default: [
+        { label: 'Sale', to: '/offers', icon: 'sell', isActive: true },
+        { label: 'New Arrivals', to: '/shop?newArrival=true&sort=newest', icon: 'new_releases', isActive: true },
+        { label: 'Best Sellers', to: '/shop?bestseller=true&sort=bestseller', icon: 'local_fire_department', isActive: true },
+      ],
+    },
+    // WILDTANE Wallet (₹ credit from refunds, promotions and admin adjustments).
+    wallet: {
+      enabled: { type: Boolean, default: true },
+      maxRedeemPercent: { type: Number, default: 100, min: 1, max: 100 }, // share of an order payable from the wallet
+    },
+    giftCardsEnabled: { type: Boolean, default: true },
+    // Refund timeframe shown to customers once a gateway refund is initiated. Must match the published
+    // Return, Refund & Exchange Policy (client/src/content/policies.js → "Refund Timeline").
+    refundEta: { type: String, default: '7–10 working days' },
+    // Parcel defaults sent to the shipping provider when a product has no size of its own.
+    shippingPackage: {
+      pickupLocation: { type: String, default: 'Primary' }, // name of the pickup address saved in Shiprocket
+      lengthCm: { type: Number, default: 40 },
+      breadthCm: { type: Number, default: 30 },
+      heightCm: { type: Number, default: 15 },
+      weightKg: { type: Number, default: 1 },
+      autoCreateOnConfirm: { type: Boolean, default: true },
     },
     razorpayEnabled: { type: Boolean, default: true },
+    // Razorpay webhook: the signing secret saved by the admin (used when RAZORPAY_WEBHOOK_SECRET is not
+    // set on the server) and what the last webhook call looked like. The secret never leaves the server.
+    razorpayWebhook: {
+      secret: { type: String, default: '' },
+      lastReceivedAt: { type: Date, default: null },
+      lastEvent: { type: String, default: '' },
+      lastStatus: { type: String, enum: ['', 'ok', 'bad_signature', 'error'], default: '' },
+      lastError: { type: String, default: '' },
+    },
     codEnabled: { type: Boolean, default: true },
     codMaxOrder: { type: Number, default: 50000 },
     // Display-only conversion: 1 INR = rate units of the currency.

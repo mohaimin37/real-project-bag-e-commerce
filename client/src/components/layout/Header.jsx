@@ -13,7 +13,9 @@ import { Drawer, Icon, Img } from '../ui';
 import { CoinIcon, useMyCoins } from '../coins';
 import { BrandLogo, LogoMark } from '../Brand';
 import { prefersReducedMotion } from '../../theme/engine';
-import { ShopMegaMenu } from './ShopMenuWidget';
+import { useDirectory } from '../../lib/directory';
+import { openSpinWheel, useSpinStatus } from '../growth/SpinWheelModal';
+import { DIRECTORIES } from '../../content/taxonomy';
 
 export { LogoMark };
 
@@ -22,9 +24,12 @@ export const MAIN_NAV = [
   ['/', 'Home', true],
   ['/men', 'Men'],
   ['/women', 'Women'],
+  ['/bags', 'Bags'],
   ['/universal', 'Universal'],
   ['/shop/travel-utility', 'Travel & Utility'],
   ['/shop/accessories', 'Accessories'],
+  ['/shop/clothing', 'Clothing'],
+  ['/shop/fragrance', 'Perfumes'],
   ['/shop', 'Shop'],
   ['/returns-exchange', 'Returns & Exchange'],
   ['/about', 'About Us'],
@@ -40,10 +45,13 @@ const SHOP_EDITS = [
   ['/shop?bestseller=true&sort=bestseller', 'local_fire_department', 'Best sellers'],
   ['/offers', 'sell', 'Offers'],
   ['/catalogue', 'view_carousel', 'Catalogue'],
+  ['/track', 'local_shipping', 'Track Order'],
   ['/returns-exchange', 'assignment_return', 'Returns & Exchange'],
 ];
 const DISCOVER = [
+  ['/track', 'Track Order'],
   ['/about', 'About Us'],
+  ['/sustainability', 'Sustainability & CSR'],
   ['/returns-exchange', 'Returns & Exchange'],
   ['/corporate', 'Corporate bulk'],
   ['/blog', 'Journal'],
@@ -73,6 +81,28 @@ function Thumb({ cat, className }) {
   );
 }
 
+/** "Spin & Win" menu entry: always available here, even after the floating button hides for the day. */
+function SpinMenuItem({ className, onPick }) {
+  const { data: status } = useSpinStatus();
+  if (status?.enabled === false) return null;
+  const played = status && !status.eligible && !status.signInRequired;
+  return (
+    <button
+      type="button"
+      onClick={() => {
+        onPick?.();
+        openSpinWheel();
+      }}
+      className={className}
+    >
+      <Icon name="casino" className="text-[18px] text-violet-600 dark:text-violet-400" /> Spin & Win
+      <span className={cn('ml-auto text-[11px]', played ? 'text-outline' : 'text-violet-700 dark:text-violet-300 font-semibold')}>
+        {played ? 'Played today' : 'Spin today'}
+      </span>
+    </button>
+  );
+}
+
 function AccountMenu() {
   const user = useUser();
   const coins = useMyCoins();
@@ -96,18 +126,18 @@ function AccountMenu() {
 
   if (!user) {
     return (
-      <Link to="/login" className="hidden md:inline-flex items-center gap-1.5 h-10 ml-1 px-4 rounded-full text-[13px] font-semibold text-white bg-gradient-to-r from-amber-600 via-amber-700 to-stone-900 shadow-md ring-1 ring-amber-400/30 hover:shadow-lg hover:scale-[1.03] transition-all">
+      <Link to="/login" className="hidden md:inline-flex items-center gap-1.5 h-10 ml-1 px-4 rounded-full text-[13px] font-semibold text-white bg-gradient-to-r from-rose-600 via-rose-700 to-stone-900 shadow-md ring-1 ring-rose-400/30 hover:shadow-lg hover:scale-[1.03] transition-all">
         <Icon name="person" className="text-[18px]" /> Sign in
       </Link>
     );
   }
   return (
     <div className="relative hidden md:block" ref={ref}>
-      <button type="button" onClick={() => setOpen((o) => !o)} aria-expanded={open} aria-label="Account menu" className="flex items-center gap-2 h-10 pl-1.5 pr-3 ml-1 rounded-full ring-1 ring-outline-variant/40 hover:ring-amber-500/50 hover:bg-amber-500/5 transition-all shadow-2xs">
+      <button type="button" onClick={() => setOpen((o) => !o)} aria-expanded={open} aria-label="Account menu" className="flex items-center gap-2 h-10 pl-1.5 pr-3 ml-1 rounded-full ring-1 ring-outline-variant/40 hover:ring-rose-500/50 hover:bg-rose-500/5 transition-all shadow-2xs">
         {user.avatar?.url ? (
           <img src={imgUrl(user.avatar.url)} alt="" className="w-7 h-7 rounded-full object-cover" />
         ) : (
-          <span className="w-7 h-7 rounded-full bg-gradient-to-br from-amber-600 via-amber-700 to-stone-900 text-amber-200 text-[11px] font-bold flex items-center justify-center shadow-xs">{initials(user.name)}</span>
+          <span className="w-7 h-7 rounded-full bg-gradient-to-br from-rose-600 via-rose-700 to-stone-900 text-rose-200 text-[11px] font-bold flex items-center justify-center shadow-xs">{initials(user.name)}</span>
         )}
         <span className="text-label-lg max-w-[110px] truncate font-medium">{user.name?.split(' ')[0]}</span>
         <Icon name="expand_more" className={cn('text-[18px] text-outline transition-transform', open && 'rotate-180')} />
@@ -122,6 +152,7 @@ function AccountMenu() {
             <CoinIcon className="w-[18px] h-[18px]" /> My coins
             <span className="ml-auto font-bold tabular-nums">{coins.data?.balance ?? '…'}</span>
           </Link>
+          <SpinMenuItem className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-surface-container text-body-sm" onPick={() => setOpen(false)} />
           {user.role === 'admin' && (
             <Link to="/admin" className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-surface-container text-body-sm text-secondary font-semibold">
               <Icon name="dashboard" className="text-[18px]" /> Admin dashboard
@@ -180,6 +211,51 @@ export function CurrencySelect({ className, optionClassName }) {
         ))}
       </select>
     </label>
+  );
+}
+
+/** Phone menu: one department (Women, Men, Bags…) that expands into its groups and categories. */
+function DirectoryAccordion({ dir, open, onToggle, onNavigate, row }) {
+  const { sections, bySlug, isLoading } = useDirectory(dir.key, open);
+  const [openGroup, setOpenGroup] = useState(null);
+  const groups = (sections || []).flatMap((s) => s.groups);
+  return (
+    <div>
+      <button type="button" onClick={onToggle} className={cn(row, 'w-full justify-between')} aria-expanded={open}>
+        <span className="flex items-center gap-2.5">
+          <span className={cn('w-2.5 h-2.5 rounded-full', categoryTone({ name: dir.label }).dot)} /> {dir.label}
+        </span>
+        <Icon name="expand_more" className={cn('text-[18px] text-outline transition-transform duration-200', open && 'rotate-180')} />
+      </button>
+      {open && (
+        <div className="bg-surface-container-low py-1 animate-fade-in">
+          <Link to={dir.path} onClick={onNavigate} className="block px-5 py-2 text-label-lg font-semibold text-secondary">Shop all {dir.label}</Link>
+          {isLoading && <p className="px-5 py-2 text-body-sm text-outline">Loading…</p>}
+          {groups.map((g) => {
+            const gOpen = openGroup === g.key;
+            return (
+              <div key={g.key}>
+                <button type="button" onClick={() => setOpenGroup(gOpen ? null : g.key)} aria-expanded={gOpen} className="w-full flex items-center justify-between px-5 py-2 text-body-sm font-medium">
+                  <span>{g.label} <span className="text-[11px] text-outline">{g.count}</span></span>
+                  <Icon name="expand_more" className={cn('text-[16px] text-outline transition-transform', gOpen && 'rotate-180')} />
+                </button>
+                {gOpen && (
+                  <div className="pb-1">
+                    {g.items.map((i) => (
+                      <Link key={i.slug} to={i.to} onClick={onNavigate} className="flex items-center gap-3 px-7 py-1.5 text-body-sm">
+                        <Thumb cat={bySlug.get(i.slug) || { name: i.label, slug: i.slug }} className="w-7 h-7" />
+                        <span className="flex-1">{i.label}</span>
+                        <span className="text-[11px] text-outline">{i.count}</span>
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -287,7 +363,7 @@ function SideNav({ categories }) {
               close();
               dispatch(setShopModalOpen(true));
             }}
-            className="w-full flex items-center justify-between p-3 rounded-2xl bg-gradient-to-r from-amber-500/15 via-rose-500/10 to-indigo-500/15 border border-secondary/35 text-on-surface shadow-xs active:scale-98 transition-all"
+            className="w-full flex items-center justify-between p-3 rounded-2xl bg-gradient-to-r from-rose-500/15 via-rose-500/10 to-indigo-500/15 border border-secondary/35 text-on-surface shadow-xs active:scale-98 transition-all"
           >
             <div className="flex items-center gap-2.5">
               <span className="w-8 h-8 rounded-xl bg-secondary text-on-secondary flex items-center justify-center font-bold shadow-xs">
@@ -316,35 +392,12 @@ function SideNav({ categories }) {
         ))}
 
         <p className={heading}>Categories</p>
-        {categories?.map((cat) => {
-          const isOpen = expanded === cat._id;
-          return (
-            <div key={cat._id}>
-              <button type="button" onClick={() => setExpanded(isOpen ? null : cat._id)} className={cn(row, 'w-full justify-between')} aria-expanded={isOpen}>
-                <span className="flex items-center gap-2.5">
-                  <span className={cn('w-2.5 h-2.5 rounded-full', categoryTone(cat).dot)} /> {cat.name}
-                </span>
-                <Icon name="expand_more" className={cn('text-[18px] text-outline transition-transform duration-200', isOpen && 'rotate-180')} />
-              </button>
-              {isOpen && (
-                <div className="bg-surface-container-low py-1">
-                  <Link to={`/shop/${cat.slug}`} onClick={close} className={cn('block px-5 py-2 text-label-lg font-semibold', categoryTone(cat).text)}>
-                    Shop all {cat.name}
-                  </Link>
-                  {(cat.children || []).filter((c) => c.productCount > 0).map((c) => (
-                    <Link key={c._id} to={`/shop/${c.slug}`} onClick={close} className="flex items-center gap-3 px-5 py-1.5 text-body-sm">
-                      <Thumb cat={c} className="w-8 h-8" />
-                      <span className="flex-1">{c.name}</span>
-                      <span className="text-[11px] text-outline">{c.productCount}</span>
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </div>
-          );
-        })}
+        {Object.values(DIRECTORIES).map((dir) => (
+          <DirectoryAccordion key={dir.key} dir={dir} open={expanded === dir.key} onToggle={() => setExpanded(expanded === dir.key ? null : dir.key)} onNavigate={close} row={row} />
+        ))}
 
         <p className={heading}>More</p>
+        <SpinMenuItem className={cn(row, 'w-full')} onPick={close} />
         <button
           type="button"
           onClick={() => {
@@ -436,6 +489,124 @@ export function SearchPill({ onOpen, onVoiceOpen, className }) {
   );
 }
 
+// Nav items that open a mega menu, and the directory each one shows.
+const MEGA = { '/women': 'women', '/men': 'men', '/bags': 'bags', '/shop/accessories': 'accessories', '/shop/travel-utility': 'travel' };
+const MEGA_EXTRAS = {
+  women: [['/women?newArrival=true&sort=newest', 'New arrivals'], ['/women?bestseller=true&sort=bestseller', 'Bestsellers'], ['/women?onSale=true', 'Sale']],
+  men: [['/men?newArrival=true&sort=newest', 'New arrivals'], ['/men?bestseller=true&sort=bestseller', 'Bestsellers'], ['/men?onSale=true', 'Sale']],
+  bags: [['/new-arrivals', 'New arrivals'], ['/bestsellers', 'Bestsellers'], ['/offers', 'Offers']],
+  accessories: [['/new-arrivals', 'New arrivals'], ['/bestsellers', 'Bestsellers']],
+  travel: [['/new-arrivals', 'New arrivals'], ['/bestsellers', 'Bestsellers']],
+};
+
+/**
+ * Desktop nav link with a mega menu. Opens on hover or keyboard focus, closes on Escape / leave /
+ * navigation. Columns come from the live category directory, so empty categories never appear.
+ */
+function MegaNavItem({ to, label, dirKey, className }) {
+  const [open, setOpen] = useState(false);
+  const [armed, setArmed] = useState(false); // counts load on first hover/focus, not on every page view
+  const timer = useRef(null);
+  const { pathname } = useLocation();
+  const { sections } = useDirectory(dirKey, armed);
+  const panelId = `mega-${dirKey}`;
+  useEffect(() => setOpen(false), [pathname]);
+  useEffect(() => () => clearTimeout(timer.current), []);
+  const show = () => {
+    setArmed(true);
+    clearTimeout(timer.current);
+    timer.current = setTimeout(() => setOpen(true), 120);
+  };
+  const hide = () => {
+    clearTimeout(timer.current);
+    timer.current = setTimeout(() => setOpen(false), 150);
+  };
+  const groups = (sections || []).flatMap((s) => s.groups);
+  const hasMenu = Boolean(DIRECTORIES[dirKey]);
+  const ready = groups.length > 0;
+  return (
+    <div
+      className="static"
+      onMouseEnter={hasMenu ? show : undefined}
+      onMouseLeave={hasMenu ? hide : undefined}
+      onFocus={hasMenu ? show : undefined}
+      onBlur={(e) => !e.currentTarget.contains(e.relatedTarget) && hide()}
+      onKeyDown={(e) => e.key === 'Escape' && setOpen(false)}
+    >
+      <NavLink to={to} className={className} aria-haspopup={hasMenu ? 'true' : undefined} aria-expanded={hasMenu ? open : undefined} aria-controls={hasMenu ? panelId : undefined}>
+        {label}
+        {hasMenu && <Icon name="expand_more" className={cn('text-[15px] ml-0.5 opacity-60 transition-transform', open && 'rotate-180')} />}
+      </NavLink>
+      {hasMenu && open && ready && (
+        <div id={panelId} role="region" aria-label={`${label} menu`} className="absolute left-0 right-0 top-full z-50 bg-surface-container-lowest border-y border-surface-container-high shadow-lift animate-fade-in">
+          <div className="max-w-[1280px] mx-auto px-6 py-5 grid grid-cols-[1fr_200px] gap-6">
+            <div className="grid grid-cols-4 gap-x-6 gap-y-5 max-h-[60vh] overflow-y-auto scrollbar-none">
+              {groups.map((g) => (
+                <div key={g.key} className="min-w-0">
+                  <Link to={g.to} className="text-[13px] font-bold text-on-surface hover:text-secondary">{g.label}</Link>
+                  <ul className="mt-1.5 flex flex-col gap-1">
+                    {g.items.map((i) => (
+                      <li key={i.slug}>
+                        <Link to={i.to} className="text-[12.5px] text-on-surface-variant hover:text-on-surface hover:underline flex justify-between gap-2">
+                          <span className="truncate">{i.label}</span>
+                          <span className="text-[11px] text-outline">{i.count}</span>
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+            <div className="flex flex-col gap-1.5 border-l border-surface-container-high pl-5">
+              <Link to={to} className="text-[13px] font-bold text-on-surface hover:text-secondary flex items-center gap-1">Shop all {label} <Icon name="arrow_forward" className="text-[15px]" /></Link>
+              {(MEGA_EXTRAS[dirKey] || []).map(([href, text]) => (
+                <Link key={href} to={href} className="text-[12.5px] text-on-surface-variant hover:text-on-surface hover:underline">{text}</Link>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Offers strip above the header. Everything comes from Admin → Settings: the announcement text,
+ * the signup bonus amount, and the offer links (the server only sends switched-on links inside
+ * their start/end dates). Nothing here is hard-coded, so it can't advertise an offer that isn't live.
+ */
+function PromoRibbon() {
+  const { data: config } = useConfig();
+  const links = config?.promoRibbon || [];
+  const bonus = config?.loyalty?.enabled !== false ? config?.loyalty?.signupBonus : 0;
+  const text = [config?.announcement, bonus > 0 ? `${bonus} welcome coins when you create an account` : ''].filter(Boolean).join(' • ');
+  const shell = 'bg-gradient-to-r from-slate-950 via-rose-950 to-slate-950 text-rose-100 border-b border-rose-400/20 text-[11px] sm:text-[12px] py-1.5 px-3 select-none relative z-50';
+  // Until the store settings arrive, keep the ribbon's height so the page doesn't jump down.
+  if (!config) return <div className={shell} aria-hidden="true"><div className="h-6" /></div>;
+  if (!text && !links.length) return null;
+  return (
+    <div className={shell}>
+      <div className="w-full max-w-[1920px] mx-auto flex items-center justify-center gap-2.5 min-w-0">
+        {text && <span className="hidden md:block font-medium text-rose-50/90 truncate min-w-0">{text}</span>}
+        {links.length > 0 && (
+          <nav aria-label="Offers" className="flex items-center gap-1.5 overflow-x-auto scrollbar-none shrink-0 max-w-full">
+            {links.map((p) => (
+              <Link
+                key={`${p.label}-${p.to}`}
+                to={p.to}
+                className="inline-flex items-center gap-1 h-6 px-2.5 rounded-full font-bold whitespace-nowrap text-white bg-white/10 border border-white/20 hover:bg-rose-500/30 hover:border-rose-300/40 transition-colors"
+              >
+                {p.icon && <Icon name={p.icon} className="text-[13px]" />}
+                {p.label}
+              </Link>
+            ))}
+          </nav>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function Header() {
   const { pathname } = useLocation();
   const dispatch = useDispatch();
@@ -443,7 +614,12 @@ export default function Header() {
   const { count } = useCart();
   const { count: wishCount } = useWishlist();
   const coins = useMyCoins();
-  const isMobileCustomHeader = pathname === '/' || pathname.startsWith('/shop') || ['/men', '/women', '/universal', '/unisex', '/offers'].includes(pathname);
+  // Shop listing pages draw their own compact header on phones.
+  const isMobileCustomHeader =
+    pathname === '/' ||
+    pathname.startsWith('/shop') ||
+    ['/men', '/women', '/universal', '/unisex', '/offers', '/bags', '/new-arrivals', '/bestsellers'].includes(pathname) ||
+    /^\/(women|men|bags|accessories|travel-utility)\/[^/]+/.test(pathname);
 
   // A soft shadow once the page scrolls, so the sticky header lifts off the content.
   const [scrolled, setScrolled] = useState(false);
@@ -472,22 +648,7 @@ export default function Header() {
 
   return (
     <>
-      {/* ── TOP ANNOUNCEMENT & SALES OFFERS RIBBON (Requirement 7 & Notification Bar) ── */}
-      <div className="bg-gradient-to-r from-stone-950 via-amber-950 to-stone-950 text-amber-200 border-b border-amber-500/25 text-[11px] sm:text-[12px] py-1.5 px-3 select-none relative z-50">
-        <div className="w-full max-w-[1920px] mx-auto flex items-center justify-between gap-2.5">
-          <div className="flex items-center gap-2 overflow-hidden mx-auto text-center truncate">
-            <span className="inline-flex items-center gap-1 font-black uppercase tracking-wider text-amber-400 bg-amber-500/20 border border-amber-500/30 px-2 py-0.5 rounded-full text-[9.5px] sm:text-[10px]">
-              <Icon name="local_fire_department" className="text-[12px] text-amber-400" /> LIVE OFFERS
-            </span>
-            <span className="font-medium text-amber-100/90 truncate">
-              🎁 50 Free Welcome Coins on Signup • Flat 10% Extra Off with Code <strong className="font-mono text-amber-300">WILD10</strong> • Doorstep Courier Pickup for Returns
-            </span>
-            <Link to="/offers" className="font-bold underline text-amber-300 hover:text-white shrink-0 ml-1.5">
-              Explore Offers & Sales →
-            </Link>
-          </div>
-        </div>
-      </div>
+      <PromoRibbon />
 
       <header className={cn('site-header sticky top-0 z-50 w-full transition-shadow duration-300 bg-surface/95 backdrop-blur-md border-b border-surface-container-high/60', isMobileCustomHeader && 'hidden md:block', scrolled && 'shadow-[0_8px_30px_-12px_rgb(0_0_0/0.25)]')}>
         <div className="w-full max-w-[1920px] mx-auto px-2.5 sm:px-4 md:px-5 lg:px-6 h-14 md:h-[68px] flex items-center justify-between gap-1.5 sm:gap-2.5 md:gap-3.5">
@@ -530,10 +691,10 @@ export default function Header() {
               to="/account/coins"
               aria-label={`Wallet balance, ${coins?.data?.balance ?? 0} coins`}
               title="WILDTANE Wallet & Reward Coins"
-              className="relative inline-flex items-center gap-1.5 h-9 sm:h-10 px-2.5 sm:px-3 rounded-full text-on-surface hover:bg-amber-500/10 ring-1 ring-amber-500/30 hover:ring-amber-500/60 transition-all hover:scale-105 active:scale-95 shadow-2xs group"
+              className="relative inline-flex items-center gap-1.5 h-9 sm:h-10 px-2.5 sm:px-3 rounded-full text-on-surface hover:bg-rose-500/10 ring-1 ring-rose-500/30 hover:ring-rose-500/60 transition-all hover:scale-105 active:scale-95 shadow-2xs group"
             >
-              <CoinIcon className="w-4 h-4 text-amber-500 shrink-0 group-hover:scale-110 transition-transform" />
-              <span className="text-[12px] sm:text-[13px] font-black text-amber-700 dark:text-amber-300 tabular-nums">
+              <CoinIcon className="w-4 h-4 text-rose-500 shrink-0 group-hover:scale-110 transition-transform" />
+              <span className="text-[12px] sm:text-[13px] font-black text-rose-700 dark:text-rose-300 tabular-nums">
                 {coins?.data?.balance ?? 0}
               </span>
               <span className="text-[10px] uppercase font-bold text-outline opacity-75 hidden xs:inline">
@@ -580,11 +741,13 @@ export default function Header() {
           <SearchPill onOpen={openSearch} onVoiceOpen={openVoice} className="w-full" />
         </div>
         {/* Every main menu option on its own row: centred on desktop (Shop opens the mega-menu), swipeable on phones. */}
-        <nav aria-label="Main" className="border-t border-surface-container-high/60">
+        <nav aria-label="Main" className="relative border-t border-surface-container-high/60">
           <div className="hidden md:flex items-center justify-center flex-wrap gap-1 max-w-[1920px] mx-auto px-4 lg:px-6 py-1.5">
             {MAIN_NAV.map(([to, label, end]) =>
               to === '/shop' ? (
                 <ShopMenu key={to} categories={categories} />
+              ) : MEGA[to] ? (
+                <MegaNavItem key={to} to={to} label={label} dirKey={MEGA[to]} className={({ isActive }) => cn(navItem, isActive ? navActive : navIdle)} />
               ) : (
                 <NavLink key={to} to={to} end={end} className={({ isActive }) => cn(navItem, isActive ? navActive : navIdle)}>
                   {label}

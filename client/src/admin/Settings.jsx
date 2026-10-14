@@ -6,10 +6,18 @@ import { cn, formatINR } from '../lib/format';
 import { Button, ErrorState, Field, Icon, Input, PageLoader, Textarea, Toggle } from '../components/ui';
 import { PageHeader, Panel } from './kit';
 import { ThemePreview } from '../components/theme/ThemePanel';
+import { RazorpayWebhookPanel, ReturnRefundPanel, ShopMenuPanel, SpinWheelPanel, cleanShowcase } from './StorefrontSettings';
+import { FooterPanel, HomepagePanel } from './HomepageSettings';
 import { ALL_THEME_IDS, CUSTOM_THEME, DEFAULT_MODE, DEFAULT_THEME, THEMES } from '../theme/themes';
 
 const TABS = [
   ['store', 'storefront', 'Store'],
+  ['homepage', 'home', 'Homepage'],
+  ['footer', 'bottom_navigation', 'Footer'],
+  ['offers', 'sell', 'Offer ribbon'],
+  ['spin', 'casino', 'Spin wheel'],
+  ['shopmenu', 'grid_view', 'Shop menu'],
+  ['returns', 'assignment_return', 'Returns & refunds'],
   ['appearance', 'palette', 'Appearance'],
   ['tax', 'percent', 'Tax & shipping'],
   ['payments', 'payments', 'Payments'],
@@ -18,7 +26,58 @@ const TABS = [
   ['integrations', 'hub', 'Integrations'],
 ];
 
-const LOYALTY_DEFAULTS = { enabled: true, coinsPer100: 5, rupeesPerCoin: 1, maxRedeemPercent: 50 };
+const LOYALTY_DEFAULTS = { enabled: true, coinsPer100: 5, rupeesPerCoin: 1, maxRedeemPercent: 50, signupBonus: 50, referralBonus: 100, referralQualifyOn: 'first_delivery', maxReferralsPerUser: 50 };
+const RIBBON_ICONS = ['sell', 'local_offer', 'new_releases', 'local_fire_department', 'percent', 'redeem', 'bolt', 'star'];
+
+// <input type="datetime-local"> wants local time without a zone.
+const toLocal = (d) => {
+  if (!d) return '';
+  const date = new Date(d);
+  return new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+};
+
+/** Offer links shown in the strip above the search bar. */
+function RibbonPanel({ value = [], onChange }) {
+  const rows = value || [];
+  const update = (i, patch) => onChange(rows.map((r, x) => (x === i ? { ...r, ...patch } : r)));
+  const now = Date.now();
+  const state = (r) => (!r.isActive ? 'Off' : r.startsAt && new Date(r.startsAt) > now ? 'Scheduled' : r.endsAt && new Date(r.endsAt) <= now ? 'Ended' : 'Showing');
+  return (
+    <Panel
+      title="Offer ribbon"
+      action={
+        <Button size="sm" variant="tonal" icon="add" disabled={rows.length >= 8} onClick={() => onChange([...rows, { label: 'Special Offers', to: '/offers', icon: 'local_offer', isActive: true, startsAt: null, endsAt: null }])}>
+          Add link
+        </Button>
+      }
+    >
+      <p className="text-body-sm text-on-surface-variant mb-space-md">
+        Short links in the strip at the very top of the store, above the search bar. Only links that are switched on and inside their dates are shown — use dates for
+        limited-time sales so they disappear by themselves. Point links at real pages, e.g. <code>/offers</code>, <code>/shop?onSale=true</code>, <code>/shop/travel-utility</code>.
+        Don’t add countdowns or discount figures that aren’t backed by a live coupon or sale price.
+      </p>
+      <div className="flex flex-col gap-space-sm">
+        {rows.length === 0 && <p className="text-body-sm text-outline">No links — the strip shows only the announcement text.</p>}
+        {rows.map((r, i) => (
+          <div key={i} className="grid grid-cols-2 md:grid-cols-12 gap-2 p-space-sm rounded-xl bg-surface-container-low items-end">
+            <Field label="Label" className="md:col-span-3"><Input value={r.label} maxLength={40} onChange={(e) => update(i, { label: e.target.value })} /></Field>
+            <Field label="Link" className="md:col-span-4"><Input value={r.to} maxLength={200} onChange={(e) => update(i, { to: e.target.value })} placeholder="/offers" /></Field>
+            <Field label="Icon" className="md:col-span-2">
+              <select className="input" value={r.icon || ''} onChange={(e) => update(i, { icon: e.target.value })}>
+                <option value="">None</option>
+                {RIBBON_ICONS.map((ic) => <option key={ic} value={ic}>{ic.replace(/_/g, ' ')}</option>)}
+              </select>
+            </Field>
+            <div className="md:col-span-2 pb-2 flex items-center gap-2"><Toggle checked={r.isActive !== false} onChange={(v) => update(i, { isActive: v })} label={state(r)} /></div>
+            <button type="button" onClick={() => onChange(rows.filter((_, x) => x !== i))} className="btn-icon hover:text-error md:col-span-1 justify-self-end" aria-label="Remove link"><Icon name="delete" /></button>
+            <Field label="Starts (optional)" className="md:col-span-6"><Input type="datetime-local" value={toLocal(r.startsAt)} onChange={(e) => update(i, { startsAt: e.target.value ? new Date(e.target.value).toISOString() : null })} /></Field>
+            <Field label="Ends (optional)" className="md:col-span-6"><Input type="datetime-local" value={toLocal(r.endsAt)} onChange={(e) => update(i, { endsAt: e.target.value ? new Date(e.target.value).toISOString() : null })} /></Field>
+          </div>
+        ))}
+      </div>
+    </Panel>
+  );
+}
 const APPEARANCE_DEFAULTS = { defaultTheme: DEFAULT_THEME, defaultMode: DEFAULT_MODE, enabledThemes: ALL_THEME_IDS };
 const THEME_LABEL = (id) => (id === CUSTOM_THEME ? 'Custom' : THEMES[id].name);
 
@@ -90,6 +149,7 @@ export default function Settings() {
   const [saving, setSaving] = useState(false);
   const query = useQuery({ queryKey: ['admin', 'settings'], queryFn: adminApi.settings, select: (d) => d.settings });
   const dash = useQuery({ queryKey: ['admin', 'dashboard', 30], queryFn: () => adminApi.dashboard(30), select: (d) => d.alerts });
+  const shipping = useQuery({ queryKey: ['admin', 'shipping-status'], queryFn: adminApi.shippingStatus });
   useEffect(() => {
     if (query.data) setS(structuredClone(query.data));
   }, [query.data]);
@@ -101,8 +161,28 @@ export default function Settings() {
   const save = async () => {
     setSaving(true);
     try {
-      const { storeName, supportEmail, supportPhone, businessAddress, supportHours, grievanceOfficer, gstin, announcement, taxRate, taxLabel, pricesIncludeTax, freeShippingThreshold, codEnabled, codMaxOrder, shippingMethods, currencies, loyalty, appearance } = s;
-      await adminApi.updateSettings({ storeName, supportEmail, supportPhone, businessAddress: businessAddress || '', supportHours: supportHours || '', grievanceOfficer: { name: '', designation: '', email: '', phone: '', ...grievanceOfficer }, gstin: gstin || '', announcement, taxRate, taxLabel, pricesIncludeTax, freeShippingThreshold, codEnabled, codMaxOrder, shippingMethods, currencies, loyalty: { ...LOYALTY_DEFAULTS, ...loyalty }, appearance: { ...APPEARANCE_DEFAULTS, ...appearance } });
+      const { storeName, supportEmail, supportPhone, businessAddress, supportHours, grievanceOfficer, gstin, announcement, taxRate, taxLabel, pricesIncludeTax, freeShippingThreshold, codEnabled, codMaxOrder, shippingMethods, currencies, loyalty, appearance, promoRibbon, wallet, giftCardsEnabled, refundEta, shippingPackage } = s;
+      const l = { ...LOYALTY_DEFAULTS, ...loyalty };
+      await adminApi.updateSettings({
+        storeName, supportEmail, supportPhone, businessAddress: businessAddress || '', supportHours: supportHours || '', grievanceOfficer: { name: '', designation: '', email: '', phone: '', ...grievanceOfficer }, gstin: gstin || '', announcement, taxRate, taxLabel, pricesIncludeTax, freeShippingThreshold, codEnabled, codMaxOrder, shippingMethods, currencies,
+        loyalty: { enabled: l.enabled, coinsPer100: l.coinsPer100, rupeesPerCoin: l.rupeesPerCoin, maxRedeemPercent: l.maxRedeemPercent, signupBonus: l.signupBonus, referralBonus: l.referralBonus, referralQualifyOn: l.referralQualifyOn, maxReferralsPerUser: l.maxReferralsPerUser },
+        appearance: { ...APPEARANCE_DEFAULTS, ...appearance },
+        promoRibbon: (promoRibbon || []).map(({ label, to, icon, isActive, startsAt, endsAt }) => ({ label, to, icon: icon || '', isActive: isActive !== false, startsAt: startsAt || null, endsAt: endsAt || null })),
+        wallet: { enabled: wallet?.enabled !== false, maxRedeemPercent: wallet?.maxRedeemPercent ?? 100 },
+        giftCardsEnabled: giftCardsEnabled !== false,
+        spinToWin: {
+          enabled: s.spinToWin?.enabled !== false,
+          ...(s.spinToWin?.slices ? { slices: s.spinToWin.slices.map(({ label, short, type, value, minOrder, weight, color, isActive }) => ({ label, short, type, value: type === 'free_shipping' ? 0 : Number(value) || 0, minOrder: Number(minOrder) || 0, weight: Number(weight) || 0, color, isActive: isActive !== false })) } : {}),
+        },
+        ...(s.returnRefundMethods?.length ? { returnRefundMethods: s.returnRefundMethods } : {}),
+        shopShowcase: cleanShowcase(s.shopShowcase),
+        homepage: s.homepage || null,
+        footer: s.footer || null,
+        social: { instagram: s.social?.instagram || '', facebook: s.social?.facebook || '', linkedin: s.social?.linkedin || '' },
+        cancellationRefunds: { automatic: s.cancellationRefunds?.automatic !== false },
+        refundEta: refundEta || '',
+        ...(shippingPackage ? { shippingPackage: { pickupLocation: shippingPackage.pickupLocation, lengthCm: shippingPackage.lengthCm, breadthCm: shippingPackage.breadthCm, heightCm: shippingPackage.heightCm, weightKg: shippingPackage.weightKg, autoCreateOnConfirm: shippingPackage.autoCreateOnConfirm } } : {}),
+      });
       toast.success('Settings saved');
       qc.invalidateQueries({ queryKey: ['admin', 'settings'] });
       qc.invalidateQueries({ queryKey: ['config'] });
@@ -170,6 +250,19 @@ export default function Settings() {
             </Panel>
           )}
 
+          {tab === 'offers' && <RibbonPanel value={s.promoRibbon} onChange={(v) => set('promoRibbon', v)} />}
+          {tab === 'homepage' && <HomepagePanel value={s.homepage} onChange={(v) => set('homepage', v)} />}
+          {tab === 'footer' && <FooterPanel value={s.footer} onChange={(v) => set('footer', v)} social={s.social} onSocial={(v) => set('social', v)} />}
+          {tab === 'spin' && <SpinWheelPanel value={s.spinToWin} onChange={(v) => set('spinToWin', v)} />}
+          {tab === 'shopmenu' && <ShopMenuPanel value={s.shopShowcase} onChange={(v) => set('shopShowcase', v)} />}
+          {tab === 'returns' && <ReturnRefundPanel value={s.returnRefundMethods} onChange={(v) => set('returnRefundMethods', v)} />}
+          {tab === 'returns' && (
+            <Panel title="Refund timeframe">
+              <Field label="Shown to customers once a refund to their original payment starts" hint="Must match your published Refund Policy (currently says 7–10 working days)" className="max-w-md pt-space-md">
+                <Input value={s.refundEta || ''} maxLength={60} onChange={(e) => set('refundEta', e.target.value)} placeholder="7–10 working days" />
+              </Field>
+            </Panel>
+          )}
           {tab === 'appearance' && <AppearancePanel value={s.appearance} onChange={(v) => set('appearance', v)} />}
 
           {tab === 'tax' && (
@@ -226,6 +319,51 @@ export default function Settings() {
               </div>
             </Panel>
           )}
+          {tab === 'payments' && (
+            <Panel title="Gift cards, wallet & refunds">
+              <div className="flex flex-col gap-space-md">
+                <div className="flex items-center justify-between gap-4 p-space-md rounded-xl bg-surface-container-low">
+                  <div className="flex items-center gap-3">
+                    <Icon name="currency_exchange" className="text-secondary" />
+                    <div>
+                      <p className="text-label-lg">Refund cancelled orders automatically</p>
+                      <p className="text-body-sm text-on-surface-variant">
+                        {s.cancellationRefunds?.automatic !== false
+                          ? 'On (recommended): when a paid order is cancelled before it ships, the money goes back at once — to the card / UPI used, plus any gift card or wallet amount. Customers trust this most.'
+                          : 'Off: cancelled paid orders wait for you. Press “Refund now” in Sales → Payments → Refunds to send (or on the order).'}
+                      </p>
+                    </div>
+                  </div>
+                  <Toggle checked={s.cancellationRefunds?.automatic !== false} onChange={(v) => set('cancellationRefunds', { automatic: v })} />
+                </div>
+                <div className="flex items-center justify-between gap-4 p-space-md rounded-xl bg-surface-container-low">
+                  <div className="flex items-center gap-3">
+                    <Icon name="card_giftcard" className="text-secondary" />
+                    <div><p className="text-label-lg">Gift cards at checkout</p><p className="text-body-sm text-on-surface-variant">Issue and manage cards in <b>Sales → Gift cards</b>.</p></div>
+                  </div>
+                  <Toggle checked={s.giftCardsEnabled !== false} onChange={(v) => set('giftCardsEnabled', v)} />
+                </div>
+                <div className="flex items-center justify-between gap-4 p-space-md rounded-xl bg-surface-container-low">
+                  <div className="flex items-center gap-3">
+                    <Icon name="casino" className="text-secondary" />
+                    <div><p className="text-label-lg">Daily Spin & Win</p><p className="text-body-sm text-on-surface-variant">Signed-in shoppers spin once a day for a personal code valid until midnight. It pops up once a day and is always in the account menu. Change the prizes in <b>Spin wheel</b>.</p></div>
+                  </div>
+                  <Toggle checked={s.spinToWin?.enabled !== false} onChange={(v) => set('spinToWin', { ...s.spinToWin, enabled: v })} />
+                </div>
+                <div className="flex items-center justify-between gap-4 p-space-md rounded-xl bg-surface-container-low">
+                  <div className="flex items-center gap-3">
+                    <Icon name="account_balance_wallet" className="text-secondary" />
+                    <div><p className="text-label-lg">WILDTANE Wallet at checkout</p><p className="text-body-sm text-on-surface-variant">Customers can use wallet credit (refunds, promotions). Adjust a customer’s wallet from their profile.</p></div>
+                  </div>
+                  <Toggle checked={s.wallet?.enabled !== false} onChange={(v) => set('wallet', { ...s.wallet, enabled: v })} />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-space-md">
+                  <Field label="Max % of an order payable from the wallet"><Input type="number" min={1} max={100} value={s.wallet?.maxRedeemPercent ?? 100} onChange={(e) => set('wallet', { ...s.wallet, maxRedeemPercent: Number(e.target.value) })} /></Field>
+                  <Field label="Refund timeframe shown to customers" hint="Must match your published Refund Policy (currently says 7–10 working days)"><Input value={s.refundEta || ''} maxLength={60} onChange={(e) => set('refundEta', e.target.value)} placeholder="7–10 working days" /></Field>
+                </div>
+              </div>
+            </Panel>
+          )}
 
           {tab === 'loyalty' && (() => {
             const l = { ...LOYALTY_DEFAULTS, ...s.loyalty };
@@ -250,7 +388,18 @@ export default function Settings() {
                     Example: a <b>₹2,500</b> order earns <b>{earn} coins</b> (worth {formatINR(earn * l.rupeesPerCoin)}). On a later ₹2,500 order the shopper can use up to <b>{Math.floor((2500 * l.maxRedeemPercent) / 100 / l.rupeesPerCoin)} coins</b>.
                     Coins are added when the order is placed; if it is cancelled or returned, coins used come back and coins earned are removed.
                   </p>
-                  <p className="text-body-sm text-on-surface-variant">To give or take back coins for one customer, open them in <b>Customers → Full profile</b>.</p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-space-md">
+                    <Field label="Signup bonus (coins)" hint="Paid once per new account, when registration completes. 0 = off"><Input type="number" min={0} value={l.signupBonus} onChange={(e) => setL({ signupBonus: Number(e.target.value) })} /></Field>
+                    <Field label="Referral bonus (coins)" hint="Paid once to the customer who referred a friend. 0 = off"><Input type="number" min={0} value={l.referralBonus} onChange={(e) => setL({ referralBonus: Number(e.target.value) })} /></Field>
+                    <Field label="Referral counts when" hint="Waiting for a delivered order stops fake sign-ups earning coins">
+                      <select className="input" value={l.referralQualifyOn} onChange={(e) => setL({ referralQualifyOn: e.target.value })}>
+                        <option value="first_delivery">The friend’s first order is delivered</option>
+                        <option value="signup">The friend creates an account</option>
+                      </select>
+                    </Field>
+                    <Field label="Max rewarded referrals per customer" hint="0 = no limit"><Input type="number" min={0} value={l.maxReferralsPerUser} onChange={(e) => setL({ maxReferralsPerUser: Number(e.target.value) })} /></Field>
+                  </div>
+                  <p className="text-body-sm text-on-surface-variant">Self-referrals (same email or mobile number) are rejected automatically. To give or take back coins for one customer, open them in <b>Customers → Full profile</b>.</p>
                 </div>
               </Panel>
             );
@@ -273,11 +422,21 @@ export default function Settings() {
           )}
 
           {tab === 'integrations' && (
+            <RazorpayWebhookPanel
+              info={query.data?.razorpayWebhook}
+              onSaved={() => {
+                // Refresh only the webhook part, so unsaved edits in other tabs are kept.
+                adminApi.settings().then((d) => qc.setQueryData(['admin', 'settings'], (old) => (old ? { ...old, settings: { ...old.settings, razorpayWebhook: d.settings.razorpayWebhook } } : old)));
+              }}
+            />
+          )}
+          {tab === 'integrations' && (
             <Panel title="Integrations">
               <div className="flex flex-col gap-space-md">
                 {[
                   ['chat', 'WhatsApp Cloud API', dash.data?.whatsappConfigured, 'New-order alerts are sent to the admin WhatsApp number.', 'Alerts are logged to the server console. Set WHATSAPP_ACCESS_TOKEN, WHATSAPP_PHONE_NUMBER_ID and ADMIN_WHATSAPP_NUMBER in server/.env.'],
                   ['cloud', 'Cloudinary', dash.data?.cloudinaryConfigured, 'Uploads are stored on Cloudinary.', 'Uploads are stored in server/uploads. Set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY and CLOUDINARY_API_SECRET to switch.'],
+                  ['local_shipping', 'Shiprocket shipping', shipping.data?.configured, 'Shipments and doorstep return pickups are booked with Shiprocket; tracking updates arrive by webhook.', 'Not connected: tracking numbers are entered by hand on each order. Set SHIPROCKET_EMAIL, SHIPROCKET_PASSWORD, SHIPROCKET_WEBHOOK_TOKEN and SHIPROCKET_WAREHOUSE_* in server/.env.'],
                 ].map(([icon, name, ok, yes, no]) => (
                   <div key={name} className="flex items-start gap-3 p-space-md rounded-xl bg-surface-container-low">
                     <span className={cn('w-10 h-10 rounded-xl flex items-center justify-center shrink-0', ok ? 'bg-secondary text-on-secondary' : 'bg-tertiary-fixed text-tertiary-container')}><Icon name={icon} /></span>

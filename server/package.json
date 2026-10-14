@@ -12,7 +12,8 @@
     "test:whatsapp": "node src/seed/testWhatsApp.js",
     "seed:fresh": "node src/seed/seed.js --fresh",
     "admin:sync": "node src/seed/syncAdmin.js",
-    "test:api": "node src/seed/smokeTest.js"
+    "test:api": "node src/seed/smokeTest.js",
+    "test:logic": "node src/seed/logicTest.js"
   },
   "engines": {
     "node": ">=20"

@@ -23,5 +23,24 @@ export function useMoney() {
 }
 
 export function useCategories() {
-  return useQuery({ queryKey: ['categories'], queryFn: () => api.categories(), staleTime: 5 * 60 * 1000, select: (d) => d.categories });
+  return useQuery({
+    queryKey: ['categories'],
+    queryFn: () => api.categories(),
+    staleTime: 5 * 60 * 1000,
+    select: (d) => {
+      const cats = Array.isArray(d?.categories) ? [...d.categories] : [];
+      cats.departments = d?.departments || { men: [], women: [], universal: [] };
+      return cats;
+    },
+  });
 }
+
+export function useDepartments() {
+  return useQuery({
+    queryKey: ['categories'],
+    queryFn: () => api.categories(),
+    staleTime: 5 * 60 * 1000,
+    select: (d) => d?.departments || { men: [], women: [], universal: [] },
+  });
+}
+

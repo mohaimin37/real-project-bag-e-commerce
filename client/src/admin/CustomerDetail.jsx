@@ -113,6 +113,7 @@ export default function CustomerDetail() {
       </div>
 
       <CoinsPanel customer={c} history={coinHistory} />
+      <WalletPanel customer={c} />
       {c.addresses?.length > 0 && (
         <Panel title={`Saved addresses (${c.addresses.length})`}>
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-space-md">{c.addresses.map((a) => <AddressCard key={a._id} address={a} />)}</div>
@@ -135,7 +136,65 @@ export default function CustomerDetail() {
   );
 }
 
-const COIN_LABEL = { earned: 'Earned', redeemed: 'Used', refunded: 'Returned', reversed: 'Removed', adjusted: 'Adjusted' };
+const COIN_LABEL = { earned: 'Earned', redeemed: 'Used', refunded: 'Returned', reversed: 'Removed', adjusted: 'Adjusted', bonus: 'Bonus' };
+
+const WALLET_LABEL = { refund: 'Refund', order_restore: 'Order cancelled', promo: 'Promo credit', referral: 'Referral', admin_credit: 'Admin credit', admin_debit: 'Admin debit', order_debit: 'Used on order' };
+
+/** WILDTANE Wallet (₹): balance, ledger and an audited credit/debit form. No top-ups without payment. */
+function WalletPanel({ customer }) {
+  const qc = useQueryClient();
+  const [amount, setAmount] = useState('');
+  const [note, setNote] = useState('');
+  const [promo, setPromo] = useState(false);
+  const ledger = useQuery({ queryKey: ['admin', 'customer-wallet', customer._id], queryFn: () => adminApi.customerWallet(customer._id), select: (d) => d.items });
+  const adjust = useMutation({
+    mutationFn: (sign) => adminApi.adjustWallet(customer._id, { amount: sign * Math.abs(Number(amount) || 0), note, type: promo ? 'promo' : 'admin_credit' }),
+    onSuccess: (res, sign) => {
+      toast.success(`${sign > 0 ? 'Credited' : 'Debited'} ${formatINR(Math.abs(Number(amount)))} · new balance ${formatINR(res.balance)}`);
+      setAmount('');
+      setNote('');
+      qc.invalidateQueries({ queryKey: ['admin'] });
+    },
+    onError: (e) => toast.error(e.details?.[0]?.message || e.message),
+  });
+  const ready = Number(amount) > 0 && note.trim().length >= 3;
+  return (
+    <Panel title={<span className="flex items-center gap-2"><Icon name="account_balance_wallet" className="text-[20px]" /> WILDTANE Wallet · {formatINR(customer.wallet || 0)}</span>}>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-space-md">
+        <div className="flex flex-col gap-2 p-space-md rounded-xl bg-surface-container-low">
+          <p className="text-label-lg">Credit or debit the wallet (₹)</p>
+          <p className="text-body-sm text-on-surface-variant">For goodwill credits or corrections. Each change is logged with your name and the reason, and shows in the customer’s wallet history.</p>
+          <div className="flex gap-2">
+            <Input inputMode="decimal" placeholder="₹" value={amount} onChange={(e) => setAmount(e.target.value.replace(/[^\d.]/g, ''))} className="w-28" aria-label="Amount in rupees" />
+            <Input placeholder="Reason" value={note} maxLength={200} onChange={(e) => setNote(e.target.value)} aria-label="Reason" />
+          </div>
+          <label className="flex items-center gap-2 text-body-sm"><input type="checkbox" className="accent-primary" checked={promo} onChange={(e) => setPromo(e.target.checked)} /> Label credit as a promotional credit</label>
+          <div className="flex gap-2">
+            <Button size="sm" icon="add" disabled={!ready} loading={adjust.isPending && adjust.variables === 1} onClick={() => adjust.mutate(1)}>Credit</Button>
+            <Button size="sm" variant="tonal" icon="remove" disabled={!ready || !customer.wallet} loading={adjust.isPending && adjust.variables === -1} onClick={() => adjust.mutate(-1)}>Debit</Button>
+          </div>
+        </div>
+        <div className="flex flex-col max-h-72 overflow-y-auto">
+          {!ledger.data?.length ? (
+            <p className="text-body-sm text-on-surface-variant">No wallet activity yet.</p>
+          ) : (
+            ledger.data.map((h) => (
+              <div key={h._id} className="flex items-center gap-3 py-2 border-b border-surface-container-high last:border-0 text-body-sm">
+                <span className="w-24 shrink-0 text-label-md">{WALLET_LABEL[h.type] || h.type}</span>
+                <span className="flex-1 min-w-0 truncate text-on-surface-variant">
+                  {h.orderId ? <Link to={`/admin/orders/${h.orderId}`} className="text-secondary hover:underline">{h.orderId} </Link> : null}
+                  {h.description}{h.by?.name ? ` — ${h.by.name}` : ''}
+                  <span className="block text-label-sm font-normal text-outline">{formatDateTime(h.createdAt)}</span>
+                </span>
+                <span className={h.amount > 0 ? 'font-bold text-emerald-700 dark:text-emerald-400' : 'font-bold'}>{h.amount > 0 ? '+' : ''}{formatINR(h.amount)}</span>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+    </Panel>
+  );
+}
 
 /** Coin balance, history and a quick "give / take back" form. */
 function CoinsPanel({ customer, history }) {

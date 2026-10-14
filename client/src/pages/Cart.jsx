@@ -1,5 +1,6 @@
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useEffect, useRef, useState } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { discountLabel, useMyCoupons } from '../components/offers';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../lib/api';
 import { cn } from '../lib/format';
@@ -14,15 +15,42 @@ export function CouponBox() {
   const user = useUser();
   const { cart, summary, applyCoupon, removeCoupon } = useCart();
   const money = useMoney();
-  const [code, setCode] = useState('');
+  const [params, setParams] = useSearchParams();
+  const fromOffer = (params.get('coupon') || '').trim().toUpperCase();
+  const [code, setCode] = useState(fromOffer);
   const [error, setError] = useState('');
   const offers = useQuery({ queryKey: ['public-coupons'], queryFn: api.publicCoupons, select: (d) => d.coupons, staleTime: 5 * 60 * 1000 });
+  const mine = useMyCoupons();
+  const myCodes = (mine.data?.mine || []).filter((c) => c.status === 'available');
+  const hasItems = (cart?.items?.length || 0) > 0;
+  const tried = useRef('');
+
+  // "Use offer" from My coupons / the Offers page lands here with ?coupon=CODE: apply it once the bag has items.
+  useEffect(() => {
+    if (!user || !fromOffer || tried.current === fromOffer || summary?.coupon?.code === fromOffer) return;
+    if (!hasItems) {
+      setError('Add something to your bag and your code will be ready to apply.');
+      return;
+    }
+    tried.current = fromOffer;
+    applyCoupon.mutate(fromOffer, {
+      onSuccess: () => {
+        setCode('');
+        setError('');
+        const next = new URLSearchParams(params);
+        next.delete('coupon');
+        setParams(next, { replace: true });
+      },
+      onError: (e) => setError(e.message),
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, fromOffer, hasItems]);
 
   if (!user) {
     return (
       <p className="text-body-sm text-on-surface-variant flex items-center gap-2">
         <Icon name="sell" className="text-[18px] text-secondary" />
-        <span><Link to="/login?next=/cart" className="text-secondary underline">Sign in</Link> to apply coupon codes.</span>
+        <span><Link to={`/login?next=${encodeURIComponent(fromOffer ? `/cart?coupon=${fromOffer}` : '/cart')}`} className="text-secondary underline">Sign in</Link> to apply coupon codes.</span>
       </p>
     );
   }
@@ -56,6 +84,15 @@ export function CouponBox() {
         <Button type="submit" variant="primary" size="sm" className="h-10" loading={applyCoupon.isPending}>Apply</Button>
       </form>
       {(error || (cart.couponCode && summary?.couponError)) && <p className="text-label-md text-error">{error || summary.couponError}</p>}
+      {myCodes.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {myCodes.slice(0, 3).map((o) => (
+            <button key={o.code} type="button" title={o.description} onClick={() => submit(o.code)} className="px-2 py-1 rounded-lg border border-dashed border-violet-500/60 text-violet-700 dark:text-violet-300 text-label-sm hover:bg-violet-500/10">
+              {o.code} · {discountLabel(o)} <span className="opacity-70">(yours)</span>
+            </button>
+          ))}
+        </div>
+      )}
       {offers.data?.length > 0 && (
         <div className="flex flex-wrap gap-1.5">
           {offers.data.slice(0, 3).map((o) => (

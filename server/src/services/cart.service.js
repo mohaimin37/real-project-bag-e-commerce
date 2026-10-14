@@ -77,8 +77,9 @@ export async function computeTotals(lines, { userId, couponCode, shippingCode, s
   }
 
   const afterDiscount = round2(subtotal - discount);
+  const freeShipCoupon = coupon?.type === 'free_shipping';
   const methods = s.shippingMethods.map((m) => {
-    const free = (m.freeEligible && afterDiscount >= s.freeShippingThreshold) || afterDiscount <= 5;
+    const free = freeShipCoupon || (m.freeEligible && afterDiscount >= s.freeShippingThreshold) || afterDiscount <= 5;
     return { code: m.code, label: m.label, description: m.description, eta: m.eta, basePrice: m.price, price: free ? 0 : m.price, free };
   });
   const method = methods.find((m) => m.code === shippingCode) || methods[0];

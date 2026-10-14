@@ -12,18 +12,18 @@ import { Icon, Img, Modal, Spinner } from '../ui';
 const STORAGE_KEY = 'wt_recent_searches_v2';
 
 const TRENDING_SEARCHES = [
-  { text: 'Laptop Backpacks', icon: 'backpack', badge: 'HOT', color: 'text-amber-500 bg-amber-500/10 border-amber-500/20' },
+  { text: 'Laptop Backpacks', icon: 'backpack', badge: 'HOT', color: 'text-rose-500 bg-rose-500/10 border-rose-500/20' },
   { text: 'Cabin Trolley 45L', icon: 'luggage', badge: 'TRAVEL', color: 'text-cyan-500 bg-cyan-500/10 border-cyan-500/20' },
   { text: 'Leather Briefcase', icon: 'work', badge: 'OFFICE', color: 'text-indigo-500 bg-indigo-500/10 border-indigo-500/20' },
   { text: 'Waterproof Duffle', icon: 'water_drop', badge: 'BESTSELLER', color: 'text-blue-500 bg-blue-500/10 border-blue-500/20' },
   { text: 'RFID Card Wallet', icon: 'wallet', badge: 'MUST HAVE', color: 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20' },
   { text: 'Luxury Chic Tote', icon: 'shopping_bag', badge: 'PREMIUM', color: 'text-rose-500 bg-rose-500/10 border-rose-500/20' },
-  { text: '50% Off Festival Drops', icon: 'sell', badge: '50% OFF', color: 'text-rose-500 bg-rose-500/15 border-rose-500/30', to: '/offers' },
+  { text: 'Current Offers', icon: 'sell', badge: 'SALE', color: 'text-rose-500 bg-rose-500/15 border-rose-500/30', to: '/offers' },
 ];
 
 const VISUAL_CATEGORIES = [
   { name: 'Backpacks', desc: 'Tech & Daily Commute', icon: 'backpack', to: '/shop/backpacks', color: 'from-indigo-600/20 to-violet-600/10', count: '48+ styles' },
-  { name: 'Briefcases', desc: 'Work & Laptop Folios', icon: 'work', to: '/shop/briefcases', color: 'from-amber-600/20 to-orange-600/10', count: '24+ styles' },
+  { name: 'Briefcases', desc: 'Work & Laptop Folios', icon: 'work', to: '/shop/briefcases', color: 'from-rose-600/20 to-orange-600/10', count: '24+ styles' },
   { name: 'Travel Luggage', desc: 'Cabin Duffles & Rollers', icon: 'luggage', to: '/shop/travel-utility', color: 'from-cyan-600/20 to-blue-600/10', count: '32+ styles' },
   { name: 'Handbags & Totes', desc: 'Chic Everyday Carry', icon: 'shopping_bag', to: '/shop/handbags-and-totes', color: 'from-pink-600/20 to-rose-600/10', count: '36+ styles' },
   { name: 'Wallets & Card', desc: 'Slim RFID Organizers', icon: 'wallet', to: '/shop/wallets', color: 'from-emerald-600/20 to-teal-600/10', count: '18+ styles' },
@@ -42,7 +42,7 @@ const STYLE_LENS = [
   { label: '16" Laptop Sleeve', icon: 'laptop_mac', query: 'laptop' },
   { label: 'Cabin Size Compliant', icon: 'flight_takeoff', query: 'cabin' },
   { label: 'Anti-Theft TSA Locks', icon: 'lock', query: 'lock' },
-  { label: 'Ultra-Lightweight', icon: 'feather', query: 'lightweight' },
+  { label: 'Ultra-Lightweight', icon: 'air', query: 'lightweight' },
   { label: 'Full-Grain Leather', icon: 'texture', query: 'leather' },
   { label: '⭐ 4.5+ Rated Customer Faves', icon: 'star', to: '/shop?rating=4.5' },
 ];
@@ -406,15 +406,15 @@ export default function SearchModal() {
 
         {/* Voice Search Pulse Banner (When Active) */}
         {isListening && (
-          <div className="bg-gradient-to-r from-rose-500/15 via-secondary/15 to-amber-500/15 border-b border-secondary/30 px-4 py-3 flex items-center justify-between animate-fade-in">
+          <div className="bg-gradient-to-r from-rose-500/15 via-secondary/15 to-rose-500/15 border-b border-secondary/30 px-4 py-3 flex items-center justify-between animate-fade-in">
             <div className="flex items-center gap-3">
               {/* Sound Wave Bars Widget */}
               <div className="flex items-center gap-1 h-6">
                 <span className="w-1 h-3 rounded-full bg-secondary animate-pulse" />
-                <span className="w-1 h-5 rounded-full bg-amber-400 animate-pulse delay-75" />
+                <span className="w-1 h-5 rounded-full bg-rose-400 animate-pulse delay-75" />
                 <span className="w-1 h-6 rounded-full bg-rose-500 animate-pulse delay-150" />
                 <span className="w-1 h-4 rounded-full bg-secondary animate-pulse delay-100" />
-                <span className="w-1 h-2 rounded-full bg-amber-400 animate-pulse" />
+                <span className="w-1 h-2 rounded-full bg-rose-400 animate-pulse" />
               </div>
               <div className="flex flex-col">
                 <span className="text-[12px] font-bold text-on-surface">Listening now...</span>
@@ -484,9 +484,9 @@ export default function SearchModal() {
               <div className="p-3 rounded-2xl bg-surface-container-lowest border border-outline-variant/30 shadow-xs">
                 <div className="flex items-center justify-between mb-2.5">
                   <span className="text-[11px] font-black uppercase tracking-wider text-outline flex items-center gap-1.5">
-                    <Icon name="local_fire_department" className="text-[16px] text-amber-500" /> Trending Now
+                    <Icon name="local_fire_department" className="text-[16px] text-rose-500" /> Trending Now
                   </span>
-                  <span className="px-1.5 py-0.5 rounded-full bg-amber-500/10 text-amber-500 text-[9px] font-extrabold border border-amber-500/20">
+                  <span className="px-1.5 py-0.5 rounded-full bg-rose-500/10 text-rose-500 text-[9px] font-extrabold border border-rose-500/20">
                     🔥 +140% Hits
                   </span>
                 </div>
@@ -563,7 +563,7 @@ export default function SearchModal() {
               {/* WIDGET 5: Style & Feature Lens */}
               <div className="p-3 rounded-2xl bg-surface-container-lowest border border-outline-variant/30 shadow-xs">
                 <span className="text-[11px] font-black uppercase tracking-wider text-outline flex items-center gap-1.5 mb-2">
-                  <Icon name="auto_awesome" className="text-[15px] text-amber-500" /> Feature Lens
+                  <Icon name="auto_awesome" className="text-[15px] text-rose-500" /> Feature Lens
                 </span>
                 <div className="flex flex-wrap gap-1.5">
                   {STYLE_LENS.map((s) => (
@@ -716,7 +716,7 @@ export default function SearchModal() {
                             {r.item.category?.name || 'Bags'}
                           </span>
                           {r.item.isBestseller && (
-                            <span className="text-[8.5px] font-black text-amber-500 bg-amber-500/10 px-1 rounded">
+                            <span className="text-[8.5px] font-black text-rose-500 bg-rose-500/10 px-1 rounded">
                               HOT
                             </span>
                           )}
@@ -844,14 +844,14 @@ export default function SearchModal() {
 
           {/* Desktop Voice Listening Pulse Banner */}
           {isListening && (
-            <div className="mt-3 p-3 rounded-2xl bg-gradient-to-r from-rose-500/15 via-secondary/15 to-amber-500/15 border border-secondary/30 flex items-center justify-between animate-fade-in">
+            <div className="mt-3 p-3 rounded-2xl bg-gradient-to-r from-rose-500/15 via-secondary/15 to-rose-500/15 border border-secondary/30 flex items-center justify-between animate-fade-in">
               <div className="flex items-center gap-3">
                 <div className="flex items-center gap-1 h-6">
                   <span className="w-1 h-3 rounded-full bg-secondary animate-pulse" />
-                  <span className="w-1 h-5 rounded-full bg-amber-400 animate-pulse delay-75" />
+                  <span className="w-1 h-5 rounded-full bg-rose-400 animate-pulse delay-75" />
                   <span className="w-1 h-6 rounded-full bg-rose-500 animate-pulse delay-150" />
                   <span className="w-1 h-4 rounded-full bg-secondary animate-pulse delay-100" />
-                  <span className="w-1 h-2 rounded-full bg-amber-400 animate-pulse" />
+                  <span className="w-1 h-2 rounded-full bg-rose-400 animate-pulse" />
                 </div>
                 <div>
                   <span className="text-[13px] font-bold text-on-surface">Listening to your voice...</span>
@@ -923,9 +923,9 @@ export default function SearchModal() {
                   <div className="p-3.5 rounded-2xl bg-surface-container-low/70 border border-outline-variant/30">
                     <div className="flex items-center justify-between mb-2.5">
                       <span className="text-[11px] font-black uppercase tracking-wider text-outline flex items-center gap-1.5">
-                        <Icon name="local_fire_department" className="text-[16px] text-amber-500" /> Trending Now
+                        <Icon name="local_fire_department" className="text-[16px] text-rose-500" /> Trending Now
                       </span>
-                      <span className="px-1.5 py-0.5 rounded-full bg-amber-500/10 text-amber-500 text-[9px] font-extrabold border border-amber-500/20">
+                      <span className="px-1.5 py-0.5 rounded-full bg-rose-500/10 text-rose-500 text-[9px] font-extrabold border border-rose-500/20">
                         🔥 Popular
                       </span>
                     </div>
@@ -1009,7 +1009,7 @@ export default function SearchModal() {
                   {/* WIDGET 5: Style & Feature Lens */}
                   <div className="p-3.5 rounded-2xl bg-surface-container-low/70 border border-outline-variant/30">
                     <span className="text-[11px] font-black uppercase tracking-wider text-outline flex items-center gap-1.5 mb-2">
-                      <Icon name="auto_awesome" className="text-[15px] text-amber-500" /> Feature & Material Lens
+                      <Icon name="auto_awesome" className="text-[15px] text-rose-500" /> Feature & Material Lens
                     </span>
                     <div className="flex flex-wrap gap-2">
                       {STYLE_LENS.map((s) => (
@@ -1167,7 +1167,7 @@ export default function SearchModal() {
                               {r.item.category?.name || 'Bags'}
                             </span>
                             {r.item.isBestseller && (
-                              <span className="text-[9px] font-black text-amber-500 bg-amber-500/10 px-1 rounded">
+                              <span className="text-[9px] font-black text-rose-500 bg-rose-500/10 px-1 rounded">
                                 HOT
                               </span>
                             )}

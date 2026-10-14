@@ -525,6 +525,84 @@ function BillInvoiceDispatcher({ order: o, onDispatched, open, onOpenChange }) {
   );
 }
 
+const REFUND_SOURCE = { razorpay: 'Razorpay (original method)', giftcard: 'Gift card', wallet: 'WILDTANE Wallet' };
+
+/** Cancellation + refund as recorded from the gateway. Failed gateway refunds can be retried safely. */
+function RefundPanel({ order: o, onChanged }) {
+  const retry = useMutation({
+    mutationFn: () => adminApi.retryRefund(o._id),
+    onSuccess: (res) => {
+      toast.success(res.order?.refundDetails?.status === 'Failed' ? 'Refund failed — check the reason below' : 'Refund sent');
+      onChanged();
+    },
+    onError: (e) => toast.error(e.message),
+  });
+  const r = o.refundDetails || {};
+  if (o.orderStatus !== 'Cancelled' && !(r.parts?.length)) return null;
+  return (
+    <Panel title="Cancellation & refund">
+      <div className="flex flex-col gap-2 text-body-sm">
+        <p>
+          Cancellation: <b>{o.cancellation?.status && o.cancellation.status !== 'None' ? o.cancellation.status : 'Confirmed'}</b>
+          {o.cancellation?.by ? ` by ${o.cancellation.by}` : ''}
+          {o.cancellation?.reason ? ` — “${o.cancellation.reason}”` : ''}
+        </p>
+        <p>Refund: <b>{r.status || 'None'}</b>{r.amount ? ` · ${formatINR(r.amount)}` : ''}</p>
+        {(r.parts || []).map((p) => (
+          <div key={p.source} className="p-2 rounded-lg bg-surface-container-low">
+            <p className="flex justify-between gap-2"><span>{REFUND_SOURCE[p.source] || p.source}</span><span>{formatINR(p.amount)} · <b>{p.status}</b></span></p>
+            {p.providerRefundId && <p className="text-label-sm font-normal text-outline">Refund ID {p.providerRefundId}{p.providerStatus ? ` (${p.providerStatus})` : ''}</p>}
+            {p.failureReason && <p className="text-label-sm text-error">{p.failureReason}</p>}
+          </div>
+        ))}
+        {!r.parts?.length && o.orderStatus === 'Cancelled' && ['Paid', 'Refunded'].includes(o.paymentStatus) && (
+          <p className="text-label-sm text-on-surface-variant">Cancelled before refunds were tracked automatically — confirm in the Razorpay dashboard that this payment was refunded.</p>
+        )}
+        {r.status === 'Awaiting approval' && (
+          <div className="p-3 rounded-lg bg-surface-container-low flex flex-col gap-2">
+            <p>This refund is waiting for you (Settings → Payments → refunds need approval). It goes back to the original payment, gift card and wallet the customer used.</p>
+            <Button size="sm" icon="send_money" loading={retry.isPending} onClick={() => retry.mutate()}>Refund {formatINR(r.amount || 0)} now</Button>
+          </div>
+        )}
+        {r.status === 'Failed' && (
+          <Button size="sm" icon="replay" loading={retry.isPending} onClick={() => retry.mutate()}>Retry refund</Button>
+        )}
+        <p className="text-label-sm font-normal text-outline">Gateway refund status updates arrive by Razorpay webhook (needs RAZORPAY_WEBHOOK_SECRET).</p>
+      </div>
+    </Panel>
+  );
+}
+
+/** Shiprocket shipment: book it, see the AWB, pull the latest tracking. */
+function ShipmentPanel({ order: o, onChanged }) {
+  const status = useQuery({ queryKey: ['admin', 'shipping-status'], queryFn: adminApi.shippingStatus, staleTime: 5 * 60 * 1000 });
+  const create = useMutation({ mutationFn: () => adminApi.createShipment(o._id), onSuccess: () => { toast.success('Shipment booked with Shiprocket'); onChanged(); }, onError: (e) => { toast.error(e.message); onChanged(); } });
+  const sync = useMutation({ mutationFn: () => adminApi.syncShipment(o._id), onSuccess: () => { toast.success('Tracking updated'); onChanged(); }, onError: (e) => toast.error(e.message) });
+  const s = o.shipment;
+  const configured = status.data?.configured;
+  const final = ['Cancelled', 'Returned'].includes(o.orderStatus);
+  return (
+    <Panel title="Shipment">
+      <div className="flex flex-col gap-2 text-body-sm">
+        {s?.shipmentId || s?.awb ? (
+          <>
+            <p>{s.courier || 'Courier not assigned yet'}{s.awb ? ` · AWB ${s.awb}` : ''}</p>
+            {s.status && <p>Status: <b>{s.status}</b></p>}
+            {s.lastSyncedAt && <p className="text-label-sm font-normal text-outline">Last update {formatDateTime(s.lastSyncedAt)}</p>}
+            {s.trackingUrl && <a href={s.trackingUrl} target="_blank" rel="noreferrer" className="text-secondary hover:underline">Open tracking page</a>}
+            {s.awb && configured && <Button size="sm" variant="tonal" icon="sync" loading={sync.isPending} onClick={() => sync.mutate()}>Refresh tracking</Button>}
+          </>
+        ) : configured ? (
+          !final && <Button size="sm" icon="local_shipping" loading={create.isPending} onClick={() => create.mutate()}>Book shipment with Shiprocket</Button>
+        ) : (
+          <p className="text-on-surface-variant">No shipping provider connected. Enter the courier and tracking number in <b>Update status</b>. Connect Shiprocket in Settings → Integrations to book shipments here.</p>
+        )}
+        {s?.error && <p className="text-label-sm text-error">Last provider error: {s.error}</p>}
+      </div>
+    </Panel>
+  );
+}
+
 export default function OrderDetail() {
   const { id } = useParams();
   const [params, setParams] = useSearchParams();
@@ -676,7 +754,9 @@ export default function OrderDetail() {
               {o.coinDiscount > 0 && <div className="flex justify-between text-emerald-700 dark:text-emerald-400"><span>Coins used ({o.coinsRedeemed})</span><span>−{formatINR(o.coinDiscount)}</span></div>}
               <div className="flex justify-between"><span className="text-on-surface-variant">Shipping · {o.shippingMethod?.label}</span><span>{formatINR(o.shipping)}</span></div>
               <div className="flex justify-between"><span className="text-on-surface-variant">Tax</span><span>{formatINR(o.tax)}</span></div>
-              <div className="flex justify-between text-headline-sm pt-1 border-t border-surface-container-high mt-1"><span>Grand total</span><span>{formatINR(o.grandTotal)}</span></div>
+              {o.giftCard?.amount > 0 && <div className="flex justify-between text-emerald-700 dark:text-emerald-400"><span>Gift card ({o.giftCard.code})</span><span>−{formatINR(o.giftCard.amount)}</span></div>}
+              {o.walletAmount > 0 && <div className="flex justify-between text-emerald-700 dark:text-emerald-400"><span>WILDTANE Wallet</span><span>−{formatINR(o.walletAmount)}</span></div>}
+              <div className="flex justify-between text-headline-sm pt-1 border-t border-surface-container-high mt-1"><span>{o.giftCard?.amount > 0 || o.walletAmount > 0 ? 'Paid by method' : 'Grand total'}</span><span>{formatINR(o.grandTotal)}</span></div>
               {o.coinsEarned > 0 && <p className="text-[12px] text-on-surface-variant">Customer earned {o.coinsEarned} coins{['Cancelled', 'Returned'].includes(o.orderStatus) ? ' (removed after cancellation/return)' : ''}</p>}
             </div>
           </Panel>
@@ -732,6 +812,8 @@ export default function OrderDetail() {
               {o.paymentMethod === 'cod' && <p className="text-label-sm font-normal text-outline">COD orders are marked paid automatically when delivered.</p>}
             </div>
           </Panel>
+          <RefundPanel order={o} onChanged={refresh} />
+          <ShipmentPanel order={o} onChanged={refresh} />
           <Panel title="Timeline"><OrderTimeline order={o} /></Panel>
         </div>
       </div>

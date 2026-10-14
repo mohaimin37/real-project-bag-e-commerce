@@ -71,7 +71,8 @@ export default function InstallAppBanner() {
   return (
     <aside
       aria-label="Install WILDTANE App"
-      className="md:hidden bg-surface-container-lowest border-b border-surface-container-high px-3 py-1.5 flex items-center justify-between gap-2.5"
+      // Floats just above the bottom tab bar, so it never pushes the page content down.
+      className="md:hidden fixed inset-x-2 bottom-[calc(4.25rem+env(safe-area-inset-bottom))] z-40 rounded-2xl bg-surface-container-lowest border border-surface-container-high shadow-lift px-3 py-2 flex items-center justify-between gap-2.5 animate-fade-in"
     >
       <div className="flex items-center gap-2.5 min-w-0">
         <img

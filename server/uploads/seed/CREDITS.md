@@ -158,3 +158,37 @@ Files in `variants/` are colour variations generated from the photos above (bag 
 | catalog/cabin-emerald.jpg | https://unsplash.com/photos/oXk-03LEFsk |
 | catalog/cabin-emerald-teal.jpg | https://unsplash.com/photos/-ZUHytrj4Ic |
 | catalog/cubes-navy-2.jpg | https://unsplash.com/photos/HejqYjjWGOs |
+
+
+## Clothing & Perfumes (CC0)
+
+Public-domain (CC0) photos from StockSnap and rawpixel, found via openverse.org. No attribution is required; credited as a courtesy.
+
+| File | Source | Creator |
+|---|---|---|
+| catalog/pf-oils-amber-green.jpg | https://www.rawpixel.com/image/6027555/perfume-bottles-free-public-domain-cc0-photo | — (rawpixel, CC0) |
+| catalog/pf-oil-cork-floral.jpg | https://www.rawpixel.com/image/5910911/image-flower-public-domain-floral | — (rawpixel, CC0) |
+| catalog/pf-edp-trio.jpg | https://www.rawpixel.com/image/5922636/photo-image-public-domain-wooden-table | — (rawpixel, CC0) |
+| catalog/pf-edp-amber-blossom.jpg | https://www.rawpixel.com/image/6020133/photo-image-public-domain-white-flower-free | — (rawpixel, CC0) |
+| catalog/pf-edp-violet-bloom.jpg | https://www.rawpixel.com/image/6033727/photo-image-flower-public-domain-plant | — (rawpixel, CC0) |
+| catalog/pf-mini-teal.jpg | https://www.rawpixel.com/image/7475778/perfume-bottle | — (rawpixel, CC0) |
+| catalog/pf-mini-cobalt.jpg | https://www.rawpixel.com/image/7656646/photo-image-vintage-art-public-domain | — (rawpixel, CC0) |
+| catalog/cl-tees-rail.jpg | https://www.rawpixel.com/image/3301357/free-photo-image-t-shirt-shirt-color-clothes-hanging | — (rawpixel, CC0) |
+| catalog/cl-tees-stack.jpg | https://www.rawpixel.com/image/11515803/stack-folded-t-shirts | — (rawpixel, CC0) |
+| catalog/cl-tee-white-hanger.jpg | https://www.rawpixel.com/image/5928383/photo-image-public-domain-t-shirt-free | — (rawpixel, CC0) |
+| catalog/cl-shirt-stripe.jpg | https://stocksnap.io/photo/suitcase-shirt-XSIAE0X9G9 | Angelina Litvin (StockSnap, CC0) |
+| catalog/cl-shirt-denim.jpg | https://www.rawpixel.com/image/6032758/demin-shirt-free-public-domain-cc0-photo | — (rawpixel, CC0) |
+| catalog/cl-shirt-flannel.jpg | https://stocksnap.io/photo/plaid-shirt-381E9A13D0 | Daria Nepriakhina (StockSnap, CC0) |
+| catalog/cl-jacket-corduroy.jpg | https://www.rawpixel.com/image/11800499/mans-shooting-jacket-and-vest | LACMA (public domain) (rawpixel, CC0) |
+| catalog/cl-jacket-puffer.jpg | https://www.rawpixel.com/image/5918315/down-jacket-free-public-domain-cc0-photo | — (rawpixel, CC0) |
+| catalog/cl-blazer-navy.jpg | https://stocksnap.io/photo/suit-jacket-J18ZCO3IPA | Olu Eletu (StockSnap, CC0) |
+| catalog/cl-jacket-denim-light.jpg | https://stocksnap.io/photo/blue-denim-UMLWILXWPK | Benjamin Voros (StockSnap, CC0) |
+| catalog/cl-overshirt-denim.jpg | https://www.rawpixel.com/image/8849885/denim-jacket-designed-arthur-mcgee | Smithsonian NMAAHC (CC0) (rawpixel, CC0) |
+| catalog/cl-knit-chunky.jpg | https://stocksnap.io/photo/clothes-sweaters-OA0AFM3HYZ | Michal Kulesza (StockSnap, CC0) |
+| catalog/cl-knit-puff-sleeve.jpg | https://www.rawpixel.com/image/12850726/sweater | The Met (CC0) (rawpixel, CC0) |
+| catalog/cl-hoodie-pink.jpg | https://www.rawpixel.com/image/3292744/free-photo-image-apparel-banister-blossom | — (rawpixel, CC0) |
+| catalog/cl-jeans-classic.jpg | https://www.rawpixel.com/image/5912112/image-public-domain-blue-fashion | — (rawpixel, CC0) |
+| catalog/cl-jeans-straight.jpg | https://stocksnap.io/photo/blue-jeans-BCRQWOTPWM | Seacoast Sage (StockSnap, CC0) |
+| catalog/cl-dress-floral.jpg | https://stocksnap.io/photo/woman-dress-KDQ60E3BPD | Valeria Boltneva (StockSnap, CC0) |
+| catalog/cl-dress-sundress.jpg | https://stocksnap.io/photo/girl-dress-7HIJXYHAC3 | Matt Moloney (StockSnap, CC0) |
+| catalog/cl-dress-white.jpg | https://stocksnap.io/photo/woman-dress-OO6YBBXJAB | Matt Bango (StockSnap, CC0) |

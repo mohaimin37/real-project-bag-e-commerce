@@ -1,0 +1,1064 @@
+[
+ {
+  "sku": "WT-F001",
+  "name": "Field Canvas Laptop Messenger 15\"",
+  "section": "laptop-bags",
+  "colour": "Heather Grey",
+  "photo": "/uploads/seed/catalog/messenger-expedition.jpg",
+  "price": 4999,
+  "gender": "unisex"
+ },
+ {
+  "sku": "WT-F002",
+  "name": "Two-Tone Leather Laptop Bag 15\"",
+  "section": "laptop-bags",
+  "colour": "Saddle Tan",
+  "photo": "/uploads/seed/catalog/laptop-sterling.jpg",
+  "price": 6999,
+  "gender": "men"
+ },
+ {
+  "sku": "WT-F003",
+  "name": "Boxy Leather Crossbody",
+  "section": "crossbody-bags",
+  "colour": "Black",
+  "photo": "/uploads/seed/crossbody-camera.jpg",
+  "price": 3499,
+  "gender": "women"
+ },
+ {
+  "sku": "WT-F004",
+  "name": "Soft Leather Crossbody",
+  "section": "crossbody-bags",
+  "colour": "White",
+  "photo": "/uploads/seed/catalog/crossbody-cloud.jpg",
+  "price": 3299,
+  "gender": "women"
+ },
+ {
+  "sku": "WT-F005",
+  "name": "Barrel Leather Crossbody",
+  "section": "crossbody-bags",
+  "colour": "Caramel",
+  "photo": "/uploads/seed/catalog/crossbody-nova.jpg",
+  "price": 3799,
+  "gender": "women"
+ },
+ {
+  "sku": "WT-F006",
+  "name": "Compact Camera Crossbody",
+  "section": "crossbody-bags",
+  "colour": "Tan",
+  "photo": "/uploads/seed/variants/metro-camera-crossbody-tan.jpg",
+  "price": 2999,
+  "gender": "unisex"
+ },
+ {
+  "sku": "WT-F007",
+  "name": "Everyday Camera Crossbody",
+  "section": "crossbody-bags",
+  "colour": "Navy",
+  "photo": "/uploads/seed/variants/metro-camera-crossbody-navy.jpg",
+  "price": 2999,
+  "gender": "unisex"
+ },
+ {
+  "sku": "WT-F008",
+  "name": "Mini Barrel Crossbody",
+  "section": "crossbody-bags",
+  "colour": "Sand",
+  "photo": "/uploads/seed/crossbody-dune.jpg",
+  "price": 2799,
+  "gender": "women"
+ },
+ {
+  "sku": "WT-F009",
+  "name": "Half-Moon Crossbody",
+  "section": "crossbody-bags",
+  "colour": "Chocolate",
+  "photo": "/uploads/seed/variants/dune-barrel-crossbody-chocolate.jpg",
+  "price": 2999,
+  "gender": "women"
+ },
+ {
+  "sku": "WT-F010",
+  "name": "Voyager Leather Crossbody",
+  "section": "crossbody-bags",
+  "colour": "Cognac",
+  "photo": "/uploads/seed/catalog/camera-voyager.jpg",
+  "price": 4499,
+  "gender": "unisex"
+ },
+ {
+  "sku": "WT-F011",
+  "name": "Tech Chest Sling 5L",
+  "section": "sling-bags",
+  "colour": "Matte Black",
+  "photo": "/uploads/seed/sling-black.jpg",
+  "price": 2499,
+  "gender": "men"
+ },
+ {
+  "sku": "WT-F012",
+  "name": "Leather Utility Sling",
+  "section": "sling-bags",
+  "colour": "Tan",
+  "photo": "/uploads/seed/catalog/utility-ledger.jpg",
+  "price": 3999,
+  "gender": "men"
+ },
+ {
+  "sku": "WT-F013",
+  "name": "Canvas Utility Sling",
+  "section": "sling-bags",
+  "colour": "Sahara Sand",
+  "photo": "/uploads/seed/sling-sand.jpg",
+  "price": 1799,
+  "gender": "men"
+ },
+ {
+  "sku": "WT-F014",
+  "name": "Commuter Sling 7L",
+  "section": "sling-bags",
+  "colour": "Concrete Grey",
+  "photo": "/uploads/seed/variants/volt-modular-sling-6l-concrete-grey.jpg",
+  "price": 2999,
+  "gender": "men"
+ },
+ {
+  "sku": "WT-F015",
+  "name": "Classic Leather Duffle 45L",
+  "section": "duffle-bags",
+  "colour": "Vintage Chestnut",
+  "photo": "/uploads/seed/duffle-tan.jpg",
+  "price": 13999,
+  "gender": "men"
+ },
+ {
+  "sku": "WT-F016",
+  "name": "Gym & Weekend Duffle 40L",
+  "section": "duffle-bags",
+  "colour": "Sage Khaki",
+  "photo": "/uploads/seed/catalog/duffel-transit.jpg",
+  "price": 3499,
+  "gender": "men"
+ },
+ {
+  "sku": "WT-F017",
+  "name": "Chevron Chain Clutch",
+  "section": "clutches",
+  "colour": "Candy Pink",
+  "photo": "/uploads/seed/catalog/chain-chevron.jpg",
+  "price": 2999,
+  "gender": "women"
+ },
+ {
+  "sku": "WT-F018",
+  "name": "Chain Shoulder Clutch",
+  "section": "clutches",
+  "colour": "Mauve",
+  "photo": "/uploads/seed/catalog/chain-chevron-mauve.jpg",
+  "price": 2999,
+  "gender": "women"
+ },
+ {
+  "sku": "WT-F019",
+  "name": "Envelope Leather Clutch",
+  "section": "clutches",
+  "colour": "Espresso",
+  "photo": "/uploads/seed/clutch-espresso.jpg",
+  "price": 2999,
+  "gender": "women"
+ },
+ {
+  "sku": "WT-F020",
+  "name": "Slim Zip Clutch",
+  "section": "clutches",
+  "colour": "Espresso",
+  "photo": "/uploads/seed/clutch-espresso-table.jpg",
+  "price": 2499,
+  "gender": "women"
+ },
+ {
+  "sku": "WT-F021",
+  "name": "Structured Zip Clutch",
+  "section": "clutches",
+  "colour": "Ivory",
+  "photo": "/uploads/seed/variants/soiree-leather-zip-clutch-ivory.jpg",
+  "price": 3299,
+  "gender": "women"
+ },
+ {
+  "sku": "WT-F022",
+  "name": "Seaside Straw Tote",
+  "section": "beach-straw-bags",
+  "colour": "Straw",
+  "photo": "/uploads/seed/catalog/straw-market.jpg",
+  "price": 1999,
+  "gender": "women"
+ },
+ {
+  "sku": "WT-F023",
+  "name": "Round Rattan Basket Bag",
+  "section": "beach-straw-bags",
+  "colour": "Wheat",
+  "photo": "/uploads/seed/catalog/basket-seaside.jpg",
+  "price": 2499,
+  "gender": "women"
+ },
+ {
+  "sku": "WT-F024",
+  "name": "Pom-Pom Straw Beach Bag",
+  "section": "beach-straw-bags",
+  "colour": "Sea Blue & Straw",
+  "photo": "/uploads/seed/catalog/straw-fiesta.jpg",
+  "price": 1799,
+  "gender": "women"
+ },
+ {
+  "sku": "WT-F025",
+  "name": "Executive Leather Briefcase",
+  "section": "tech-briefcases",
+  "colour": "Black",
+  "photo": "/uploads/seed/variants/oxford-twin-buckle-briefcase-black.jpg",
+  "price": 9999,
+  "gender": "men"
+ },
+ {
+  "sku": "WT-F026",
+  "name": "Vintage Satchel Briefcase",
+  "section": "tech-briefcases",
+  "colour": "Rosewood",
+  "photo": "/uploads/seed/briefcase-oxford.jpg",
+  "price": 7999,
+  "gender": "men"
+ },
+ {
+  "sku": "WT-F027",
+  "name": "Slim Document Briefcase",
+  "section": "tech-briefcases",
+  "colour": "Indigo",
+  "photo": "/uploads/seed/variants/jute-laptop-brief-14-indigo.jpg",
+  "price": 3999,
+  "gender": "unisex"
+ },
+ {
+  "sku": "WT-F028",
+  "name": "Jute Laptop Brief 14\"",
+  "section": "tech-briefcases",
+  "colour": "Natural Jute",
+  "photo": "/uploads/seed/brief-jute.jpg",
+  "price": 3499,
+  "gender": "unisex"
+ },
+ {
+  "sku": "WT-F029",
+  "name": "Leather Laptop Portfolio",
+  "section": "tech-briefcases",
+  "colour": "Cognac",
+  "photo": "/uploads/seed/catalog/portfolio-atlas.jpg",
+  "price": 4999,
+  "gender": "unisex"
+ },
+ {
+  "sku": "WT-F030",
+  "name": "Heritage Messenger Briefcase",
+  "section": "tech-briefcases",
+  "colour": "Saddle Brown",
+  "photo": "/uploads/seed/messenger-leather.jpg",
+  "price": 8999,
+  "gender": "men"
+ },
+ {
+  "sku": "WT-F031",
+  "name": "Canvas City Daypack 18L",
+  "section": "daypacks",
+  "colour": "Heather Grey",
+  "photo": "/uploads/seed/daypack-grey.jpg",
+  "price": 2499,
+  "gender": "unisex"
+ },
+ {
+  "sku": "WT-F032",
+  "name": "Urban Daypack 16L",
+  "section": "daypacks",
+  "colour": "Sand",
+  "photo": "/uploads/seed/variants/heather-canvas-daypack-16l-sand.jpg",
+  "price": 2299,
+  "gender": "unisex"
+ },
+ {
+  "sku": "WT-F033",
+  "name": "Campus Daypack 22L",
+  "section": "daypacks",
+  "colour": "Midnight Navy",
+  "photo": "/uploads/seed/daypack-navy.jpg",
+  "price": 2299,
+  "gender": "unisex"
+ },
+ {
+  "sku": "WT-F034",
+  "name": "Minimal Everyday Daypack 18L",
+  "section": "daypacks",
+  "colour": "Charcoal",
+  "photo": "/uploads/seed/variants/metro-everyday-daypack-18l-charcoal.jpg",
+  "price": 2699,
+  "gender": "unisex"
+ },
+ {
+  "sku": "WT-F035",
+  "name": "Heritage Leather Daypack",
+  "section": "daypacks",
+  "colour": "Chestnut",
+  "photo": "/uploads/seed/catalog/backpack-fulton.jpg",
+  "price": 8999,
+  "gender": "unisex"
+ },
+ {
+  "sku": "WT-F036",
+  "name": "Prairie Canvas Rucksack 20L",
+  "section": "daypacks",
+  "colour": "Mustard",
+  "photo": "/uploads/seed/catalog/rucksack-prairie.jpg",
+  "price": 3299,
+  "gender": "unisex"
+ },
+ {
+  "sku": "WT-F037",
+  "name": "Trail Hiking Daypack 25L",
+  "section": "daypacks",
+  "colour": "Ocean Blue",
+  "photo": "/uploads/seed/catalog/pack-alpine.jpg",
+  "price": 3999,
+  "gender": "unisex"
+ },
+ {
+  "sku": "WT-F038",
+  "name": "Highland Canvas Daypack 20L",
+  "section": "daypacks",
+  "colour": "Charcoal",
+  "photo": "/uploads/seed/catalog/pack-highland.jpg",
+  "price": 3499,
+  "gender": "unisex"
+ },
+ {
+  "sku": "WT-F039",
+  "name": "Storm Roll-Top Commuter 25L",
+  "section": "waterproof-commuters",
+  "colour": "Black",
+  "photo": "/uploads/seed/catalog/drypack-coastline.jpg",
+  "price": 4499,
+  "gender": "unisex"
+ },
+ {
+  "sku": "WT-F040",
+  "name": "Ridgeline Roll-Top Pack 25L",
+  "section": "waterproof-commuters",
+  "colour": "Stone Grey",
+  "photo": "/uploads/seed/catalog/rolltop-ridgeline.jpg",
+  "price": 3999,
+  "gender": "unisex"
+ },
+ {
+  "sku": "WT-F041",
+  "name": "Weatherproof Trail Pack 28L",
+  "section": "waterproof-commuters",
+  "colour": "Ash Grey",
+  "photo": "/uploads/seed/pack-trailhead.jpg",
+  "price": 4299,
+  "gender": "unisex"
+ },
+ {
+  "sku": "WT-F042",
+  "name": "Rainproof Commuter Pack 28L",
+  "section": "waterproof-commuters",
+  "colour": "Forest Green",
+  "photo": "/uploads/seed/variants/trailhead-weatherproof-pack-28l-forest-green.jpg",
+  "price": 4299,
+  "gender": "unisex"
+ },
+ {
+  "sku": "WT-F043",
+  "name": "Monsoon Commuter Pack 28L",
+  "section": "waterproof-commuters",
+  "colour": "Black",
+  "photo": "/uploads/seed/variants/trailhead-weatherproof-pack-28l-black.jpg",
+  "price": 4299,
+  "gender": "unisex"
+ },
+ {
+  "sku": "WT-F044",
+  "name": "Rainproof Tech Backpack 22L",
+  "section": "waterproof-commuters",
+  "colour": "Stealth Matte Black",
+  "photo": "/uploads/seed/apex-slate.jpg",
+  "price": 4999,
+  "gender": "unisex"
+ },
+ {
+  "sku": "WT-F045",
+  "name": "Summit Weatherproof Pack 30L",
+  "section": "waterproof-commuters",
+  "colour": "Cobalt Blue",
+  "photo": "/uploads/seed/catalog/pack-summit.jpg",
+  "price": 4799,
+  "gender": "unisex"
+ },
+ {
+  "sku": "WT-F046",
+  "name": "Compression Packing Cubes (3)",
+  "section": "travel-organisers",
+  "colour": "Navy",
+  "photo": "/uploads/seed/catalog/cubes-navy-2.jpg",
+  "price": 1799,
+  "gender": "unisex"
+ },
+ {
+  "sku": "WT-F047",
+  "name": "Cable & Charger Organiser",
+  "section": "travel-organisers",
+  "colour": "Stealth Black",
+  "photo": "/uploads/seed/cable-pouch.jpg",
+  "price": 999,
+  "gender": "unisex"
+ },
+ {
+  "sku": "WT-F048",
+  "name": "Electronics Organiser Board",
+  "section": "travel-organisers",
+  "colour": "Sahara Sand",
+  "photo": "/uploads/seed/cable-pouch-detail.jpg",
+  "price": 1299,
+  "gender": "unisex"
+ },
+ {
+  "sku": "WT-F049",
+  "name": "Packing Cube Medium",
+  "section": "travel-organisers",
+  "colour": "Graphite",
+  "photo": "/uploads/seed/packing-cube.jpg",
+  "price": 699,
+  "gender": "unisex"
+ },
+ {
+  "sku": "WT-F050",
+  "name": "Toiletry Travel Organiser",
+  "section": "travel-organisers",
+  "colour": "Olive & Peach",
+  "photo": "/uploads/seed/catalog/pouch-toiletry.jpg",
+  "price": 1199,
+  "gender": "unisex"
+ },
+ {
+  "sku": "WT-F051",
+  "name": "Classic Leather Luggage Tag",
+  "section": "luggage-tags",
+  "colour": "Navy",
+  "photo": "/uploads/seed/catalog/tag-navy.jpg",
+  "price": 599,
+  "gender": "unisex"
+ },
+ {
+  "sku": "WT-F052",
+  "name": "Bright Leather Luggage Tag",
+  "section": "luggage-tags",
+  "colour": "Sky Blue",
+  "photo": "/uploads/seed/catalog/tag-sky.jpg",
+  "price": 599,
+  "gender": "unisex"
+ },
+ {
+  "sku": "WT-F053",
+  "name": "Privacy-Flap Luggage Tag",
+  "section": "luggage-tags",
+  "colour": "Navy",
+  "photo": "/uploads/seed/catalog/tag-navy.jpg",
+  "price": 649,
+  "gender": "unisex"
+ },
+ {
+  "sku": "WT-F054",
+  "name": "Buckle Strap Luggage Tag",
+  "section": "luggage-tags",
+  "colour": "Sky Blue",
+  "photo": "/uploads/seed/catalog/tag-sky.jpg",
+  "price": 649,
+  "gender": "unisex"
+ },
+ {
+  "sku": "WT-F055",
+  "name": "Luggage Tag Pair",
+  "section": "luggage-tags",
+  "colour": "Navy",
+  "photo": "/uploads/seed/catalog/tag-navy.jpg",
+  "price": 999,
+  "gender": "unisex"
+ },
+ {
+  "sku": "WT-F056",
+  "name": "Family Luggage Tag Set (4)",
+  "section": "luggage-tags",
+  "colour": "Sky Blue",
+  "photo": "/uploads/seed/catalog/tag-sky.jpg",
+  "price": 1799,
+  "gender": "unisex"
+ },
+ {
+  "sku": "WT-F057",
+  "name": "Monogram-Ready Luggage Tag",
+  "section": "luggage-tags",
+  "colour": "Navy",
+  "photo": "/uploads/seed/catalog/tag-navy.jpg",
+  "price": 699,
+  "gender": "unisex"
+ },
+ {
+  "sku": "WT-F058",
+  "name": "Slim Leather Bag Tag",
+  "section": "luggage-tags",
+  "colour": "Sky Blue",
+  "photo": "/uploads/seed/catalog/tag-sky.jpg",
+  "price": 549,
+  "gender": "unisex"
+ },
+ {
+  "sku": "WT-F059",
+  "name": "Business Card Luggage Tag",
+  "section": "luggage-tags",
+  "colour": "Navy",
+  "photo": "/uploads/seed/catalog/tag-navy.jpg",
+  "price": 599,
+  "gender": "unisex"
+ },
+ {
+  "sku": "WT-F060",
+  "name": "Wool Felt Laptop Sleeve 13\"",
+  "section": "laptop-sleeves",
+  "colour": "Heather Grey",
+  "photo": "/uploads/seed/catalog/sleeve-felt.jpg",
+  "price": 1499,
+  "gender": "unisex"
+ },
+ {
+  "sku": "WT-F061",
+  "name": "Leather Laptop Folio 14\"",
+  "section": "laptop-sleeves",
+  "colour": "Espresso Brown",
+  "photo": "/uploads/seed/folio-espresso.jpg",
+  "price": 3299,
+  "gender": "unisex"
+ },
+ {
+  "sku": "WT-F062",
+  "name": "Slim Laptop Folio 14\"",
+  "section": "laptop-sleeves",
+  "colour": "Onyx Black",
+  "photo": "/uploads/seed/variants/vanguard-executive-laptop-folio-14-onyx-black.jpg",
+  "price": 2999,
+  "gender": "unisex"
+ },
+ {
+  "sku": "WT-F063",
+  "name": "Leather Laptop Sleeve 13\"",
+  "section": "laptop-sleeves",
+  "colour": "Saddle Tan",
+  "photo": "/uploads/seed/catalog/sleeve-saddle-tan.jpg",
+  "price": 2999,
+  "gender": "unisex"
+ },
+ {
+  "sku": "WT-F064",
+  "name": "Zip Leather Laptop Case 14\"",
+  "section": "laptop-sleeves",
+  "colour": "Espresso",
+  "photo": "/uploads/seed/catalog/sleeve-saddle-espresso.jpg",
+  "price": 3499,
+  "gender": "unisex"
+ },
+ {
+  "sku": "WT-F065",
+  "name": "Padded Leather Laptop Sleeve 15\"",
+  "section": "laptop-sleeves",
+  "colour": "Cognac",
+  "photo": "/uploads/seed/catalog/sleeve-saddle-cognac.jpg",
+  "price": 3699,
+  "gender": "unisex"
+ },
+ {
+  "sku": "WT-F066",
+  "name": "Leather Tablet Sleeve 11\"",
+  "section": "laptop-sleeves",
+  "colour": "Saddle Tan",
+  "photo": "/uploads/seed/catalog/sleeve-saddle-tan-2.jpg",
+  "price": 1999,
+  "gender": "unisex"
+ },
+ {
+  "sku": "WT-F067",
+  "name": "Everyday Nylon Belt Bag",
+  "section": "belt-bags",
+  "colour": "Stone Grey",
+  "photo": "/uploads/seed/catalog/beltbag-grey.jpg",
+  "price": 1299,
+  "gender": "unisex"
+ },
+ {
+  "sku": "WT-F068",
+  "name": "Leather Hip Pack",
+  "section": "belt-bags",
+  "colour": "Cream",
+  "photo": "/uploads/seed/catalog/beltbag-cream.jpg",
+  "price": 2799,
+  "gender": "unisex"
+ },
+ {
+  "sku": "WT-F069",
+  "name": "Mini Leather Belt Bag",
+  "section": "belt-bags",
+  "colour": "Cherry Red",
+  "photo": "/uploads/seed/catalog/beltbag-red.jpg",
+  "price": 1999,
+  "gender": "women"
+ },
+ {
+  "sku": "WT-F070",
+  "name": "Iridescent Belt Bag",
+  "section": "belt-bags",
+  "colour": "Iridescent",
+  "photo": "/uploads/seed/catalog/beltbag-holo.jpg",
+  "price": 1199,
+  "gender": "women"
+ },
+ {
+  "sku": "WT-F071",
+  "name": "Metallic Waist Bag",
+  "section": "belt-bags",
+  "colour": "Magenta",
+  "photo": "/uploads/seed/catalog/beltbag-magenta.jpg",
+  "price": 1199,
+  "gender": "women"
+ },
+ {
+  "sku": "WT-F072",
+  "name": "Gloss Chest & Waist Pack",
+  "section": "belt-bags",
+  "colour": "Electric Blue",
+  "photo": "/uploads/seed/catalog/beltbag-blue.jpg",
+  "price": 1299,
+  "gender": "unisex"
+ },
+ {
+  "sku": "WT-F073",
+  "name": "Sport Waist Pack",
+  "section": "belt-bags",
+  "colour": "Stone Grey",
+  "photo": "/uploads/seed/catalog/beltbag-grey.jpg",
+  "price": 999,
+  "gender": "unisex"
+ },
+ {
+  "sku": "WT-F074",
+  "name": "Canvas Dopp Kit",
+  "section": "toiletry-kits",
+  "colour": "Olive & Peach",
+  "photo": "/uploads/seed/catalog/pouch-toiletry.jpg",
+  "price": 1499,
+  "gender": "men"
+ },
+ {
+  "sku": "WT-F075",
+  "name": "Hanging Toiletry Organiser",
+  "section": "toiletry-kits",
+  "colour": "Aqua",
+  "photo": "/uploads/seed/catalog/washbag-aqua.jpg",
+  "price": 1799,
+  "gender": "unisex"
+ },
+ {
+  "sku": "WT-F076",
+  "name": "Leather Wash Bag",
+  "section": "toiletry-kits",
+  "colour": "Black",
+  "photo": "/uploads/seed/catalog/dopp-heritage-black.jpg",
+  "price": 2499,
+  "gender": "men"
+ },
+ {
+  "sku": "WT-F077",
+  "name": "Large Leather Dopp Kit",
+  "section": "toiletry-kits",
+  "colour": "Dark Brown",
+  "photo": "/uploads/seed/catalog/dopp-heritage-brown.jpg",
+  "price": 2999,
+  "gender": "men"
+ },
+ {
+  "sku": "WT-F078",
+  "name": "Shimmer Wash Bag",
+  "section": "toiletry-kits",
+  "colour": "Aqua",
+  "photo": "/uploads/seed/catalog/washbag-aqua.jpg",
+  "price": 1299,
+  "gender": "women"
+ },
+ {
+  "sku": "WT-F079",
+  "name": "Boxy Toiletry Case",
+  "section": "toiletry-kits",
+  "colour": "Olive & Peach",
+  "photo": "/uploads/seed/catalog/pouch-toiletry.jpg",
+  "price": 1299,
+  "gender": "unisex"
+ },
+ {
+  "sku": "WT-F080",
+  "name": "Slim Leather Passport Cover",
+  "section": "passport-holders",
+  "colour": "Dark Brown",
+  "photo": "/uploads/seed/catalog/passport-heritage.jpg",
+  "price": 1199,
+  "gender": "unisex"
+ },
+ {
+  "sku": "WT-F081",
+  "name": "Leather Passport Wallet",
+  "section": "passport-holders",
+  "colour": "Dark Brown",
+  "photo": "/uploads/seed/catalog/passport-heritage.jpg",
+  "price": 1699,
+  "gender": "unisex"
+ },
+ {
+  "sku": "WT-F082",
+  "name": "Mountain Print Passport Cover",
+  "section": "passport-holders",
+  "colour": "Map Print",
+  "photo": "/uploads/seed/catalog/passport-atlas.jpg",
+  "price": 899,
+  "gender": "unisex"
+ },
+ {
+  "sku": "WT-F083",
+  "name": "Bon Voyage Passport Cover",
+  "section": "passport-holders",
+  "colour": "Blush Pink",
+  "photo": "/uploads/seed/catalog/passport-wanderlust-blush.jpg",
+  "price": 899,
+  "gender": "unisex"
+ },
+ {
+  "sku": "WT-F084",
+  "name": "Adventure Print Passport Cover",
+  "section": "passport-holders",
+  "colour": "Sky Blue",
+  "photo": "/uploads/seed/catalog/passport-wanderlust-sky.jpg",
+  "price": 899,
+  "gender": "unisex"
+ },
+ {
+  "sku": "WT-F085",
+  "name": "Explorer Print Passport Cover",
+  "section": "passport-holders",
+  "colour": "Map Print",
+  "photo": "/uploads/seed/catalog/passport-atlas.jpg",
+  "price": 949,
+  "gender": "unisex"
+ },
+ {
+  "sku": "WT-F086",
+  "name": "Slim Leather Key Ring",
+  "section": "keychains",
+  "colour": "Black",
+  "photo": "/uploads/seed/catalog/keyfob-black.jpg",
+  "price": 449,
+  "gender": "unisex"
+ },
+ {
+  "sku": "WT-F087",
+  "name": "Wristlet Key Strap",
+  "section": "keychains",
+  "colour": "Chestnut",
+  "photo": "/uploads/seed/catalog/keyfob-brown.jpg",
+  "price": 599,
+  "gender": "unisex"
+ },
+ {
+  "sku": "WT-F088",
+  "name": "Key & Coin Pouch Set",
+  "section": "keychains",
+  "colour": "Black",
+  "photo": "/uploads/seed/catalog/keyset-onyx.jpg",
+  "price": 1499,
+  "gender": "men"
+ },
+ {
+  "sku": "WT-F089",
+  "name": "Brass Ring Key Fob",
+  "section": "keychains",
+  "colour": "Black",
+  "photo": "/uploads/seed/catalog/keyfob-black.jpg",
+  "price": 499,
+  "gender": "unisex"
+ },
+ {
+  "sku": "WT-F090",
+  "name": "Leather Key Loop",
+  "section": "keychains",
+  "colour": "Chestnut",
+  "photo": "/uploads/seed/catalog/keyfob-brown.jpg",
+  "price": 449,
+  "gender": "unisex"
+ },
+ {
+  "sku": "WT-F091",
+  "name": "Compact Key Organiser",
+  "section": "keychains",
+  "colour": "Black",
+  "photo": "/uploads/seed/catalog/keyset-onyx.jpg",
+  "price": 999,
+  "gender": "men"
+ },
+ {
+  "sku": "WT-F092",
+  "name": "Leather Make-Up Pouch",
+  "section": "pouches",
+  "colour": "Tan",
+  "photo": "/uploads/seed/catalog/zippouch-tan.jpg",
+  "price": 1199,
+  "gender": "women"
+ },
+ {
+  "sku": "WT-F093",
+  "name": "Leather Cosmetic Bag",
+  "section": "pouches",
+  "colour": "Chocolate",
+  "photo": "/uploads/seed/catalog/zippouch-chocolate.jpg",
+  "price": 1299,
+  "gender": "women"
+ },
+ {
+  "sku": "WT-F094",
+  "name": "Leather Vanity Pouch",
+  "section": "pouches",
+  "colour": "Espresso",
+  "photo": "/uploads/seed/catalog/zippouch-espresso.jpg",
+  "price": 1499,
+  "gender": "women"
+ },
+ {
+  "sku": "WT-F095",
+  "name": "Tech Accessories Pouch",
+  "section": "pouches",
+  "colour": "Espresso",
+  "photo": "/uploads/seed/catalog/zippouch-espresso.jpg",
+  "price": 1099,
+  "gender": "unisex"
+ },
+ {
+  "sku": "WT-F096",
+  "name": "Leather Pencil Pouch",
+  "section": "pouches",
+  "colour": "Tan",
+  "photo": "/uploads/seed/catalog/zippouch-tan.jpg",
+  "price": 699,
+  "gender": "unisex"
+ },
+ {
+  "sku": "WT-F097",
+  "name": "Leather Coin Pouch",
+  "section": "pouches",
+  "colour": "Chocolate",
+  "photo": "/uploads/seed/catalog/zippouch-chocolate.jpg",
+  "price": 599,
+  "gender": "unisex"
+ },
+ {
+  "sku": "WT-F098",
+  "name": "Large Flat Zip Pouch",
+  "section": "pouches",
+  "colour": "Espresso",
+  "photo": "/uploads/seed/catalog/zippouch-espresso.jpg",
+  "price": 1299,
+  "gender": "unisex"
+ },
+ {
+  "sku": "WT-F099",
+  "name": "Receipt & Card Pouch",
+  "section": "pouches",
+  "colour": "Tan",
+  "photo": "/uploads/seed/catalog/zippouch-tan.jpg",
+  "price": 799,
+  "gender": "unisex"
+ },
+ {
+  "sku": "WT-F100",
+  "name": "Charger Pouch",
+  "section": "pouches",
+  "colour": "Chocolate",
+  "photo": "/uploads/seed/catalog/zippouch-chocolate.jpg",
+  "price": 899,
+  "gender": "unisex"
+ },
+ {
+  "sku": "WT-F101",
+  "name": "Sunglasses Hard Case",
+  "section": "eyewear-cases",
+  "colour": "White",
+  "photo": "/uploads/seed/catalog/eyecase-white.jpg",
+  "price": 649,
+  "gender": "unisex"
+ },
+ {
+  "sku": "WT-F102",
+  "name": "Clamshell Glasses Case",
+  "section": "eyewear-cases",
+  "colour": "White",
+  "photo": "/uploads/seed/catalog/eyecase-white-2.jpg",
+  "price": 599,
+  "gender": "unisex"
+ },
+ {
+  "sku": "WT-F103",
+  "name": "Leather Reading Glasses Sleeve",
+  "section": "eyewear-cases",
+  "colour": "Tan",
+  "photo": "/uploads/seed/catalog/eyesleeve-tan.jpg",
+  "price": 899,
+  "gender": "unisex"
+ },
+ {
+  "sku": "WT-F104",
+  "name": "Slim Glasses Sleeve",
+  "section": "eyewear-cases",
+  "colour": "Black",
+  "photo": "/uploads/seed/catalog/eyesleeve-black.jpg",
+  "price": 899,
+  "gender": "unisex"
+ },
+ {
+  "sku": "WT-F105",
+  "name": "Travel Glasses Case",
+  "section": "eyewear-cases",
+  "colour": "White",
+  "photo": "/uploads/seed/catalog/eyecase-white.jpg",
+  "price": 699,
+  "gender": "unisex"
+ },
+ {
+  "sku": "WT-F106",
+  "name": "Spectacle Case with Cloth",
+  "section": "eyewear-cases",
+  "colour": "White",
+  "photo": "/uploads/seed/catalog/eyecase-white-2.jpg",
+  "price": 649,
+  "gender": "unisex"
+ },
+ {
+  "sku": "WT-F107",
+  "name": "Pocket Glasses Sleeve",
+  "section": "eyewear-cases",
+  "colour": "Tan",
+  "photo": "/uploads/seed/catalog/eyesleeve-tan.jpg",
+  "price": 799,
+  "gender": "unisex"
+ },
+ {
+  "sku": "WT-F108",
+  "name": "Leather Sunglasses Sleeve",
+  "section": "eyewear-cases",
+  "colour": "Black",
+  "photo": "/uploads/seed/catalog/eyesleeve-black.jpg",
+  "price": 949,
+  "gender": "unisex"
+ },
+ {
+  "sku": "WT-F109",
+  "name": "Insulated Steel Bottle 750ml",
+  "section": "hydration",
+  "colour": "Matte Black",
+  "photo": "/uploads/seed/flask.jpg",
+  "price": 1299,
+  "gender": "unisex"
+ },
+ {
+  "sku": "WT-F110",
+  "name": "Insulated Bottle 500ml",
+  "section": "hydration",
+  "colour": "Sage Green",
+  "photo": "/uploads/seed/flask-sage.jpg",
+  "price": 999,
+  "gender": "unisex"
+ },
+ {
+  "sku": "WT-F111",
+  "name": "Insulated Bottle 600ml",
+  "section": "hydration",
+  "colour": "Lilac",
+  "photo": "/uploads/seed/catalog/bottle-lilac.jpg",
+  "price": 1099,
+  "gender": "unisex"
+ },
+ {
+  "sku": "WT-F112",
+  "name": "Insulated Bottle Trio",
+  "section": "hydration",
+  "colour": "Lilac",
+  "photo": "/uploads/seed/catalog/bottle-trio.jpg",
+  "price": 2999,
+  "gender": "unisex"
+ },
+ {
+  "sku": "WT-F113",
+  "name": "Steel Sports Bottle 1L",
+  "section": "hydration",
+  "colour": "Matte Black",
+  "photo": "/uploads/seed/flask.jpg",
+  "price": 1499,
+  "gender": "unisex"
+ },
+ {
+  "sku": "WT-F114",
+  "name": "Big Insulated Bottle 1L",
+  "section": "hydration",
+  "colour": "Sage Green",
+  "photo": "/uploads/seed/flask-sage.jpg",
+  "price": 1599,
+  "gender": "unisex"
+ },
+ {
+  "sku": "WT-F115",
+  "name": "Desk Bottle 500ml",
+  "section": "hydration",
+  "colour": "Lilac",
+  "photo": "/uploads/seed/catalog/bottle-lilac.jpg",
+  "price": 899,
+  "gender": "unisex"
+ },
+ {
+  "sku": "WT-F116",
+  "name": "Kids & Grown-Ups Bottle 400ml",
+  "section": "hydration",
+  "colour": "Lilac",
+  "photo": "/uploads/seed/catalog/bottle-trio.jpg",
+  "price": 799,
+  "gender": "unisex"
+ },
+ {
+  "sku": "WT-F117",
+  "name": "Carry-On Travel Backpack 40L",
+  "section": "backpacks",
+  "colour": "Stealth Matte Black",
+  "photo": "/uploads/seed/apex-slate.jpg",
+  "price": 6999,
+  "gender": "men"
+ },
+ {
+  "sku": "WT-F118",
+  "name": "Weekender Travel Backpack 35L",
+  "section": "backpacks",
+  "colour": "Black",
+  "photo": "/uploads/seed/catalog/backpack-hudson.jpg",
+  "price": 5499,
+  "gender": "men"
+ }
+]

@@ -6,20 +6,109 @@ import { adminApi } from '../lib/api';
 import { cn, formatDateTime, formatINR, imgUrl } from '../lib/format';
 import { EmptyState, Icon, Modal, Pagination, Spinner, StatusBadge } from '../components/ui';
 import { DataTable, FilterSelect, PageHeader, SearchBox, Toolbar, useListParams } from './kit';
+import { CreateReturnModal, RefundDestinationBox } from './ReturnTools';
 
 const STATUS_TABS = [
   { id: '', label: 'All requests' },
   { id: 'Requested', label: 'Requested' },
   { id: 'Approved', label: 'Approved' },
-  { id: 'Picked Up', label: 'Picked Up' },
-  { id: 'Processing', label: 'Processing' },
+  { id: 'Pickup Scheduled', label: 'Pickup scheduled' },
+  { id: 'In Inspection', label: 'In inspection' },
   { id: 'Completed', label: 'Completed' },
   { id: 'Rejected', label: 'Rejected' },
+  { id: 'Cancelled', label: 'Cancelled by customer' },
 ];
+
+/** The one decision a new request needs. Until it's made the customer sees "in process". */
+function DecisionBar({ request: r, busy, onDecide }) {
+  const [note, setNote] = useState('');
+  if (r.status !== 'Requested') return null;
+  return (
+    <div className="p-4 rounded-xl border-2 border-secondary/40 bg-secondary/5 flex flex-col gap-3">
+      <div>
+        <h4 className="text-label-lg font-bold flex items-center gap-1.5"><Icon name="gavel" className="text-[20px] text-secondary" /> Approve or reject this {r.type}?</h4>
+        <p className="text-body-sm text-on-surface-variant">
+          The customer sees <b>“{r.type === 'exchange' ? 'Exchange' : 'Return'} in process”</b> until you decide. Approving {r.type === 'return' ? 'asks them how they want their money back (UPI, bank, original payment or wallet) and ' : ''}lets you book the pickup.
+          Rejecting shows <b>“This item cannot be returned or exchanged”</b>. They get an email either way.
+        </p>
+      </div>
+      <input className="input h-10" value={note} onChange={(e) => setNote(e.target.value)} placeholder="Note for the customer (optional) — e.g. reason for rejecting" maxLength={300} />
+      <div className="flex flex-wrap gap-2">
+        <button type="button" disabled={busy} onClick={() => onDecide('Approved', note)} className="btn-primary h-10 px-5 gap-1.5"><Icon name="check_circle" className="text-[18px]" /> Approve</button>
+        <button type="button" disabled={busy} onClick={() => window.confirm('Reject this request? The customer will see that the item cannot be returned or exchanged.') && onDecide('Rejected', note)} className="btn-tonal h-10 px-5 gap-1.5 text-error"><Icon name="block" className="text-[18px]" /> Reject</button>
+      </div>
+    </div>
+  );
+}
+
+/** Doorstep pickup (Shiprocket) and the refund for a completed return. */
+function ReturnLogistics({ request: r, onUpdated }) {
+  const shipping = useQuery({ queryKey: ['admin', 'shipping-status'], queryFn: adminApi.shippingStatus, staleTime: 5 * 60 * 1000 });
+  const pickup = useMutation({ mutationFn: () => adminApi.schedulePickup(r._id), onSuccess: (d) => { toast.success('Doorstep pickup booked'); onUpdated(d.request); }, onError: (e) => toast.error(e.message) });
+  const [utr, setUtr] = useState('');
+  const paid = useMutation({
+    mutationFn: (ref) => adminApi.markReturnRefunded(r._id, ref),
+    onSuccess: (d) => { toast.success('Refund confirmed — the customer can see it now'); setUtr(''); onUpdated(d.request); },
+    onError: (e) => toast.error(e.message),
+  });
+  const rp = r.reversePickup || {};
+  const refund = r.refund || {};
+  const manual = refund.status && ['Pending', 'Failed'].includes(refund.status) && !refund.providerRefundId;
+  return (
+    <div className="p-4 rounded-xl bg-surface-container-low border border-outline-variant/40 flex flex-col gap-2 text-body-sm">
+      <h4 className="text-label-lg font-bold flex items-center gap-1.5"><Icon name="local_shipping" className="text-[20px] text-secondary" /> Pickup & refund</h4>
+      {rp.shipmentId || rp.awb ? (
+        <p>Pickup booked{rp.courier ? ` with ${rp.courier}` : ''}{rp.awb ? ` · AWB ${rp.awb}` : ''}{rp.status ? ` · ${rp.status}` : ''}</p>
+      ) : shipping.data?.configured ? (
+        !['Rejected', 'Completed'].includes(r.status) && (
+          <button type="button" className="btn-tonal h-9 self-start gap-1.5" disabled={pickup.isPending} onClick={() => pickup.mutate()}>
+            <Icon name="local_shipping" className="text-[18px]" /> Book doorstep pickup (Shiprocket)
+          </button>
+        )
+      ) : (
+        <p className="text-on-surface-variant">No shipping provider connected — arrange the pickup with your courier and note the AWB in the internal note.</p>
+      )}
+      {rp.error && <p className="text-label-sm text-error">Last provider error: {rp.error}</p>}
+      {r.type === 'return' && (
+        <p>
+          Refund: <b>{refund.status && refund.status !== 'None' ? refund.status : 'Starts when you mark the request Completed'}</b>
+          {refund.amount ? ` · ${formatINR(refund.amount)}` : ''} · {refund.method || r.refundMethod}
+          {refund.providerRefundId ? ` · Razorpay ${refund.providerRefundId}` : ''}
+        </p>
+      )}
+      {refund.failureReason && <p className="text-label-sm text-error">{refund.failureReason}</p>}
+      {refund.status === 'Processed' && (
+        <p className="p-2.5 rounded-lg bg-emerald-500/10 text-on-surface flex items-start gap-2">
+          <Icon name="task_alt" className="text-[18px] text-emerald-600 dark:text-emerald-400 shrink-0" />
+          <span>Refund completed{refund.processedAt ? ` on ${formatDateTime(refund.processedAt)}` : ''}{refund.reference ? ` · ref ${refund.reference}` : ''}. The customer sees this on their Returns page.</span>
+        </p>
+      )}
+      {manual && (
+        <form
+          className="mt-1 p-3 rounded-xl border border-secondary/40 bg-secondary/5 flex flex-col gap-2"
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (window.confirm(`Confirm you have sent ${formatINR(refund.amount || 0)} by ${refund.method || r.refundMethod}? The customer will be told the refund is complete.`)) paid.mutate(utr.trim());
+          }}
+        >
+          <p className="font-semibold">Send {formatINR(refund.amount || 0)} by {refund.method || r.refundMethod}, then confirm here</p>
+          <p className="text-label-sm text-on-surface-variant">Use the UPI ID / bank account shown under “Where to send the refund”. After you confirm, the customer sees “Refund sent” with this reference and gets an email.</p>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <input className="input h-10 flex-1" value={utr} onChange={(e) => setUtr(e.target.value)} maxLength={60} placeholder="UTR / transaction reference (required)" aria-label="UTR or transaction reference" />
+            <button type="submit" className="btn-primary h-10 gap-1.5" disabled={paid.isPending || utr.trim().length < 4}>
+              <Icon name="task_alt" className="text-[18px]" /> Confirm refund completed
+            </button>
+          </div>
+        </form>
+      )}
+    </div>
+  );
+}
 
 export default function Returns() {
   const [p, set] = useListParams({ page: '1' });
   const [selectedRequest, setSelectedRequest] = useState(null);
+  const [creating, setCreating] = useState(false);
   const [statusUpdate, setStatusUpdate] = useState({ status: '', note: '', adminNotes: '' });
   const qc = useQueryClient();
 
@@ -32,7 +121,8 @@ export default function Returns() {
   const updateMutation = useMutation({
     mutationFn: ({ id, body }) => adminApi.updateReturnStatus(id, body),
     onSuccess: (data) => {
-      toast.success(`Request ${data.request?.requestId || ''} updated to ${statusUpdate.status}`);
+      toast.success(`Request ${data.request?.requestId || ''} is now ${data.request?.status || statusUpdate.status}`);
+      setStatusUpdate((prev) => ({ ...prev, status: data.request?.status || prev.status, note: '' }));
       qc.invalidateQueries({ queryKey: ['admin', 'returns'] });
       qc.invalidateQueries({ queryKey: ['admin', 'dashboard'] });
       setSelectedRequest((prev) => (prev ? { ...prev, ...data.request } : null));
@@ -48,6 +138,13 @@ export default function Returns() {
       status: req.status,
       note: '',
       adminNotes: req.adminNotes || '',
+    });
+  };
+
+  const decide = (status, note) => {
+    updateMutation.mutate({
+      id: selectedRequest._id,
+      body: { status, note: note?.trim() || (status === 'Approved' ? 'Request approved' : 'Request not approved — this item cannot be returned or exchanged'), adminNotes: statusUpdate.adminNotes },
     });
   };
 
@@ -125,7 +222,7 @@ export default function Returns() {
       render: (r) => (
         <div className="max-w-[200px]">
           <p className="text-body-sm font-medium truncate">{r.reason}</p>
-          <p className="text-[11px] text-outline truncate">{r.customerComments || 'No remarks'}</p>
+          <p className="text-[11px] text-outline truncate">{r.detailedReason || 'No remarks'}</p>
         </div>
       ),
     },
@@ -142,7 +239,15 @@ export default function Returns() {
     {
       key: 'status',
       header: 'Status',
-      render: (r) => <StatusBadge status={r.status} />,
+      render: (r) => (
+        <div className="flex flex-col items-start gap-1">
+          <StatusBadge status={r.status} />
+          {r.status === 'Requested' && <span className="text-[11px] font-semibold text-secondary">Needs your decision</span>}
+          {r.type === 'return' && ['Approved', 'Pickup Scheduled', 'In Inspection'].includes(r.status) && !r.refundDetailsSubmittedAt && (!r.refund?.status || r.refund.status === 'None') && (
+            <span className="text-[11px] text-outline">Waiting for refund details</span>
+          )}
+        </div>
+      ),
     },
     {
       key: 'actions',
@@ -169,7 +274,9 @@ export default function Returns() {
         title="Returns & Exchanges"
         subtitle={query.data ? `${query.data.total} requests found • 7-day post-delivery policy enforcement` : ' '}
         eyebrow="Customer Concierge"
+        actions={<button type="button" className="btn-primary h-10 gap-1.5" onClick={() => setCreating(true)}><Icon name="add" className="text-[18px]" /> Create return / exchange</button>}
       />
+      <CreateReturnModal open={creating} onClose={() => setCreating(false)} />
 
       {/* Status Filter Tabs */}
       <div className="flex gap-1 overflow-x-auto scrollbar-none mb-space-md border-b border-surface-container-high">
@@ -290,7 +397,7 @@ export default function Returns() {
                 </h4>
                 {selectedRequest.pickupAddress ? (
                   <p className="text-body-sm text-on-surface-variant leading-relaxed">
-                    {selectedRequest.pickupAddress.street}, {selectedRequest.pickupAddress.city},{' '}
+                    {[selectedRequest.pickupAddress.fullName, selectedRequest.pickupAddress.addressLine1, selectedRequest.pickupAddress.addressLine2].filter(Boolean).join(', ')}, {selectedRequest.pickupAddress.city},{' '}
                     {selectedRequest.pickupAddress.state} - {selectedRequest.pickupAddress.postalCode}
                   </p>
                 ) : (
@@ -317,10 +424,10 @@ export default function Returns() {
                     <div className="flex-1 min-w-0">
                       <p className="text-body-sm font-semibold truncate">{it.productName}</p>
                       <p className="text-[12px] text-outline">
-                        SKU: {it.sku || 'N/A'} {it.variantName ? `· ${it.variantName}` : ''}
+                        SKU: {it.SKU || 'N/A'} {it.variantName ? `· ${it.variantName}` : ''}
                       </p>
                       <p className="text-label-sm text-secondary font-medium mt-0.5">
-                        Qty: {it.quantity || 1} {it.price ? `· ${formatINR(it.price)}` : ''}
+                        Qty: {it.quantity || 1} {it.unitPrice ? `· ${formatINR(it.unitPrice)} each` : ''}
                       </p>
                     </div>
                     {it.itemCondition && (
@@ -338,9 +445,9 @@ export default function Returns() {
               <div>
                 <span className="text-[11px] text-outline uppercase tracking-wider block font-bold">Customer Reason</span>
                 <p className="text-body-md font-medium text-on-surface mt-0.5">{selectedRequest.reason}</p>
-                {selectedRequest.customerComments && (
+                {selectedRequest.detailedReason && (
                   <p className="text-body-sm text-on-surface-variant italic mt-1 bg-surface-container-low p-2.5 rounded-lg border border-outline-variant/40">
-                    "{selectedRequest.customerComments}"
+                    "{selectedRequest.detailedReason}"
                   </p>
                 )}
               </div>
@@ -351,42 +458,30 @@ export default function Returns() {
                     Exchange Requested For
                   </span>
                   <p className="text-body-sm text-on-surface font-medium mt-0.5">
-                    {selectedRequest.exchangePreference.replacementProductName || 'Item Replacement'}{' '}
-                    {selectedRequest.exchangePreference.replacementColor ? `(${selectedRequest.exchangePreference.replacementColor})` : ''}
+                    {selectedRequest.exchangePreference.desiredItemName || 'Item replacement'}{' '}
+                    {selectedRequest.exchangePreference.desiredSizeOrColor ? `(${selectedRequest.exchangePreference.desiredSizeOrColor})` : ''}
                   </p>
-                  {selectedRequest.exchangePreference.replacementNotes && (
+                  {selectedRequest.exchangePreference.notes && (
                     <p className="text-body-sm text-outline mt-0.5">
-                      Notes: {selectedRequest.exchangePreference.replacementNotes}
+                      Notes: {selectedRequest.exchangePreference.notes}
                     </p>
                   )}
                 </div>
               )}
-
-              {selectedRequest.type === 'return' && selectedRequest.refundDestination && (
-                <div className="pt-2 border-t border-surface-container-high">
-                  <span className="text-[11px] text-amber-700 dark:text-amber-300 uppercase tracking-wider block font-bold">
-                    Refund Payout Destination
-                  </span>
-                  <div className="mt-1 flex items-center gap-2">
-                    <span className="text-label-sm font-semibold uppercase px-2 py-0.5 rounded bg-surface-container">
-                      {selectedRequest.refundDestination.method || 'UPI / Bank'}
-                    </span>
-                    {selectedRequest.refundDestination.upiId && (
-                      <span className="text-body-sm font-mono font-medium">
-                        UPI: {selectedRequest.refundDestination.upiId}
-                      </span>
-                    )}
-                    {selectedRequest.refundDestination.accountNumber && (
-                      <span className="text-body-sm font-mono text-outline">
-                        A/C: {selectedRequest.refundDestination.accountNumber} ({selectedRequest.refundDestination.ifsc})
-                      </span>
-                    )}
-                  </div>
-                </div>
-              )}
             </div>
 
+            <DecisionBar key={`d-${selectedRequest._id}`} request={selectedRequest} busy={updateMutation.isPending} onDecide={decide} />
+
+            {selectedRequest.status === 'Cancelled' && (
+              <p className="p-3 rounded-xl bg-surface-container-low text-body-sm flex items-center gap-2"><Icon name="cancel" className="text-[18px] text-outline" /> The customer cancelled this request. Nothing more to do.</p>
+            )}
+
+            <RefundDestinationBox key={selectedRequest._id} request={selectedRequest} onUpdated={(r) => { setSelectedRequest((prev) => ({ ...prev, ...r })); qc.invalidateQueries({ queryKey: ['admin', 'returns'] }); }} />
+
+            <ReturnLogistics request={selectedRequest} onUpdated={(r) => { setSelectedRequest((prev) => ({ ...prev, ...r })); qc.invalidateQueries({ queryKey: ['admin', 'returns'] }); }} />
+
             {/* Admin Status Action Form */}
+            {selectedRequest.status !== 'Cancelled' && (
             <form onSubmit={handleStatusSubmit} className="p-4 rounded-xl bg-surface-container-highest/60 border border-secondary/20 space-y-4">
               <h4 className="text-label-lg font-bold flex items-center gap-1.5 text-secondary">
                 <Icon name="admin_panel_settings" className="text-[20px]" /> Update Status & Logistics
@@ -400,13 +495,12 @@ export default function Returns() {
                     value={statusUpdate.status}
                     onChange={(e) => setStatusUpdate((prev) => ({ ...prev, status: e.target.value }))}
                   >
-                    <option value="Requested">Requested (Pending review)</option>
-                    <option value="Approved">Approved (Doorstep pickup assigned)</option>
-                    <option value="Picked Up">Picked Up (In transit to warehouse)</option>
-                    <option value="Processing">Processing (Under inspection)</option>
-                    <option value="Completed">Completed (Refund paid / Exchange dispatched)</option>
-                    <option value="Rejected">Rejected (Does not meet policy)</option>
-                    <option value="Cancelled">Cancelled (By customer/admin)</option>
+                    <option value="Requested">Requested (pending review)</option>
+                    <option value="Approved">Approved</option>
+                    <option value="Pickup Scheduled">Pickup scheduled</option>
+                    <option value="In Inspection">In inspection (item received)</option>
+                    <option value="Completed">Completed (return refunds start automatically)</option>
+                    <option value="Rejected">Rejected (does not meet policy)</option>
                   </select>
                 </div>
 
@@ -444,6 +538,7 @@ export default function Returns() {
                 </button>
               </div>
             </form>
+            )}
 
             {/* Timeline */}
             {selectedRequest.statusHistory?.length > 0 && (

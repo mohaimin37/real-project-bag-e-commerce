@@ -6,55 +6,10 @@ import { useConfig } from '../../hooks/useStore';
 import { Icon, Spinner } from '../ui';
 import { LogoMark } from '../Brand';
 import { CurrencySelect } from './Header';
+import { useFooterContent } from '../../content/homepage';
 
 // Flipkart-style footer: link columns on the left, "Mail us" and "Registered office" on the right.
-const COLUMNS = [
-  {
-    title: 'Shop',
-    links: [
-      ['/men', 'Men'],
-      ['/women', 'Women'],
-      ['/universal', 'Universal'],
-      ['/shop/travel-utility', 'Travel & Utility'],
-      ['/shop/accessories', 'Accessories'],
-      ['/shop?newArrival=true&sort=newest', 'New Arrivals'],
-      ['/shop?bestseller=true&sort=bestseller', 'Best Sellers'],
-      ['/offers', 'Offers'],
-    ],
-  },
-  {
-    title: 'About',
-    links: [
-      ['/contact', 'Contact Us'],
-      ['/about', 'About Us'],
-      ['/corporate', 'Corporate Orders'],
-      ['/blog', 'Journal'],
-      ['/csr-policy', 'CSR'],
-    ],
-  },
-  {
-    title: 'Help',
-    links: [
-      ['/returns-exchange', 'Returns & Exchange'],
-      ['/help#payments', 'Payments'],
-      ['/shipping-policy', 'Shipping'],
-      ['/return-policy#order-cancellation', 'Cancellation & Returns'],
-      ['/account/orders', 'Track Order'],
-      ['/faq', 'FAQ'],
-      ['/help', 'Help Centre'],
-    ],
-  },
-  {
-    title: 'Consumer Policy',
-    links: [
-      ['/return-policy', 'Return Policy'],
-      ['/terms-and-conditions', 'Terms of Use'],
-      ['/privacy-policy', 'Privacy'],
-      ['/privacy-policy#grievance-officer', 'Grievance Redressal'],
-      ['/policies', 'All Policies'],
-    ],
-  },
-];
+// Columns are edited in Admin → Settings → Footer (built-in ones in content/homepage.js).
 
 const heading = 'text-[12px] font-semibold uppercase tracking-wider text-on-band/55 mb-1';
 const link = 'w-fit text-[13px] font-medium text-on-band hover:underline underline-offset-2';
@@ -110,16 +65,25 @@ function AddressBlock({ title, config, children }) {
 export default function Footer() {
   const { data: config } = useConfig();
   const phone = config?.supportPhone || '8920550465';
+  const email = config?.supportEmail || 'info@wildtane.com';
+  const company = config?.companyName || 'WILDTANE PRIVATE LIMITED';
   const payments = (config?.paymentMethods || []).filter((m) => m.available);
+  const { columns } = useFooterContent();
+  // Only the social profiles filled in under Admin → Settings → Footer.
+  const socials = [
+    ['instagram', 'Instagram', 'photo_camera'],
+    ['facebook', 'Facebook', 'thumb_up'],
+    ['linkedin', 'LinkedIn', 'work'],
+  ].filter(([k]) => /^https:\/\//.test(config?.social?.[k] || ''));
   return (
     // Deep shade of the theme's brand colour (dark, so the gold logo, telephone and email stand out).
     <footer className="mt-6 text-on-band pb-16 md:pb-0" style={{ background: 'linear-gradient(180deg, color-mix(in srgb, rgb(var(--c-secondary)) 30%, rgb(var(--c-band))), color-mix(in srgb, rgb(var(--c-secondary)) 14%, rgb(var(--c-band))))' }}>
       <div className="container-x py-8 md:py-10 grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-[repeat(4,minmax(0,1fr))_1px_minmax(0,1.3fr)_minmax(0,1.3fr)] gap-x-6 gap-y-8">
-        {COLUMNS.map((col) => (
-          <nav key={col.title} aria-label={col.title} className="flex flex-col gap-2">
+        {columns.slice(0, 4).map((col, i) => (
+          <nav key={`${i}-${col.title}`} aria-label={col.title} className="flex flex-col gap-2">
             <h3 className={heading}>{col.title}</h3>
-            {col.links.map(([to, label]) => (
-              <Link key={label} to={to} className={link}>{label}</Link>
+            {(col.links || []).filter((l) => l.label && l.to).map((l, x) => (
+              <Link key={x} to={l.to} className={link}>{l.label}</Link>
             ))}
           </nav>
         ))}
@@ -135,15 +99,24 @@ export default function Footer() {
         <div className="col-span-2 sm:col-span-2 lg:col-span-1 flex flex-col gap-5">
           <AddressBlock title="Registered office address" config={config}>
             <p className="block text-[13px] text-on-band/90 mt-1.5 font-medium">
-              GSTIN: <span className="font-mono font-bold text-accent">07AAECW3767F1Z4</span>
+              GSTIN: <span className="font-mono font-bold text-accent">{config?.gstin || '07AAECW3767F1Z4'}</span>
             </p>
             <p className="block text-[13px] text-on-band/90 mt-1">
-              Telephone: <a href="tel:8920550465" className="text-accent hover:underline font-semibold">8920550465</a>
+              Telephone: <a href={`tel:${phone.replace(/\s/g, '')}`} className="text-accent hover:underline font-semibold">{phone}</a>
             </p>
             <p className="block text-[13px] text-on-band/90 mt-0.5">
-              Email: <a href={`mailto:${config?.supportEmail || 'info@wildtane.com'}`} className="text-accent hover:underline">{config?.supportEmail || 'info@wildtane.com'}</a>
+              Email: <a href={`mailto:${email}`} className="text-accent hover:underline">{email}</a>
             </p>
           </AddressBlock>
+          {socials.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {socials.map(([k, label, icon]) => (
+                <a key={k} href={config.social[k]} target="_blank" rel="noopener noreferrer" className="h-8 px-3 rounded-full bg-on-band/10 ring-1 ring-on-band/20 text-[12px] font-semibold inline-flex items-center gap-1.5 hover:bg-on-band/20">
+                  <Icon name={icon} className="text-[16px]" /> {label}
+                </a>
+              ))}
+            </div>
+          )}
           <Link to="/" className="flex items-center gap-2.5 w-fit mt-1" aria-label="WILDTANE home">
             <LogoMark className="w-8 h-8 shrink-0" tone="gold" />
             <h2 className="font-serif tracking-widest font-black text-2xl text-on-band uppercase select-none">
@@ -164,7 +137,7 @@ export default function Footer() {
                 <Icon name={icon} className="text-[18px] text-on-band/80" /> {label}
               </Link>
             ))}
-            <span className="text-on-band/70">© {new Date().getFullYear()} WILDTANE PRIVATE LIMITED</span>
+            <span className="text-on-band/70">© {new Date().getFullYear()} {company}</span>
           </div>
           <div className="flex flex-wrap items-center justify-center gap-3">
             {/* Only the payment methods checkout offers right now (Admin → Settings → Payments). */}

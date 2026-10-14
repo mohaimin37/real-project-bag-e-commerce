@@ -14,6 +14,7 @@ export const SORTS = {
   'price-high': { finalPrice: -1 },
   'highest-rated': { ratingAverage: -1, ratingCount: -1 },
   newest: { createdAt: -1 },
+  discount: null, // computed in listProducts (highest % off first)
   name: { name: 1 },
   'stock-low': { stock: 1 },
 };
@@ -26,7 +27,9 @@ async function resolveCategoryIds(slugOrId) {
   const cats = await Category.find({ $or: [{ _id: { $in: ids } }, { slug: { $in: slugs } }] }).select('_id');
   const catIds = cats.map((c) => c._id);
   const childCats = await Category.find({ parent: { $in: catIds } }).select('_id');
-  return [...new Set([...catIds, ...childCats.map((c) => c._id)])];
+  const childIds = childCats.map((c) => c._id);
+  const grandChildCats = await Category.find({ parent: { $in: childIds } }).select('_id');
+  return [...new Set([...catIds, ...childIds, ...grandChildCats.map((c) => c._id)])];
 }
 
 /** Builds a Mongo filter from catalog query params. */
@@ -45,10 +48,24 @@ export async function buildProductFilter(query, { admin = false } = {}) {
 
   if (query.category) {
     const ids = await resolveCategoryIds(query.category);
-    and.push({ $or: [{ category: { $in: ids } }, { subcategory: { $in: ids } }] });
+    and.push({
+      $or: [
+        { category: { $in: ids } },
+        { subcategory: { $in: ids } },
+        { categories: { $in: ids } },
+        { productType: { $in: ids } },
+      ],
+    });
   }
   if (query.subcategory) {
-    filter.subcategory = { $in: await resolveCategoryIds(query.subcategory) };
+    const subIds = await resolveCategoryIds(query.subcategory);
+    and.push({
+      $or: [
+        { subcategory: { $in: subIds } },
+        { categories: { $in: subIds } },
+        { productType: { $in: subIds } },
+      ],
+    });
   }
 
   // Exact audience: /men → men, /women → women, /unisex → unisex (pieces made for everyone).
@@ -83,6 +100,21 @@ export async function buildProductFilter(query, { admin = false } = {}) {
 
   if (query.inStock === 'true') filter.stock = { $gt: 0 };
   if (query.onSale === 'true') and.push({ $expr: { $lt: ['$finalPrice', '$price'] } });
+  // Minimum discount %: finalPrice ≤ price × (1 − d/100). Worked out from real prices, not a stored label.
+  const minDiscount = Number(query.minDiscount);
+  if (Number.isFinite(minDiscount) && minDiscount > 0 && minDiscount < 100) {
+    and.push({ $expr: { $lte: ['$finalPrice', { $multiply: ['$price', 1 - minDiscount / 100] }] } });
+  }
+
+  const occasions = toList(query.occasion).map((o) => o.toLowerCase());
+  if (occasions.length) filter.occasions = { $in: occasions };
+  const closures = toList(query.closure);
+  if (closures.length) filter.closureType = { $in: closures };
+  const laptop = Number(query.laptop);
+  if (Number.isFinite(laptop) && laptop > 0) filter.laptopSize = { $gte: laptop };
+  if (query.waterResistant === 'true') filter.waterResistant = true;
+  const compartments = Number(query.compartments);
+  if (Number.isFinite(compartments) && compartments > 0) filter.compartments = { $gte: compartments };
   if (query.featured === 'true') filter.isFeatured = true;
   if (query.bestseller === 'true') filter.isBestseller = true;
   if (query.newArrival === 'true') filter.isNewArrival = true;
@@ -114,6 +146,16 @@ export async function getFacets(baseFilter) {
         sizes: [{ $group: { _id: '$sizeGroup', count: { $sum: 1 } } }],
         genders: [{ $group: { _id: '$gender', count: { $sum: 1 } } }],
         onSale: [{ $match: { $expr: { $lt: ['$finalPrice', '$price'] } } }, { $count: 'n' }],
+        // How many products clear each discount step, so empty steps are hidden.
+        discounts: [
+          { $match: { $expr: { $lt: ['$finalPrice', '$price'] } } },
+          { $project: { d: { $multiply: [{ $divide: [{ $subtract: ['$price', '$finalPrice'] }, '$price'] }, 100] } } },
+          { $group: { _id: null, d10: { $sum: { $cond: [{ $gte: ['$d', 10] }, 1, 0] } }, d25: { $sum: { $cond: [{ $gte: ['$d', 25] }, 1, 0] } }, d40: { $sum: { $cond: [{ $gte: ['$d', 40] }, 1, 0] } } } },
+        ],
+        flags: [{ $group: { _id: null, bestseller: { $sum: { $cond: ['$isBestseller', 1, 0] } }, newArrival: { $sum: { $cond: ['$isNewArrival', 1, 0] } }, waterResistant: { $sum: { $cond: ['$waterResistant', 1, 0] } } } }],
+        occasions: [{ $unwind: '$occasions' }, { $group: { _id: '$occasions', count: { $sum: 1 } } }, { $sort: { count: -1 } }],
+        closures: [{ $match: { closureType: { $nin: ['', null] } } }, { $group: { _id: '$closureType', count: { $sum: 1 } } }],
+        laptop: [{ $match: { laptopSize: { $gt: 0 } } }, { $group: { _id: '$laptopSize', count: { $sum: 1 } } }, { $sort: { _id: 1 } }],
         priceBands: [
           {
             $bucket: {
@@ -135,6 +177,14 @@ export async function getFacets(baseFilter) {
     sizes: Object.fromEntries(result.sizes.map((s) => [s._id || 'small', s.count])),
     genders: Object.fromEntries(result.genders.map((g) => [g._id || 'unisex', g.count])),
     onSale: result.onSale[0]?.n || 0,
+    discounts: { 10: result.discounts[0]?.d10 || 0, 25: result.discounts[0]?.d25 || 0, 40: result.discounts[0]?.d40 || 0 },
+    bestseller: result.flags[0]?.bestseller || 0,
+    newArrival: result.flags[0]?.newArrival || 0,
+    waterResistant: result.flags[0]?.waterResistant || 0,
+    occasions: result.occasions.map((o) => ({ value: o._id, count: o.count })),
+    closures: result.closures.map((c) => ({ value: c._id, count: c.count })),
+    // Laptop sizes as "fits at least N inches": count of products fitting each size or larger.
+    laptop: result.laptop.map((l, i, all) => ({ value: l._id, count: all.slice(i).reduce((n, x) => n + x.count, 0) })),
     // Keyed by the band's lower bound: 0, 5000, 10000, 20000.
     priceBands: Object.fromEntries(result.priceBands.map((b) => [b._id, b.count])),
   };

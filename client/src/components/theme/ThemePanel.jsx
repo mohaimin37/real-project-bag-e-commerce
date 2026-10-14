@@ -1,21 +1,13 @@
 import { memo, useEffect, useId, useMemo, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { effectiveTheme, resetAppearance, resetCustomColors, resetVision, setCustomColors, setMode, setPalette, setSiteAppearance, setThemeOpen, setVision, toggleContrast } from '../../store';
-import { useConfig } from '../../hooks/useStore';
+import { effectiveTheme, resetAppearance, resetCustomColors, resetVision, setCustomColors, setMode, setPalette, setThemeOpen, setVision, toggleContrast } from '../../store';
 import { designOf, previewStyle, themeTokens } from '../../theme/engine';
 import { CORNER_STYLES, CUSTOM_DEFAULTS, CUSTOM_FIELDS, CUSTOM_THEME, DESIGNS, enabledThemeIds, TEXT_SIZES, THEME_ORDER, THEMES, VISION_DEFAULTS } from '../../theme/themes';
 import { cn } from '../../lib/format';
 import { Drawer, Icon, Toggle } from '../ui';
+import { useSiteAppearanceSync } from './siteAppearance';
 
-/** Keeps the store's appearance defaults (Admin → Settings → Appearance) in sync. Mount once per layout. */
-export function useSiteAppearanceSync() {
-  const dispatch = useDispatch();
-  const { data: config } = useConfig();
-  const appearance = config?.appearance;
-  useEffect(() => {
-    if (appearance) dispatch(setSiteAppearance(appearance));
-  }, [appearance, dispatch]);
-}
+export { useSiteAppearanceSync };
 
 const heading = 'text-[11px] font-semibold uppercase tracking-wider text-outline mb-2';
 
@@ -431,7 +423,6 @@ export function AppearanceSettings() {
 export default function ThemeDrawer() {
   const dispatch = useDispatch();
   const open = useSelector((s) => s.ui.themeOpen);
-  useSiteAppearanceSync();
   const close = () => dispatch(setThemeOpen(false));
   return (
     <Drawer

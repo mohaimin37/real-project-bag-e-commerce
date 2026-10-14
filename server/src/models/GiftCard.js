@@ -46,4 +46,13 @@ const giftCardSchema = new mongoose.Schema(
 
 giftCardSchema.index({ code: 1, isActive: 1 });
 
+// The PIN (hashed) never leaves the server.
+giftCardSchema.set('toJSON', {
+  transform: (_doc, ret) => {
+    ret.hasPin = Boolean(ret.pin);
+    delete ret.pin;
+    return ret;
+  },
+});
+
 export default mongoose.model('GiftCard', giftCardSchema);

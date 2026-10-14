@@ -12,11 +12,16 @@ export const QUICK_ACTIONS = [
   ['/admin/quick-edit?tab=promo', 'confirmation_number', 'Promo codes', 'Discounts at checkout'],
   ['/admin/orders', 'receipt_long', 'Orders', 'Pack & ship'],
   ['/admin/products', 'inventory_2', 'All products', 'Open one to edit it'],
+  ['/admin/categories', 'category', 'Categories', 'Menus & subcategories'],
+  ['/admin/banners', 'view_carousel', 'Offer banners', 'Slides on /offers'],
+  ['/admin/giftcards', 'card_giftcard', 'Gift cards', 'Issue & check balance'],
+  ['/admin/returns', 'assignment_return', 'Returns', 'Pickups & refunds'],
+  ['/admin/payments', 'payments', 'Payments', 'Who paid · refunds to send'],
 ];
 
 export function QuickActions({ className }) {
   return (
-    <div className={cn('grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-2', className)}>
+    <div className={cn('grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-2', className)}>
       {QUICK_ACTIONS.map(([to, icon, label, note]) => (
         <Link key={to} to={to} className="card surface-card border border-outline-variant/60 p-3 flex items-center gap-3 hover:shadow-card transition-all">
           <span className="w-9 h-9 shrink-0 rounded-lg bg-secondary/10 text-secondary flex items-center justify-center"><Icon name={icon} className="text-[20px]" /></span>
@@ -44,6 +49,118 @@ const TASKS = [
       'Press “Publish to store” to make it live, or “Save hidden” to keep it off the store for now. Your draft is kept if you leave mid-way.',
     ],
     ['/admin/products/new', 'Add a product'],
+  ],
+  [
+    'more-categories', 'category', 'Show one product in several categories',
+    'Add product → step 2 “Also show it in”  ·  or open the product → Organisation → Extra categories',
+    [
+      'Search for the category (e.g. “school”, “travel organizers”) and tap it. Add as many as fit.',
+      'It is still one product: stock, price and reviews are shared, nothing is copied.',
+      'Empty categories stay hidden in the store until a product is in them.',
+    ],
+    ['/admin/products', 'Open products'],
+  ],
+  [
+    'offer-banners', 'view_carousel', 'Change the sliding banners on the Offers page',
+    'Sidebar → Content → Banners → New banner → placement “Offers page slider”',
+    [
+      'Write a short title and one line of text, add a photo if you like, and where the button goes (e.g. /offers?sort=discount).',
+      'Add 4–5 of them. They slide by themselves at the top of the Offers page.',
+      'Set Starts / Ends to run a sale for a few days — it disappears by itself afterwards.',
+    ],
+    ['/admin/banners', 'Open Banners'],
+  ],
+  [
+    'spin', 'casino', 'Daily Spin & Win',
+    'Sidebar → Content → Settings → Spin wheel',
+    [
+      'Signed-in shoppers can spin once a day. Each prize is a personal code that works on one order until midnight (IST).',
+      'Change the prizes (₹ off, % off or free shipping), the text on the wheel, colours, minimum order and how often each prize comes up. Add up to 8 prizes; the preview shows the wheel shoppers will see.',
+      'The wheel opens by itself once a day, hides after they play, and is always in their account menu. Switch it off here any time.',
+    ],
+    ['/admin/settings', 'Open Settings'],
+  ],
+  [
+    'homepage', 'home', 'Change the homepage & footer',
+    'Sidebar → Content → Settings → Homepage  ·  Footer',
+    [
+      'Homepage: switch sections on or off and move them up or down — separately for Desktop and Phone.',
+      'Open a section to edit its headline, text, pictures, buttons, cards and product rows (pick featured, new, best sellers or any category).',
+      'Footer: edit the link columns and add your Instagram / Facebook / LinkedIn links. Address, GSTIN, phone and email come from the Store tab.',
+      'Keep every claim true — numbers, ratings, awards and press quotes must be real. “Use built-in” puts the original content back.',
+    ],
+    ['/admin/settings', 'Open Settings'],
+  ],
+  [
+    'shopmenu', 'grid_view', 'Change the Shop menu',
+    'Sidebar → Content → Settings → Shop menu',
+    [
+      'Edit the departments, budget tiles, trending chips and promise boxes in the full-screen menu that opens from “Shop”. Reorder with the arrows, delete with the bin.',
+      'Pick one real product as “Our pick” — its real price and rating are shown. Categories in the menu follow Catalogue → Categories by themselves.',
+      'Press “Use built-in” to go back to the original content.',
+    ],
+    ['/admin/settings', 'Open Settings'],
+  ],
+  [
+    'approve-return', 'gavel', 'Approve or reject a return',
+    'Sidebar → Sales → Returns → open a request marked “Needs your decision”',
+    [
+      'Until you decide, the customer sees “Return in process”. Press Approve or Reject (add a note if you like) — they get an email either way.',
+      'Rejected: the customer sees “This item cannot be returned or exchanged” and can’t request it again.',
+      'Approved return: the customer is asked on a refund page how they want the money — UPI, bank account, original payment or wallet (choose which options they get in Settings → Returns & refunds). Their answer appears under “Where to send the refund”.',
+      'Book the pickup, then mark it Completed after inspection. A cash-on-delivery return can’t be completed until the customer (or you, by phone) gives UPI / bank details.',
+      'Customers can cancel a request themselves until the pickup is booked.',
+    ],
+    ['/admin/returns', 'Open Returns'],
+  ],
+  [
+    'giftcards', 'card_giftcard', 'Sell or give a gift card',
+    'Sidebar → Sales → Gift cards → Issue gift card',
+    [
+      'Type the value and, if you want, an expiry date and a PIN.',
+      'Copy the code (and PIN — it is shown only once) and send it to the customer.',
+      'Open a card any time to see its balance and every order it paid for. Switch it off if it is lost.',
+    ],
+    ['/admin/giftcards', 'Open Gift cards'],
+  ],
+  [
+    'refund-failed', 'replay', 'A cancelled order’s refund failed',
+    'Orders → open the order → “Cancellation & refund” panel',
+    [
+      'The panel shows each part of the refund (online payment, gift card, wallet) and the reason it failed.',
+      'Press “Retry refund”. The store checks Razorpay first, so it never refunds twice.',
+    ],
+    ['/admin/orders', 'Open Orders'],
+  ],
+  [
+    'payments', 'payments', 'See who paid and send refunds',
+    'Sidebar → Sales → Payments',
+    [
+      'The top boxes show money collected, refunded, cash-on-delivery still to collect, and refunds waiting for you.',
+      '“By customer” lists how much each customer has paid in total.',
+      '“Refunds to send” shows the customer’s UPI ID or bank account with copy buttons. Send the money from your bank / UPI app, then press “I have sent it” and paste the UTR.',
+      'Cancelled paid orders are refunded automatically. To approve each one yourself, turn off Settings → Payments → “Refund cancelled orders automatically”; they then wait here with a “Refund now” button.',
+    ],
+    ['/admin/payments', 'Open Payments'],
+  ],
+  [
+    'create-return', 'assignment_return', 'Create a return for a customer',
+    'Sidebar → Sales → Returns → Create return / exchange',
+    [
+      'Type the order ID and press Find order. Pick the items and how many.',
+      'Choose return or exchange, the reason, and where the refund goes (UPI / bank / original payment / wallet) — or “Ask the customer” to let them choose on their refund page.',
+      'Past 7 days? Switch on “Make an exception” and write why — it is kept in the history.',
+    ],
+    ['/admin/returns', 'Open Returns'],
+  ],
+  [
+    'wallet', 'account_balance_wallet', 'Give a customer wallet credit',
+    'Customers → open the customer → WILDTANE Wallet',
+    [
+      'Type the amount in ₹ and a short reason, then press Credit (or Debit to correct a mistake).',
+      'The customer sees it in My account → Wallet and can use it at checkout. Every change is logged with your name.',
+    ],
+    ['/admin/customers', 'Open Customers'],
   ],
   [
     'price', 'sell', 'Change a price (rate) or put something on sale',

@@ -29,6 +29,27 @@ function getTransporter() {
   return transporter;
 }
 
+let lastCheck = { ok: false, at: 0 };
+
+/**
+ * True when SMTP is configured and the server accepted our login recently (cached 5 minutes).
+ * Lets security emails (verification codes) fail loudly instead of pretending to send.
+ */
+export async function emailServiceReady() {
+  const t = getTransporter();
+  if (!t) return false;
+  if (lastCheck.ok && Date.now() - lastCheck.at < 5 * 60 * 1000) return true;
+  try {
+    await t.verify();
+    lastCheck = { ok: true, at: Date.now() };
+    return true;
+  } catch (err) {
+    console.error(`[email] SMTP unavailable: ${err.code || ''} ${err.message}`);
+    lastCheck = { ok: false, at: Date.now() };
+    return false;
+  }
+}
+
 /** Sends an email with high delivery priority, or logs to console when SMTP is disabled. */
 export async function sendEmail({ to, subject, text, html, attachments, priority = 'high' }) {
   const t = getTransporter();

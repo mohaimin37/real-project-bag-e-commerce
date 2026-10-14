@@ -1,0 +1,1861 @@
+{
+ "laptop-bags": [
+  {
+   "url": "/uploads/seed/catalog/messenger-expedition.jpg",
+   "colour": "Heather Grey",
+   "hex": "#8a8a86",
+   "family": "grey",
+   "from": "Expedition Canvas Messenger"
+  },
+  {
+   "url": "/uploads/seed/apex-side-pocket.jpg",
+   "colour": "Heather Grey",
+   "hex": "#8a8a86",
+   "family": "grey",
+   "from": "Expedition Canvas Messenger"
+  },
+  {
+   "url": "/uploads/seed/apex-navy.jpg",
+   "colour": "Midnight Navy",
+   "hex": "#1e293b",
+   "family": "navy",
+   "from": "WILDTANE Stratus Padded 15.6-inch Laptop Bag"
+  },
+  {
+   "url": "/uploads/seed/catalog/laptop-sterling.jpg",
+   "colour": "Midnight Navy",
+   "hex": "#1e293b",
+   "family": "navy",
+   "from": "WILDTANE Stratus Padded 15.6-inch Laptop Bag"
+  },
+  {
+   "url": "/uploads/seed/folio-espresso.jpg",
+   "colour": "Midnight Onyx",
+   "hex": "#121212",
+   "family": "onyx",
+   "from": "WILDTANE Chelsea 14-inch Executive Laptop Bag"
+  },
+  {
+   "url": "/uploads/seed/catalog/messenger-dalton.jpg",
+   "colour": "Storm Grey",
+   "hex": "#4a4d52",
+   "family": "grey",
+   "from": "Dalton Ballistic Canvas Messenger"
+  },
+  {
+   "url": "/uploads/seed/apex-harness.jpg",
+   "colour": "Saddle Tan",
+   "hex": "#8e5329",
+   "family": "tan",
+   "from": "Sterling Leather Laptop Bag 15\""
+  },
+  {
+   "url": "/uploads/seed/variants/vanguard-executive-laptop-folio-14-onyx-black.jpg",
+   "colour": "Onyx Black",
+   "hex": "#111111",
+   "family": "onyx",
+   "from": "Vanguard Executive Laptop Folio 14\""
+  },
+  {
+   "url": "/uploads/seed/apex-trolley-test.jpg",
+   "colour": "Dark Brown",
+   "hex": "#3b2619",
+   "family": "brown",
+   "from": "Dalton Field Messenger"
+  },
+  {
+   "url": "/uploads/seed/messenger-leather.jpg",
+   "colour": "Saddle Brown",
+   "hex": "#7a4423",
+   "family": "tan",
+   "from": "Ranger Leather Messenger"
+  },
+  {
+   "url": "/uploads/seed/variants/ranger-leather-messenger-dark-walnut.jpg",
+   "colour": "Dark Walnut",
+   "hex": "#3e2a1e",
+   "family": "brown",
+   "from": "Ranger Leather Messenger"
+  }
+ ],
+ "crossbody-bags": [
+  {
+   "url": "/uploads/seed/crossbody-camera.jpg",
+   "colour": "Chalk White",
+   "hex": "#f0ece1",
+   "family": "white",
+   "from": "WILDTANE Amara Compact Crossbody Bag"
+  },
+  {
+   "url": "/uploads/seed/catalog/crossbody-cloud.jpg",
+   "colour": "Chalk White",
+   "hex": "#f0ece1",
+   "family": "white",
+   "from": "WILDTANE Amara Compact Crossbody Bag"
+  },
+  {
+   "url": "/uploads/seed/catalog/crossbody-nova.jpg",
+   "colour": "Blush Mauve",
+   "hex": "#b57984",
+   "family": "pink",
+   "from": "Cloud Quilted Pebble Leather Crossbody"
+  }
+ ],
+ "sling-bags": [
+  {
+   "url": "/uploads/seed/catalog/crossbody-cloud.jpg",
+   "colour": "White",
+   "hex": "#efefed",
+   "family": "cream",
+   "from": "Cloud Minimal Crossbody"
+  },
+  {
+   "url": "/uploads/seed/apex-harness.jpg",
+   "colour": "White",
+   "hex": "#efefed",
+   "family": "cream",
+   "from": "Cloud Minimal Crossbody"
+  },
+  {
+   "url": "/uploads/seed/catalog/crossbody-nova.jpg",
+   "colour": "Caramel",
+   "hex": "#a8642b",
+   "family": "tan",
+   "from": "Nova Mini Barrel Crossbody"
+  },
+  {
+   "url": "/uploads/seed/catalog/wallet-woodland.jpg",
+   "colour": "Caramel",
+   "hex": "#a8642b",
+   "family": "tan",
+   "from": "Nova Mini Barrel Crossbody"
+  },
+  {
+   "url": "/uploads/seed/crossbody-camera.jpg",
+   "colour": "Black",
+   "hex": "#111111",
+   "family": "onyx",
+   "from": "Metro Camera Crossbody"
+  },
+  {
+   "url": "/uploads/seed/variants/metro-camera-crossbody-tan.jpg",
+   "colour": "Tan",
+   "hex": "#a0683b",
+   "family": "tan",
+   "from": "Metro Camera Crossbody"
+  },
+  {
+   "url": "/uploads/seed/variants/metro-camera-crossbody-navy.jpg",
+   "colour": "Navy",
+   "hex": "#1d2638",
+   "family": "navy",
+   "from": "Metro Camera Crossbody"
+  },
+  {
+   "url": "/uploads/seed/catalog/utility-ledger.jpg",
+   "colour": "Tan",
+   "hex": "#a35c2a",
+   "family": "tan",
+   "from": "Ledger Leather Utility Bag"
+  },
+  {
+   "url": "/uploads/seed/apex-trolley-test.jpg",
+   "colour": "Tan",
+   "hex": "#a35c2a",
+   "family": "tan",
+   "from": "Ledger Leather Utility Bag"
+  },
+  {
+   "url": "/uploads/seed/sling-sand.jpg",
+   "colour": "Sahara Sand",
+   "hex": "#c2b280",
+   "family": "tan",
+   "from": "Terra Recycled Daily Sling"
+  },
+  {
+   "url": "/uploads/seed/cable-pouch-detail.jpg",
+   "colour": "Sahara Sand",
+   "hex": "#c2b280",
+   "family": "tan",
+   "from": "Terra Recycled Daily Sling"
+  },
+  {
+   "url": "/uploads/seed/catalog/camera-voyager.jpg",
+   "colour": "Cognac",
+   "hex": "#9c5528",
+   "family": "tan",
+   "from": "Voyager Leather Camera Bag"
+  },
+  {
+   "url": "/uploads/seed/crossbody-dune.jpg",
+   "colour": "Sand",
+   "hex": "#d8c3a5",
+   "family": "sand",
+   "from": "Dune Barrel Crossbody"
+  },
+  {
+   "url": "/uploads/seed/variants/dune-barrel-crossbody-chocolate.jpg",
+   "colour": "Chocolate",
+   "hex": "#4a2e22",
+   "family": "brown",
+   "from": "Dune Barrel Crossbody"
+  },
+  {
+   "url": "/uploads/seed/sling-black.jpg",
+   "colour": "Matte Black",
+   "hex": "#111111",
+   "family": "onyx",
+   "from": "Volt Modular Sling 6L"
+  },
+  {
+   "url": "/uploads/seed/variants/volt-modular-sling-6l-concrete-grey.jpg",
+   "colour": "Concrete Grey",
+   "hex": "#9ca3af",
+   "family": "grey",
+   "from": "Volt Modular Sling 6L"
+  },
+  {
+   "url": "/uploads/seed/variants/volt-modular-sling-6l-signal-orange.jpg",
+   "colour": "Signal Orange",
+   "hex": "#ea580c",
+   "family": "orange",
+   "from": "Volt Modular Sling 6L"
+  }
+ ],
+ "duffle-bags": [
+  {
+   "url": "/uploads/seed/catalog/duffel-transit.jpg",
+   "colour": "Sage Khaki",
+   "hex": "#8d8b76",
+   "family": "olive",
+   "from": "Transit Gym Duffel 30L"
+  },
+  {
+   "url": "/uploads/seed/catalog/wallet-woodland.jpg",
+   "colour": "Sage Khaki",
+   "hex": "#8d8b76",
+   "family": "olive",
+   "from": "Transit Gym Duffel 30L"
+  },
+  {
+   "url": "/uploads/seed/catalog/duffel-ranger.jpg",
+   "colour": "Khaki Tan",
+   "hex": "#a77b4f",
+   "family": "tan",
+   "from": "Ranger Canvas Duffel 40L"
+  },
+  {
+   "url": "/uploads/seed/apex-side-pocket.jpg",
+   "colour": "Khaki Tan",
+   "hex": "#a77b4f",
+   "family": "tan",
+   "from": "Ranger Canvas Duffel 40L"
+  },
+  {
+   "url": "/uploads/seed/catalog/weekender-nylon-grey-2.jpg",
+   "colour": "Slate Grey",
+   "hex": "#6e7378",
+   "family": "grey",
+   "from": "Commuter Nylon Weekender 35L"
+  },
+  {
+   "url": "/uploads/seed/apex-interior.jpg",
+   "colour": "Slate Grey",
+   "hex": "#6e7378",
+   "family": "grey",
+   "from": "Commuter Nylon Weekender 35L"
+  },
+  {
+   "url": "/uploads/seed/catalog/duffle-highway.jpg",
+   "colour": "Highway Havana Tan",
+   "hex": "#92400e",
+   "family": "tan",
+   "from": "Highway Waxed Canvas Overnighter Duffle 45L"
+  },
+  {
+   "url": "/uploads/seed/cable-pouch-detail.jpg",
+   "colour": "Oxblood Brown",
+   "hex": "#5a2a20",
+   "family": "brown",
+   "from": "Highway Leather Duffle 45L"
+  },
+  {
+   "url": "/uploads/seed/catalog/weekender-concord.jpg",
+   "colour": "Cocoa",
+   "hex": "#6a3c22",
+   "family": "brown",
+   "from": "Concord Leather Weekender"
+  },
+  {
+   "url": "/uploads/seed/duffle-tan.jpg",
+   "colour": "Vintage Chestnut",
+   "hex": "#703b18",
+   "family": "tan",
+   "from": "Nomad Grand Duffle 48L"
+  },
+  {
+   "url": "/uploads/seed/variants/nomad-grand-duffle-48l-stealth-obsidian.jpg",
+   "colour": "Stealth Obsidian",
+   "hex": "#111111",
+   "family": "onyx",
+   "from": "Nomad Grand Duffle 48L"
+  },
+  {
+   "url": "/uploads/seed/hero-traveler.jpg",
+   "colour": "Vintage Chestnut",
+   "hex": "#703b18",
+   "family": "tan",
+   "from": "Nomad Grand Duffle 48L"
+  }
+ ],
+ "clutches": [
+  {
+   "url": "/uploads/seed/catalog/cardholder-red.jpg",
+   "colour": "Crimson Red",
+   "hex": "#991b1b",
+   "family": "rose",
+   "from": "WILDTANE Aura Pebble Zip Leather Wristlet"
+  },
+  {
+   "url": "/uploads/seed/cardholder-tan.jpg",
+   "colour": "Crimson Red",
+   "hex": "#991b1b",
+   "family": "rose",
+   "from": "WILDTANE Aura Pebble Zip Leather Wristlet"
+  },
+  {
+   "url": "/uploads/seed/catalog/raffia-tassel.jpg",
+   "colour": "Royal Crimson Gold",
+   "hex": "#881337",
+   "family": "rose",
+   "from": "WILDTANE Zardozi Handcrafted Silk Potli Bag"
+  },
+  {
+   "url": "/uploads/seed/catalog/basket-seaside.jpg",
+   "colour": "Royal Crimson Gold",
+   "hex": "#881337",
+   "family": "rose",
+   "from": "WILDTANE Zardozi Handcrafted Silk Potli Bag"
+  },
+  {
+   "url": "/uploads/seed/clutch-espresso.jpg",
+   "colour": "Espresso Brown",
+   "hex": "#3a2012",
+   "family": "brown",
+   "from": "WILDTANE Celeste Structured Evening Clutch"
+  },
+  {
+   "url": "/uploads/seed/clutch-espresso-table.jpg",
+   "colour": "Espresso Brown",
+   "hex": "#3a2012",
+   "family": "brown",
+   "from": "WILDTANE Celeste Structured Evening Clutch"
+  },
+  {
+   "url": "/uploads/seed/catalog/chain-chevron.jpg",
+   "colour": "Candy Pink",
+   "hex": "#e9a7b5",
+   "family": "pink",
+   "from": "Chevron Chain Shoulder Bag"
+  },
+  {
+   "url": "/uploads/seed/catalog/chain-chevron-mauve.jpg",
+   "colour": "Mauve",
+   "hex": "#8d6f75",
+   "family": "pink",
+   "from": "Chevron Chain Shoulder Bag"
+  },
+  {
+   "url": "/uploads/seed/catalog/eyecase-white.jpg",
+   "colour": "Pearlized White Marble",
+   "hex": "#fafafa",
+   "family": "white",
+   "from": "WILDTANE Starlight Acrylic Box Clutch"
+  },
+  {
+   "url": "/uploads/seed/catalog/eyecase-white-2.jpg",
+   "colour": "Pearlized White Marble",
+   "hex": "#fafafa",
+   "family": "white",
+   "from": "WILDTANE Starlight Acrylic Box Clutch"
+  },
+  {
+   "url": "/uploads/seed/variants/soiree-leather-zip-clutch-ivory.jpg",
+   "colour": "Ivory",
+   "hex": "#efe8dc",
+   "family": "cream",
+   "from": "Soirée Leather Zip Clutch"
+  }
+ ],
+ "beach-straw-bags": [
+  {
+   "url": "/uploads/seed/catalog/straw-market.jpg",
+   "colour": "Straw",
+   "hex": "#c8a46e",
+   "family": "sand",
+   "from": "Market Day Straw Shopper"
+  },
+  {
+   "url": "/uploads/seed/catalog/briefcase-black.jpg",
+   "colour": "Straw",
+   "hex": "#c8a46e",
+   "family": "sand",
+   "from": "Market Day Straw Shopper"
+  },
+  {
+   "url": "/uploads/seed/catalog/raffia-tassel.jpg",
+   "colour": "Natural",
+   "hex": "#d9c29b",
+   "family": "sand",
+   "from": "Raffia Tassel Crossbody"
+  },
+  {
+   "url": "/uploads/seed/apex-trolley-test.jpg",
+   "colour": "Natural",
+   "hex": "#d9c29b",
+   "family": "sand",
+   "from": "Raffia Tassel Crossbody"
+  },
+  {
+   "url": "/uploads/seed/catalog/basket-seaside.jpg",
+   "colour": "Wheat",
+   "hex": "#c9a46b",
+   "family": "sand",
+   "from": "Seaside Basket Bag"
+  },
+  {
+   "url": "/uploads/seed/cable-pouch-detail.jpg",
+   "colour": "Wheat",
+   "hex": "#c9a46b",
+   "family": "sand",
+   "from": "Seaside Basket Bag"
+  },
+  {
+   "url": "/uploads/seed/catalog/straw-fiesta.jpg",
+   "colour": "Sea Blue & Straw",
+   "hex": "#6f8fa8",
+   "family": "blue",
+   "from": "Fiesta Fringe Straw Bag"
+  },
+  {
+   "url": "/uploads/seed/catalog/tote-linen.jpg",
+   "colour": "Sea Blue & Straw",
+   "hex": "#6f8fa8",
+   "family": "blue",
+   "from": "Fiesta Fringe Straw Bag"
+  },
+  {
+   "url": "/uploads/seed/catalog/straw-riviera.jpg",
+   "colour": "Natural Straw",
+   "hex": "#cfae7b",
+   "family": "sand",
+   "from": "Riviera Straw Beach Bag"
+  },
+  {
+   "url": "/uploads/seed/catalog/wicker-capri.jpg",
+   "colour": "Tangerine",
+   "hex": "#d9622b",
+   "family": "orange",
+   "from": "Capri Wicker Top-Handle"
+  },
+  {
+   "url": "/uploads/seed/apex-interior.jpg",
+   "colour": "Tangerine",
+   "hex": "#d9622b",
+   "family": "orange",
+   "from": "Capri Wicker Top-Handle"
+  }
+ ],
+ "tech-briefcases": [
+  {
+   "url": "/uploads/seed/catalog/sleeve-felt.jpg",
+   "colour": "Heather Grey",
+   "hex": "#8d9196",
+   "family": "grey",
+   "from": "Felt Laptop Sleeve 14\""
+  },
+  {
+   "url": "/uploads/seed/apex-trolley-test.jpg",
+   "colour": "Heather Grey",
+   "hex": "#8d9196",
+   "family": "grey",
+   "from": "Felt Laptop Sleeve 14\""
+  },
+  {
+   "url": "/uploads/seed/brief-jute.jpg",
+   "colour": "Natural Jute",
+   "hex": "#c2ab84",
+   "family": "sand",
+   "from": "Jute Laptop Brief 14\""
+  },
+  {
+   "url": "/uploads/seed/variants/jute-laptop-brief-14-indigo.jpg",
+   "colour": "Indigo",
+   "hex": "#2c3a5a",
+   "family": "navy",
+   "from": "Jute Laptop Brief 14\""
+  },
+  {
+   "url": "/uploads/seed/catalog/portfolio-atlas.jpg",
+   "colour": "Cognac",
+   "hex": "#9c5528",
+   "family": "tan",
+   "from": "Atlas Leather Portfolio"
+  },
+  {
+   "url": "/uploads/seed/catalog/briefcase-black.jpg",
+   "colour": "Cognac",
+   "hex": "#9c5528",
+   "family": "tan",
+   "from": "Atlas Leather Portfolio"
+  },
+  {
+   "url": "/uploads/seed/briefcase-oxford.jpg",
+   "colour": "Rosewood",
+   "hex": "#7b4636",
+   "family": "brown",
+   "from": "Oxford Twin-Buckle Briefcase"
+  },
+  {
+   "url": "/uploads/seed/variants/oxford-twin-buckle-briefcase-black.jpg",
+   "colour": "Black",
+   "hex": "#141414",
+   "family": "onyx",
+   "from": "Oxford Twin-Buckle Briefcase"
+  }
+ ],
+ "daypacks": [
+  {
+   "url": "/uploads/seed/daypack-grey.jpg",
+   "colour": "Heather Grey",
+   "hex": "#6e7275",
+   "family": "grey",
+   "from": "Heather Canvas Daypack 16L"
+  },
+  {
+   "url": "/uploads/seed/variants/heather-canvas-daypack-16l-sand.jpg",
+   "colour": "Sand",
+   "hex": "#cdb894",
+   "family": "sand",
+   "from": "Heather Canvas Daypack 16L"
+  },
+  {
+   "url": "/uploads/seed/daypack-navy.jpg",
+   "colour": "Midnight Navy",
+   "hex": "#1d2433",
+   "family": "navy",
+   "from": "Metro Everyday Daypack 18L"
+  },
+  {
+   "url": "/uploads/seed/variants/metro-everyday-daypack-18l-charcoal.jpg",
+   "colour": "Charcoal",
+   "hex": "#33363b",
+   "family": "grey",
+   "from": "Metro Everyday Daypack 18L"
+  }
+ ],
+ "waterproof-commuters": [
+  {
+   "url": "/uploads/seed/catalog/rolltop-ridgeline.jpg",
+   "colour": "Stone Grey",
+   "hex": "#7d7f78",
+   "family": "grey",
+   "from": "Ridgeline Rolltop 22L"
+  },
+  {
+   "url": "/uploads/seed/catalog/keyset-onyx.jpg",
+   "colour": "Stone Grey",
+   "hex": "#7d7f78",
+   "family": "grey",
+   "from": "Ridgeline Rolltop 22L"
+  },
+  {
+   "url": "/uploads/seed/catalog/drypack-coastline.jpg",
+   "colour": "Black",
+   "hex": "#151515",
+   "family": "onyx",
+   "from": "Coastline Dry Pack 30L"
+  },
+  {
+   "url": "/uploads/seed/pack-trailhead.jpg",
+   "colour": "Ash Grey",
+   "hex": "#9a9c9e",
+   "family": "grey",
+   "from": "Trailhead Weatherproof Pack 28L"
+  },
+  {
+   "url": "/uploads/seed/variants/trailhead-weatherproof-pack-28l-forest-green.jpg",
+   "colour": "Forest Green",
+   "hex": "#2f4a3a",
+   "family": "olive",
+   "from": "Trailhead Weatherproof Pack 28L"
+  },
+  {
+   "url": "/uploads/seed/variants/trailhead-weatherproof-pack-28l-black.jpg",
+   "colour": "Black",
+   "hex": "#151515",
+   "family": "onyx",
+   "from": "Trailhead Weatherproof Pack 28L"
+  }
+ ],
+ "travel-organisers": [
+  {
+   "url": "/uploads/seed/catalog/pouch-toiletry.jpg",
+   "colour": "Olive & Peach",
+   "hex": "#556148",
+   "family": "olive",
+   "from": "Canvas Toiletry Pouch Set"
+  },
+  {
+   "url": "/uploads/seed/catalog/keyset-onyx.jpg",
+   "colour": "Olive & Peach",
+   "hex": "#556148",
+   "family": "olive",
+   "from": "Canvas Toiletry Pouch Set"
+  },
+  {
+   "url": "/uploads/seed/catalog/cubes-navy-2.jpg",
+   "colour": "Navy",
+   "hex": "#1f2f4f",
+   "family": "navy",
+   "from": "Packing Cube Set of 4"
+  },
+  {
+   "url": "/uploads/seed/catalog/tote-linen.jpg",
+   "colour": "Navy",
+   "hex": "#1f2f4f",
+   "family": "navy",
+   "from": "Packing Cube Set of 4"
+  },
+  {
+   "url": "/uploads/seed/cable-pouch.jpg",
+   "colour": "Stealth Black",
+   "hex": "#111111",
+   "family": "onyx",
+   "from": "Technical Cable Organizer"
+  },
+  {
+   "url": "/uploads/seed/cable-pouch-detail.jpg",
+   "colour": "Stealth Black",
+   "hex": "#111111",
+   "family": "onyx",
+   "from": "Technical Cable Organizer"
+  },
+  {
+   "url": "/uploads/seed/packing-cube.jpg",
+   "colour": "Graphite",
+   "hex": "#374151",
+   "family": "grey",
+   "from": "Compression Packing Cube"
+  }
+ ],
+ "belts": [
+  {
+   "url": "/uploads/seed/catalog/bifold-tan.jpg",
+   "colour": "Chestnut Tan",
+   "hex": "#92400e",
+   "family": "tan",
+   "from": "WILDTANE Classic Slim Dress Belt"
+  },
+  {
+   "url": "/uploads/seed/catalog/cardholder-tan.jpg",
+   "colour": "Chestnut Tan",
+   "hex": "#92400e",
+   "family": "tan",
+   "from": "WILDTANE Classic Slim Dress Belt"
+  },
+  {
+   "url": "/uploads/seed/cardholder-tan.jpg",
+   "colour": "Dark Mahogany",
+   "hex": "#451a03",
+   "family": "brown",
+   "from": "WILDTANE Classic Full-Grain Leather Dress Belt"
+  },
+  {
+   "url": "/uploads/seed/catalog/beltbag-grey.jpg",
+   "colour": "Tan Gold",
+   "hex": "#b07a45",
+   "family": "tan",
+   "from": "Sculpted Brass Buckle Leather Belt"
+  },
+  {
+   "url": "/uploads/seed/catalog/beltbag-red.jpg",
+   "colour": "Cherry Red",
+   "hex": "#b8323a",
+   "family": "red",
+   "from": "Sculpted Brass Buckle Leather Belt"
+  },
+  {
+   "url": "/uploads/seed/catalog/keyfob-brown.jpg",
+   "colour": "Chestnut Brown",
+   "hex": "#5b3a26",
+   "family": "brown",
+   "from": "Heritage Full-Grain Leather Belt"
+  },
+  {
+   "url": "/uploads/seed/catalog/keyfob-black.jpg",
+   "colour": "Classic Black",
+   "hex": "#151515",
+   "family": "onyx",
+   "from": "Heritage Full-Grain Leather Belt"
+  },
+  {
+   "url": "/uploads/seed/catalog/beltbag-cream.jpg",
+   "colour": "Warm Ivory",
+   "hex": "#ece3d3",
+   "family": "cream",
+   "from": "Sculptural Brass Accent Belt"
+  },
+  {
+   "url": "/uploads/seed/catalog/tote-linen.jpg",
+   "colour": "Onyx / Espresso",
+   "hex": "#151515",
+   "family": "onyx",
+   "from": "Executive Reversible Dress Belt"
+  },
+  {
+   "url": "/uploads/seed/catalog/keyset-onyx.jpg",
+   "colour": "Cognac / Espresso",
+   "hex": "#7a4130",
+   "family": "brown",
+   "from": "Reversible Tuscan Leather Belt"
+  }
+ ],
+ "luggage-tags": [
+  {
+   "url": "/uploads/seed/catalog/tag-navy.jpg",
+   "colour": "Navy",
+   "hex": "#1f2f4f",
+   "family": "navy",
+   "from": "Leather Luggage Tag"
+  },
+  {
+   "url": "/uploads/seed/catalog/tag-sky.jpg",
+   "colour": "Sky Blue",
+   "hex": "#6fa3c7",
+   "family": "blue",
+   "from": "Leather Luggage Tag"
+  }
+ ],
+ "perfumes": [
+  {
+   "url": "/uploads/seed/catalog/bottle-lilac.jpg",
+   "colour": "50ml Spray Bottle",
+   "hex": "#c084fc",
+   "family": "rose",
+   "from": "WILDTANE Rosa & Amber Blossom Eau De Parfum 50ml"
+  },
+  {
+   "url": "/uploads/seed/catalog/bottle-trio.jpg",
+   "colour": "50ml Spray Bottle",
+   "hex": "#c084fc",
+   "family": "rose",
+   "from": "WILDTANE Rosa & Amber Blossom Eau De Parfum 50ml"
+  },
+  {
+   "url": "/uploads/seed/flask.jpg",
+   "colour": "50ml Spray Bottle",
+   "hex": "#1c1917",
+   "family": "onyx",
+   "from": "WILDTANE Smoked Cedar & Vetiver Noir EDP 50ml"
+  },
+  {
+   "url": "/uploads/seed/apex-harness.jpg",
+   "colour": "Eau de Parfum 50ml",
+   "hex": "#c9b6e4",
+   "family": "pink",
+   "from": "Velvet Bloom Eau de Parfum 50ml"
+  },
+  {
+   "url": "/uploads/seed/apex-side-pocket.jpg",
+   "colour": "Eau de Parfum 50ml",
+   "hex": "#e2b632",
+   "family": "yellow",
+   "from": "Amber & Jasmine Eau de Parfum 50ml"
+  }
+ ],
+ "laptop-sleeves": [
+  {
+   "url": "/uploads/seed/catalog/sleeve-saddle-tan.jpg",
+   "colour": "Saddle Tan 14\"",
+   "hex": "#af723e",
+   "family": "tan",
+   "from": "Saddle Tan Full-Grain Leather Laptop Sleeve (14\"/16\")"
+  },
+  {
+   "url": "/uploads/seed/catalog/sleeve-saddle-espresso.jpg",
+   "colour": "Espresso 14\"",
+   "hex": "#3a2318",
+   "family": "brown",
+   "from": "Saddle Tan Full-Grain Leather Laptop Sleeve (14\"/16\")"
+  },
+  {
+   "url": "/uploads/seed/catalog/sleeve-saddle-cognac.jpg",
+   "colour": "Cognac",
+   "hex": "#9c5528",
+   "family": "tan",
+   "from": "Saddle Leather Laptop Sleeve 14\""
+  },
+  {
+   "url": "/uploads/seed/catalog/sleeve-saddle-tan-2.jpg",
+   "colour": "Saddle Tan",
+   "hex": "#a0622f",
+   "family": "tan",
+   "from": "Saddle Leather Laptop Sleeve 14\""
+  }
+ ],
+ "belt-bags": [
+  {
+   "url": "/uploads/seed/catalog/beltbag-holo.jpg",
+   "colour": "Iridescent",
+   "hex": "#cfd6e6",
+   "family": "grey",
+   "from": "Festival Metallic Belt Bag"
+  },
+  {
+   "url": "/uploads/seed/catalog/beltbag-magenta.jpg",
+   "colour": "Magenta",
+   "hex": "#b0277d",
+   "family": "pink",
+   "from": "Festival Metallic Belt Bag"
+  },
+  {
+   "url": "/uploads/seed/catalog/beltbag-blue.jpg",
+   "colour": "Electric Blue",
+   "hex": "#2453d6",
+   "family": "blue",
+   "from": "Festival Metallic Belt Bag"
+  },
+  {
+   "url": "/uploads/seed/catalog/beltbag-grey.jpg",
+   "colour": "Storm Grey",
+   "hex": "#4b5563",
+   "family": "grey",
+   "from": "WILDTANE Trailhead Water-Resistant Belt Bag"
+  },
+  {
+   "url": "/uploads/seed/catalog/beltbag-cream.jpg",
+   "colour": "Cream",
+   "hex": "#ece3d3",
+   "family": "cream",
+   "from": "Metro Leather Belt Bag"
+  },
+  {
+   "url": "/uploads/seed/catalog/beltbag-red.jpg",
+   "colour": "Cherry Red",
+   "hex": "#b8323a",
+   "family": "red",
+   "from": "Metro Leather Belt Bag"
+  }
+ ],
+ "toiletry-kits": [
+  {
+   "url": "/uploads/seed/catalog/washbag-aqua.jpg",
+   "colour": "Aqua",
+   "hex": "#5fb7c4",
+   "family": "teal",
+   "from": "Aqua Hanging Wash Bag"
+  },
+  {
+   "url": "/uploads/seed/catalog/tote-linen.jpg",
+   "colour": "Aqua",
+   "hex": "#5fb7c4",
+   "family": "teal",
+   "from": "Aqua Hanging Wash Bag"
+  },
+  {
+   "url": "/uploads/seed/catalog/pouch-toiletry.jpg",
+   "colour": "Hickory Brown",
+   "hex": "#602808",
+   "family": "brown",
+   "from": "WILDTANE Heritage Water-Resistant Dopp Kit Toiletry Bag"
+  },
+  {
+   "url": "/uploads/seed/catalog/dopp-heritage-black.jpg",
+   "colour": "Hickory Brown",
+   "hex": "#602808",
+   "family": "brown",
+   "from": "WILDTANE Heritage Water-Resistant Dopp Kit Toiletry Bag"
+  },
+  {
+   "url": "/uploads/seed/catalog/dopp-heritage-brown.jpg",
+   "colour": "Dark Brown",
+   "hex": "#4a2c1d",
+   "family": "brown",
+   "from": "Heritage Leather Dopp Kit"
+  }
+ ],
+ "passport-holders": [
+  {
+   "url": "/uploads/seed/catalog/passport-atlas.jpg",
+   "colour": "Map Print",
+   "hex": "#c58a54",
+   "family": "tan",
+   "from": "Atlas Map Passport Cover"
+  },
+  {
+   "url": "/uploads/seed/apex-trolley-test.jpg",
+   "colour": "Map Print",
+   "hex": "#c58a54",
+   "family": "tan",
+   "from": "Atlas Map Passport Cover"
+  },
+  {
+   "url": "/uploads/seed/catalog/passport-wanderlust-blush.jpg",
+   "colour": "Blush Pink",
+   "hex": "#e8b4b8",
+   "family": "pink",
+   "from": "Wanderlust Printed Passport Cover"
+  },
+  {
+   "url": "/uploads/seed/catalog/passport-wanderlust-sky.jpg",
+   "colour": "Sky Blue",
+   "hex": "#7fa8c9",
+   "family": "blue",
+   "from": "Wanderlust Printed Passport Cover"
+  },
+  {
+   "url": "/uploads/seed/catalog/passport-heritage.jpg",
+   "colour": "Heritage Tan",
+   "hex": "#ab7040",
+   "family": "tan",
+   "from": "Atlas RFID Multi-Currency Passport Wallet"
+  },
+  {
+   "url": "/uploads/seed/cable-pouch-detail.jpg",
+   "colour": "Dark Brown",
+   "hex": "#3b2619",
+   "family": "brown",
+   "from": "Heritage Leather Passport Wallet"
+  }
+ ],
+ "keychains": [
+  {
+   "url": "/uploads/seed/catalog/keyset-onyx.jpg",
+   "colour": "Onyx Black",
+   "hex": "#17171a",
+   "family": "onyx",
+   "from": "WILDTANE Men's Access Key Token (₹2 Payment Gateway Test)"
+  },
+  {
+   "url": "/uploads/seed/catalog/keyfob-brown.jpg",
+   "colour": "Cognac Brown",
+   "hex": "#96582c",
+   "family": "brown",
+   "from": "WILDTANE Men's Access Key Token (₹2 Payment Gateway Test)"
+  },
+  {
+   "url": "/uploads/seed/catalog/keyfob-black.jpg",
+   "colour": "Black",
+   "hex": "#151515",
+   "family": "onyx",
+   "from": "Loop Leather Key Fob"
+  },
+  {
+   "url": "/uploads/seed/apex-side-pocket.jpg",
+   "colour": "Black",
+   "hex": "#141414",
+   "family": "onyx",
+   "from": "Onyx Key & Card Set"
+  },
+  {
+   "url": "/uploads/seed/catalog/raffia-tassel.jpg",
+   "colour": "Emerald Botanical",
+   "hex": "#1f5c4a",
+   "family": "green",
+   "from": "Silk Twill Heritage Scarf"
+  },
+  {
+   "url": "/uploads/seed/cable-pouch-detail.jpg",
+   "colour": "Emerald Botanical",
+   "hex": "#1f5c4a",
+   "family": "green",
+   "from": "Silk Twill Heritage Scarf"
+  }
+ ],
+ "pouches": [
+  {
+   "url": "/uploads/seed/catalog/zippouch-espresso.jpg",
+   "colour": "Espresso",
+   "hex": "#3a2418",
+   "family": "brown",
+   "from": "Everyday Leather Zip Pouch"
+  },
+  {
+   "url": "/uploads/seed/catalog/zippouch-tan.jpg",
+   "colour": "Tan",
+   "hex": "#b07a45",
+   "family": "tan",
+   "from": "Everyday Leather Zip Pouch"
+  },
+  {
+   "url": "/uploads/seed/catalog/zippouch-chocolate.jpg",
+   "colour": "Chocolate",
+   "hex": "#5b3a26",
+   "family": "brown",
+   "from": "Everyday Leather Zip Pouch"
+  }
+ ],
+ "eyewear-cases": [
+  {
+   "url": "/uploads/seed/catalog/eyecase-white.jpg",
+   "colour": "White",
+   "hex": "#f2f2f0",
+   "family": "cream",
+   "from": "Hard-Shell Eyewear Case"
+  },
+  {
+   "url": "/uploads/seed/catalog/eyecase-white-2.jpg",
+   "colour": "White",
+   "hex": "#f2f2f0",
+   "family": "cream",
+   "from": "Hard-Shell Eyewear Case"
+  },
+  {
+   "url": "/uploads/seed/catalog/eyesleeve-tan.jpg",
+   "colour": "Tan",
+   "hex": "#b07a45",
+   "family": "tan",
+   "from": "Leather Glasses Sleeve"
+  },
+  {
+   "url": "/uploads/seed/catalog/eyesleeve-black.jpg",
+   "colour": "Black",
+   "hex": "#151515",
+   "family": "onyx",
+   "from": "Leather Glasses Sleeve"
+  }
+ ],
+ "hydration": [
+  {
+   "url": "/uploads/seed/catalog/bottle-lilac.jpg",
+   "colour": "Lilac",
+   "hex": "#c9b6e4",
+   "family": "pink",
+   "from": "Insulated Steel Bottle 600ml"
+  },
+  {
+   "url": "/uploads/seed/catalog/bottle-trio.jpg",
+   "colour": "Lilac",
+   "hex": "#c9b6e4",
+   "family": "pink",
+   "from": "Insulated Steel Bottle 600ml"
+  },
+  {
+   "url": "/uploads/seed/flask.jpg",
+   "colour": "Matte Black",
+   "hex": "#111111",
+   "family": "onyx",
+   "from": "Vacuum Insulated Flask 750ml"
+  },
+  {
+   "url": "/uploads/seed/flask-sage.jpg",
+   "colour": "Sage Green",
+   "hex": "#5e7a64",
+   "family": "olive",
+   "from": "Vacuum Insulated Flask 750ml"
+  }
+ ],
+ "t-shirts": [
+  {
+   "url": "/uploads/seed/catalog/tote-cotton.jpg",
+   "colour": "Chalk White",
+   "hex": "#f5f5f5",
+   "family": "white",
+   "from": "Signature Supima Cotton Tee"
+  },
+  {
+   "url": "/uploads/seed/catalog/tote-denim.jpg",
+   "colour": "Midnight Navy",
+   "hex": "#1f2f4f",
+   "family": "navy",
+   "from": "Signature Supima Cotton Tee"
+  },
+  {
+   "url": "/uploads/seed/catalog/tote-linen.jpg",
+   "colour": "Oatmeal Heather",
+   "hex": "#ebe4d6",
+   "family": "cream",
+   "from": "Heavyweight Supima Commuter T-Shirt"
+  },
+  {
+   "url": "/uploads/seed/apex-interior.jpg",
+   "colour": "Olive Heather",
+   "hex": "#5d6043",
+   "family": "olive",
+   "from": "Merino Wool Travel Commuter Polo"
+  }
+ ],
+ "travel-comfort": [
+  {
+   "url": "/uploads/seed/catalog/neckpillow-grey.jpg",
+   "colour": "Soft Grey",
+   "hex": "#a9abad",
+   "family": "grey",
+   "from": "Cloud Memory-Foam Neck Pillow"
+  },
+  {
+   "url": "/uploads/seed/catalog/neckpillow-grey-2.jpg",
+   "colour": "Soft Grey",
+   "hex": "#a9abad",
+   "family": "grey",
+   "from": "Cloud Memory-Foam Neck Pillow"
+  }
+ ],
+ "men-travel-backpacks": [
+  {
+   "url": "/uploads/seed/apex-slate.jpg",
+   "colour": "Slate Grey",
+   "hex": "#475569",
+   "family": "grey",
+   "from": "WILDTANE TechnoShield 16-inch Laptop Backpack"
+  },
+  {
+   "url": "/uploads/seed/apex-interior.jpg",
+   "colour": "Slate Grey",
+   "hex": "#475569",
+   "family": "grey",
+   "from": "WILDTANE TechnoShield 16-inch Laptop Backpack"
+  },
+  {
+   "url": "/uploads/seed/apex-harness.jpg",
+   "colour": "Slate Grey",
+   "hex": "#475569",
+   "family": "grey",
+   "from": "WILDTANE TechnoShield 16-inch Laptop Backpack"
+  },
+  {
+   "url": "/uploads/seed/catalog/backpack-hudson.jpg",
+   "colour": "Cobalt Blue",
+   "hex": "#1d4ed8",
+   "family": "navy",
+   "from": "WILDTANE Campus Multi-Pocket Student Backpack"
+  },
+  {
+   "url": "/uploads/seed/catalog/backpack-fulton.jpg",
+   "colour": "Cobalt Blue",
+   "hex": "#1d4ed8",
+   "family": "navy",
+   "from": "WILDTANE Campus Multi-Pocket Student Backpack"
+  },
+  {
+   "url": "/uploads/seed/catalog/rucksack-prairie.jpg",
+   "colour": "Khaki Sand",
+   "hex": "#d97706",
+   "family": "tan",
+   "from": "WILDTANE Heritage Waxed Canvas Rucksack Backpack"
+  },
+  {
+   "url": "/uploads/seed/catalog/pack-alpine.jpg",
+   "colour": "Khaki Sand",
+   "hex": "#d97706",
+   "family": "tan",
+   "from": "WILDTANE Heritage Waxed Canvas Rucksack Backpack"
+  },
+  {
+   "url": "/uploads/seed/daypack-grey.jpg",
+   "colour": "Concrete Grey",
+   "hex": "#64748b",
+   "family": "grey",
+   "from": "WILDTANE Aero 18L Minimalist Commuter Backpack"
+  },
+  {
+   "url": "/uploads/seed/daypack-navy.jpg",
+   "colour": "Concrete Grey",
+   "hex": "#64748b",
+   "family": "grey",
+   "from": "WILDTANE Aero 18L Minimalist Commuter Backpack"
+  },
+  {
+   "url": "/uploads/seed/catalog/rolltop-ridgeline.jpg",
+   "colour": "Carbon Black",
+   "hex": "#18181b",
+   "family": "onyx",
+   "from": "WILDTANE CyberTech USB Smart Backpack"
+  },
+  {
+   "url": "/uploads/seed/apex-side-pocket.jpg",
+   "colour": "Carbon Black",
+   "hex": "#18181b",
+   "family": "onyx",
+   "from": "WILDTANE CyberTech USB Smart Backpack"
+  },
+  {
+   "url": "/uploads/seed/catalog/pack-highland.jpg",
+   "colour": "Stealth Shadow",
+   "hex": "#171717",
+   "family": "onyx",
+   "from": "WILDTANE Vault TSA Lock Anti-Theft Backpack"
+  },
+  {
+   "url": "/uploads/seed/catalog/cabin-metro.jpg",
+   "colour": "Stealth Shadow",
+   "hex": "#171717",
+   "family": "onyx",
+   "from": "WILDTANE Vault TSA Lock Anti-Theft Backpack"
+  },
+  {
+   "url": "/uploads/seed/cabin-hardshell.jpg",
+   "colour": "Executive Obsidian",
+   "hex": "#0c0a09",
+   "family": "onyx",
+   "from": "WILDTANE Voyager 2-in-1 Wheeled Rolling Backpack"
+  },
+  {
+   "url": "/uploads/seed/catalog/pack-summit.jpg",
+   "colour": "Alpine Orange & Slate",
+   "hex": "#c2410c",
+   "family": "tan",
+   "from": "WILDTANE Summit 40L Ergonomic Hiking Backpack"
+  },
+  {
+   "url": "/uploads/seed/catalog/drypack-coastline.jpg",
+   "colour": "Alpine Orange & Slate",
+   "hex": "#c2410c",
+   "family": "tan",
+   "from": "WILDTANE Summit 40L Ergonomic Hiking Backpack"
+  }
+ ],
+ "men-sling-bags": [
+  {
+   "url": "/uploads/seed/sling-black.jpg",
+   "colour": "Matte Black",
+   "hex": "#111111",
+   "family": "onyx",
+   "from": "Volt Modular Sling 6L"
+  },
+  {
+   "url": "/uploads/seed/variants/volt-modular-sling-6l-concrete-grey.jpg",
+   "colour": "Concrete Grey",
+   "hex": "#9ca3af",
+   "family": "grey",
+   "from": "Volt Modular Sling 6L"
+  },
+  {
+   "url": "/uploads/seed/variants/volt-modular-sling-6l-signal-orange.jpg",
+   "colour": "Signal Orange",
+   "hex": "#ea580c",
+   "family": "orange",
+   "from": "Volt Modular Sling 6L"
+  },
+  {
+   "url": "/uploads/seed/sling-sand.jpg",
+   "colour": "Sahara Sand",
+   "hex": "#c2b280",
+   "family": "tan",
+   "from": "Terra Recycled Daily Sling"
+  },
+  {
+   "url": "/uploads/seed/cable-pouch-detail.jpg",
+   "colour": "Sahara Sand",
+   "hex": "#c2b280",
+   "family": "tan",
+   "from": "Terra Recycled Daily Sling"
+  },
+  {
+   "url": "/uploads/seed/crossbody-dune.jpg",
+   "colour": "Sand",
+   "hex": "#d8c3a5",
+   "family": "sand",
+   "from": "Dune Barrel Crossbody"
+  },
+  {
+   "url": "/uploads/seed/variants/dune-barrel-crossbody-chocolate.jpg",
+   "colour": "Chocolate",
+   "hex": "#4a2e22",
+   "family": "brown",
+   "from": "Dune Barrel Crossbody"
+  },
+  {
+   "url": "/uploads/seed/crossbody-camera.jpg",
+   "colour": "Black",
+   "hex": "#111111",
+   "family": "onyx",
+   "from": "Metro Camera Crossbody"
+  },
+  {
+   "url": "/uploads/seed/variants/metro-camera-crossbody-tan.jpg",
+   "colour": "Tan",
+   "hex": "#a0683b",
+   "family": "tan",
+   "from": "Metro Camera Crossbody"
+  },
+  {
+   "url": "/uploads/seed/variants/metro-camera-crossbody-navy.jpg",
+   "colour": "Navy",
+   "hex": "#1d2638",
+   "family": "navy",
+   "from": "Metro Camera Crossbody"
+  },
+  {
+   "url": "/uploads/seed/catalog/camera-voyager.jpg",
+   "colour": "Cognac",
+   "hex": "#9c5528",
+   "family": "tan",
+   "from": "Voyager Leather Camera Bag"
+  },
+  {
+   "url": "/uploads/seed/catalog/wallet-woodland.jpg",
+   "colour": "Cognac",
+   "hex": "#9c5528",
+   "family": "tan",
+   "from": "Voyager Leather Camera Bag"
+  },
+  {
+   "url": "/uploads/seed/catalog/utility-ledger.jpg",
+   "colour": "Tan",
+   "hex": "#a35c2a",
+   "family": "tan",
+   "from": "Ledger Leather Utility Bag"
+  },
+  {
+   "url": "/uploads/seed/apex-trolley-test.jpg",
+   "colour": "Tan",
+   "hex": "#a35c2a",
+   "family": "tan",
+   "from": "Ledger Leather Utility Bag"
+  }
+ ],
+ "men-duffle-bags": [
+  {
+   "url": "/uploads/seed/duffle-tan.jpg",
+   "colour": "Vintage Chestnut",
+   "hex": "#703b18",
+   "family": "tan",
+   "from": "Nomad Grand Duffle 48L"
+  },
+  {
+   "url": "/uploads/seed/variants/nomad-grand-duffle-48l-stealth-obsidian.jpg",
+   "colour": "Stealth Obsidian",
+   "hex": "#111111",
+   "family": "onyx",
+   "from": "Nomad Grand Duffle 48L"
+  },
+  {
+   "url": "/uploads/seed/hero-traveler.jpg",
+   "colour": "Vintage Chestnut",
+   "hex": "#703b18",
+   "family": "tan",
+   "from": "Nomad Grand Duffle 48L"
+  },
+  {
+   "url": "/uploads/seed/catalog/duffel-ranger.jpg",
+   "colour": "Khaki Tan",
+   "hex": "#a77b4f",
+   "family": "tan",
+   "from": "Ranger Canvas Duffel 40L"
+  },
+  {
+   "url": "/uploads/seed/apex-side-pocket.jpg",
+   "colour": "Khaki Tan",
+   "hex": "#a77b4f",
+   "family": "tan",
+   "from": "Ranger Canvas Duffel 40L"
+  },
+  {
+   "url": "/uploads/seed/catalog/duffle-highway.jpg",
+   "colour": "Oxblood Brown",
+   "hex": "#5a2a20",
+   "family": "brown",
+   "from": "Highway Leather Duffle 45L"
+  },
+  {
+   "url": "/uploads/seed/cable-pouch-detail.jpg",
+   "colour": "Oxblood Brown",
+   "hex": "#5a2a20",
+   "family": "brown",
+   "from": "Highway Leather Duffle 45L"
+  },
+  {
+   "url": "/uploads/seed/catalog/duffel-transit.jpg",
+   "colour": "Sage Khaki",
+   "hex": "#8d8b76",
+   "family": "olive",
+   "from": "Transit Gym Duffel 30L"
+  },
+  {
+   "url": "/uploads/seed/catalog/wallet-woodland.jpg",
+   "colour": "Sage Khaki",
+   "hex": "#8d8b76",
+   "family": "olive",
+   "from": "Transit Gym Duffel 30L"
+  },
+  {
+   "url": "/uploads/seed/catalog/weekender-concord.jpg",
+   "colour": "Cocoa",
+   "hex": "#6a3c22",
+   "family": "brown",
+   "from": "Concord Leather Weekender"
+  },
+  {
+   "url": "/uploads/seed/apex-interior.jpg",
+   "colour": "Cocoa",
+   "hex": "#6a3c22",
+   "family": "brown",
+   "from": "Concord Leather Weekender"
+  },
+  {
+   "url": "/uploads/seed/catalog/weekender-nylon-grey-2.jpg",
+   "colour": "Slate Grey",
+   "hex": "#6e7378",
+   "family": "grey",
+   "from": "Commuter Nylon Weekender 35L"
+  }
+ ],
+ "women-clutches": [
+  {
+   "url": "/uploads/seed/clutch-espresso.jpg",
+   "colour": "Espresso",
+   "hex": "#3b2620",
+   "family": "brown",
+   "from": "Soirée Leather Zip Clutch"
+  },
+  {
+   "url": "/uploads/seed/variants/soiree-leather-zip-clutch-ivory.jpg",
+   "colour": "Ivory",
+   "hex": "#efe8dc",
+   "family": "cream",
+   "from": "Soirée Leather Zip Clutch"
+  },
+  {
+   "url": "/uploads/seed/clutch-espresso-table.jpg",
+   "colour": "Espresso",
+   "hex": "#3b2620",
+   "family": "brown",
+   "from": "Soirée Leather Zip Clutch"
+  },
+  {
+   "url": "/uploads/seed/catalog/chain-chevron.jpg",
+   "colour": "Candy Pink",
+   "hex": "#e9a7b5",
+   "family": "pink",
+   "from": "Chevron Chain Shoulder Bag"
+  },
+  {
+   "url": "/uploads/seed/catalog/chain-chevron-mauve.jpg",
+   "colour": "Mauve",
+   "hex": "#8d6f75",
+   "family": "pink",
+   "from": "Chevron Chain Shoulder Bag"
+  },
+  {
+   "url": "/uploads/seed/catalog/eyecase-white.jpg",
+   "colour": "Pearlized White Marble",
+   "hex": "#fafafa",
+   "family": "white",
+   "from": "WILDTANE Starlight Acrylic Box Clutch"
+  },
+  {
+   "url": "/uploads/seed/catalog/eyecase-white-2.jpg",
+   "colour": "Pearlized White Marble",
+   "hex": "#fafafa",
+   "family": "white",
+   "from": "WILDTANE Starlight Acrylic Box Clutch"
+  }
+ ],
+ "men-leather-belts": [
+  {
+   "url": "/uploads/seed/catalog/beltbag-cream.jpg",
+   "colour": "Cream",
+   "hex": "#ece3d3",
+   "family": "cream",
+   "from": "Metro Leather Belt Bag"
+  },
+  {
+   "url": "/uploads/seed/catalog/beltbag-red.jpg",
+   "colour": "Cherry Red",
+   "hex": "#b8323a",
+   "family": "red",
+   "from": "Metro Leather Belt Bag"
+  },
+  {
+   "url": "/uploads/seed/catalog/beltbag-grey.jpg",
+   "colour": "Stone Grey",
+   "hex": "#8c8f93",
+   "family": "grey",
+   "from": "Metro Leather Belt Bag"
+  },
+  {
+   "url": "/uploads/seed/catalog/keyfob-brown.jpg",
+   "colour": "Chestnut Brown",
+   "hex": "#5b3a26",
+   "family": "brown",
+   "from": "Heritage Full-Grain Leather Belt"
+  },
+  {
+   "url": "/uploads/seed/catalog/keyfob-black.jpg",
+   "colour": "Classic Black",
+   "hex": "#151515",
+   "family": "onyx",
+   "from": "Heritage Full-Grain Leather Belt"
+  },
+  {
+   "url": "/uploads/seed/catalog/tote-linen.jpg",
+   "colour": "Onyx / Espresso",
+   "hex": "#151515",
+   "family": "onyx",
+   "from": "Executive Reversible Dress Belt"
+  },
+  {
+   "url": "/uploads/seed/catalog/keyset-onyx.jpg",
+   "colour": "Cognac / Espresso",
+   "hex": "#7a4130",
+   "family": "brown",
+   "from": "Reversible Tuscan Leather Belt"
+  },
+  {
+   "url": "/uploads/seed/catalog/bifold-tan.jpg",
+   "colour": "Chestnut Tan",
+   "hex": "#92400e",
+   "family": "tan",
+   "from": "WILDTANE Classic Slim Dress Belt"
+  },
+  {
+   "url": "/uploads/seed/catalog/cardholder-tan.jpg",
+   "colour": "Chestnut Tan",
+   "hex": "#92400e",
+   "family": "tan",
+   "from": "WILDTANE Classic Slim Dress Belt"
+  },
+  {
+   "url": "/uploads/seed/catalog/beltbag-blue.jpg",
+   "colour": "Storm Grey",
+   "hex": "#4b5563",
+   "family": "grey",
+   "from": "WILDTANE Trailhead Water-Resistant Belt Bag"
+  },
+  {
+   "url": "/uploads/seed/cardholder-tan.jpg",
+   "colour": "Dark Mahogany",
+   "hex": "#451a03",
+   "family": "brown",
+   "from": "WILDTANE Classic Full-Grain Leather Dress Belt"
+  }
+ ],
+ "women-cosmetic-bags": [
+  {
+   "url": "/uploads/seed/catalog/pouch-toiletry.jpg",
+   "colour": "Olive & Peach",
+   "hex": "#556148",
+   "family": "olive",
+   "from": "Canvas Toiletry Pouch Set"
+  },
+  {
+   "url": "/uploads/seed/catalog/keyset-onyx.jpg",
+   "colour": "Olive & Peach",
+   "hex": "#556148",
+   "family": "olive",
+   "from": "Canvas Toiletry Pouch Set"
+  },
+  {
+   "url": "/uploads/seed/catalog/zippouch-espresso.jpg",
+   "colour": "Espresso",
+   "hex": "#3a2418",
+   "family": "brown",
+   "from": "Everyday Leather Zip Pouch"
+  },
+  {
+   "url": "/uploads/seed/catalog/zippouch-tan.jpg",
+   "colour": "Tan",
+   "hex": "#b07a45",
+   "family": "tan",
+   "from": "Everyday Leather Zip Pouch"
+  },
+  {
+   "url": "/uploads/seed/catalog/zippouch-chocolate.jpg",
+   "colour": "Chocolate",
+   "hex": "#5b3a26",
+   "family": "brown",
+   "from": "Everyday Leather Zip Pouch"
+  },
+  {
+   "url": "/uploads/seed/handbag-teal.jpg",
+   "colour": "Lagoon Teal",
+   "hex": "#1e5f66",
+   "family": "teal",
+   "from": "WILDTANE Verona Handcrafted Leather Handbag"
+  },
+  {
+   "url": "/uploads/seed/handbag-rose.jpg",
+   "colour": "Lagoon Teal",
+   "hex": "#1e5f66",
+   "family": "teal",
+   "from": "WILDTANE Verona Handcrafted Leather Handbag"
+  },
+  {
+   "url": "/uploads/seed/catalog/tote-essential.jpg",
+   "colour": "Natural Canvas & Tan",
+   "hex": "#d2b48c",
+   "family": "tan",
+   "from": "WILDTANE Allure Everyday Carryall Tote"
+  },
+  {
+   "url": "/uploads/seed/catalog/tote-atelier.jpg",
+   "colour": "Natural Canvas & Tan",
+   "hex": "#d2b48c",
+   "family": "tan",
+   "from": "WILDTANE Allure Everyday Carryall Tote"
+  },
+  {
+   "url": "/uploads/seed/catalog/keyfob-brown.jpg",
+   "colour": "Chestnut Brown",
+   "hex": "#78350f",
+   "family": "brown",
+   "from": "WILDTANE Belgravia Kisslock Leather Coin Purse"
+  },
+  {
+   "url": "/uploads/seed/catalog/keyfob-black.jpg",
+   "colour": "Chestnut Brown",
+   "hex": "#78350f",
+   "family": "brown",
+   "from": "WILDTANE Belgravia Kisslock Leather Coin Purse"
+  },
+  {
+   "url": "/uploads/seed/catalog/eyecase-white.jpg",
+   "colour": "Pearlized White Marble",
+   "hex": "#fafafa",
+   "family": "white",
+   "from": "WILDTANE Starlight Acrylic Box Clutch"
+  },
+  {
+   "url": "/uploads/seed/catalog/eyecase-white-2.jpg",
+   "colour": "Pearlized White Marble",
+   "hex": "#fafafa",
+   "family": "white",
+   "from": "WILDTANE Starlight Acrylic Box Clutch"
+  },
+  {
+   "url": "/uploads/seed/catalog/raffia-tassel.jpg",
+   "colour": "Royal Crimson Gold",
+   "hex": "#881337",
+   "family": "rose",
+   "from": "WILDTANE Zardozi Handcrafted Silk Potli Bag"
+  },
+  {
+   "url": "/uploads/seed/catalog/basket-seaside.jpg",
+   "colour": "Royal Crimson Gold",
+   "hex": "#881337",
+   "family": "rose",
+   "from": "WILDTANE Zardozi Handcrafted Silk Potli Bag"
+  }
+ ],
+ "backpacks": [
+  {
+   "url": "/uploads/seed/kids-bunny.jpg",
+   "colour": "Sunshine Yellow",
+   "hex": "#f2a93b",
+   "family": "yellow",
+   "from": "Bunny Kids Backpack 10L"
+  },
+  {
+   "url": "/uploads/seed/variants/bunny-kids-backpack-10l-sky-blue.jpg",
+   "colour": "Sky Blue",
+   "hex": "#7fb6e0",
+   "family": "blue",
+   "from": "Bunny Kids Backpack 10L"
+  },
+  {
+   "url": "/uploads/seed/variants/bunny-kids-backpack-10l-mint.jpg",
+   "colour": "Mint",
+   "hex": "#9fd6bf",
+   "family": "teal",
+   "from": "Bunny Kids Backpack 10L"
+  },
+  {
+   "url": "/uploads/seed/catalog/backpack-hudson.jpg",
+   "colour": "Cobalt Blue",
+   "hex": "#1d4ed8",
+   "family": "navy",
+   "from": "WILDTANE Campus Multi-Pocket Student Backpack"
+  },
+  {
+   "url": "/uploads/seed/catalog/backpack-fulton.jpg",
+   "colour": "Cobalt Blue",
+   "hex": "#1d4ed8",
+   "family": "navy",
+   "from": "WILDTANE Campus Multi-Pocket Student Backpack"
+  },
+  {
+   "url": "/uploads/seed/catalog/backpack-mini-city.jpg",
+   "colour": "Black",
+   "hex": "#161616",
+   "family": "onyx",
+   "from": "City Mini Backpack"
+  },
+  {
+   "url": "/uploads/seed/catalog/briefcase-black.jpg",
+   "colour": "Black",
+   "hex": "#161616",
+   "family": "onyx",
+   "from": "City Mini Backpack"
+  },
+  {
+   "url": "/uploads/seed/daypack-grey.jpg",
+   "colour": "Concrete Grey",
+   "hex": "#64748b",
+   "family": "grey",
+   "from": "WILDTANE Aero 18L Minimalist Commuter Backpack"
+  },
+  {
+   "url": "/uploads/seed/daypack-navy.jpg",
+   "colour": "Concrete Grey",
+   "hex": "#64748b",
+   "family": "grey",
+   "from": "WILDTANE Aero 18L Minimalist Commuter Backpack"
+  },
+  {
+   "url": "/uploads/seed/catalog/rucksack-prairie.jpg",
+   "colour": "Khaki Sand",
+   "hex": "#d97706",
+   "family": "tan",
+   "from": "WILDTANE Heritage Waxed Canvas Rucksack Backpack"
+  },
+  {
+   "url": "/uploads/seed/catalog/pack-alpine.jpg",
+   "colour": "Khaki Sand",
+   "hex": "#d97706",
+   "family": "tan",
+   "from": "WILDTANE Heritage Waxed Canvas Rucksack Backpack"
+  },
+  {
+   "url": "/uploads/seed/catalog/pack-summit.jpg",
+   "colour": "Alpine Orange & Slate",
+   "hex": "#c2410c",
+   "family": "tan",
+   "from": "WILDTANE Summit 40L Ergonomic Hiking Backpack"
+  },
+  {
+   "url": "/uploads/seed/catalog/drypack-coastline.jpg",
+   "colour": "Alpine Orange & Slate",
+   "hex": "#c2410c",
+   "family": "tan",
+   "from": "WILDTANE Summit 40L Ergonomic Hiking Backpack"
+  },
+  {
+   "url": "/uploads/seed/catalog/pack-highland.jpg",
+   "colour": "Stealth Shadow",
+   "hex": "#171717",
+   "family": "onyx",
+   "from": "WILDTANE Vault TSA Lock Anti-Theft Backpack"
+  },
+  {
+   "url": "/uploads/seed/catalog/cabin-metro.jpg",
+   "colour": "Stealth Shadow",
+   "hex": "#171717",
+   "family": "onyx",
+   "from": "WILDTANE Vault TSA Lock Anti-Theft Backpack"
+  },
+  {
+   "url": "/uploads/seed/apex-slate.jpg",
+   "colour": "Slate Grey",
+   "hex": "#475569",
+   "family": "grey",
+   "from": "WILDTANE TechnoShield 16-inch Laptop Backpack"
+  },
+  {
+   "url": "/uploads/seed/apex-interior.jpg",
+   "colour": "Slate Grey",
+   "hex": "#475569",
+   "family": "grey",
+   "from": "WILDTANE TechnoShield 16-inch Laptop Backpack"
+  },
+  {
+   "url": "/uploads/seed/apex-harness.jpg",
+   "colour": "Slate Grey",
+   "hex": "#475569",
+   "family": "grey",
+   "from": "WILDTANE TechnoShield 16-inch Laptop Backpack"
+  },
+  {
+   "url": "/uploads/seed/catalog/rolltop-ridgeline.jpg",
+   "colour": "Carbon Black",
+   "hex": "#18181b",
+   "family": "onyx",
+   "from": "WILDTANE CyberTech USB Smart Backpack"
+  },
+  {
+   "url": "/uploads/seed/apex-side-pocket.jpg",
+   "colour": "Carbon Black",
+   "hex": "#18181b",
+   "family": "onyx",
+   "from": "WILDTANE CyberTech USB Smart Backpack"
+  },
+  {
+   "url": "/uploads/seed/cabin-hardshell.jpg",
+   "colour": "Executive Obsidian",
+   "hex": "#0c0a09",
+   "family": "onyx",
+   "from": "WILDTANE Voyager 2-in-1 Wheeled Rolling Backpack"
+  },
+  {
+   "url": "/uploads/seed/catalog/keyset-onyx.jpg",
+   "colour": "Black",
+   "hex": "#171717",
+   "family": "onyx",
+   "from": "Hudson Leather Backpack"
+  },
+  {
+   "url": "/uploads/seed/rolltop-slate.jpg",
+   "colour": "Slate Grey",
+   "hex": "#475569",
+   "family": "grey",
+   "from": "Urban Rolltop Backpack 20L"
+  },
+  {
+   "url": "/uploads/seed/variants/urban-rolltop-backpack-20l-midnight-navy.jpg",
+   "colour": "Midnight Navy",
+   "hex": "#1b2533",
+   "family": "navy",
+   "from": "Urban Rolltop Backpack 20L"
+  },
+  {
+   "url": "/uploads/seed/backpack-terracotta.jpg",
+   "colour": "Terracotta",
+   "hex": "#9a5546",
+   "family": "red",
+   "from": "Terracotta Leather Backpack"
+  },
+  {
+   "url": "/uploads/seed/backpack-burgundy.jpg",
+   "colour": "Burgundy",
+   "hex": "#6e2e3b",
+   "family": "red",
+   "from": "Terracotta Leather Backpack"
+  },
+  {
+   "url": "/uploads/seed/rucksack-canvas.jpg",
+   "colour": "Forest & Chestnut",
+   "hex": "#3d4a40",
+   "family": "olive",
+   "from": "Heritage Waxed Canvas Rucksack"
+  },
+  {
+   "url": "/uploads/seed/variants/heritage-waxed-canvas-rucksack-charcoal-black.jpg",
+   "colour": "Charcoal & Black",
+   "hex": "#2c2c2c",
+   "family": "onyx",
+   "from": "Heritage Waxed Canvas Rucksack"
+  },
+  {
+   "url": "/uploads/seed/apex-navy.jpg",
+   "colour": "Midnight Navy & Amber",
+   "hex": "#1b263b",
+   "family": "navy",
+   "from": "The Apex Commuter 24L"
+  },
+  {
+   "url": "/uploads/seed/variants/the-apex-commuter-24l-deep-forest-moss.jpg",
+   "colour": "Deep Forest Moss",
+   "hex": "#2a382e",
+   "family": "olive",
+   "from": "The Apex Commuter 24L"
+  },
+  {
+   "url": "/uploads/seed/apex-packing.jpg",
+   "colour": "Midnight Navy & Amber",
+   "hex": "#1b263b",
+   "family": "navy",
+   "from": "The Apex Commuter 24L"
+  }
+ ]
+}

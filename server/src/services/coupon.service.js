@@ -3,6 +3,8 @@ import ApiError from '../utils/ApiError.js';
 import { formatINR, round2 } from '../utils/helpers.js';
 
 export function computeDiscount(coupon, subtotal) {
+  // Free-shipping coupons take nothing off the items; computeTotals zeroes the delivery charge instead.
+  if (coupon.type === 'free_shipping') return 0;
   let discount = coupon.type === 'percentage' ? (subtotal * coupon.value) / 100 : coupon.value;
   if (coupon.type === 'percentage' && coupon.maxDiscount) discount = Math.min(discount, coupon.maxDiscount);
   return round2(Math.min(discount, subtotal));
@@ -16,6 +18,9 @@ export async function validateCoupon(code, userId, subtotal) {
   const coupon = await Coupon.findOne({ code: String(code).toUpperCase() });
   const now = new Date();
   if (!coupon || !coupon.isActive) throw ApiError.badRequest('This coupon code is not valid');
+  if (coupon.owner && (!userId || coupon.owner.toString() !== userId.toString())) {
+    throw ApiError.badRequest('This coupon code is not valid');
+  }
   if (coupon.startsAt && coupon.startsAt > now) throw ApiError.badRequest('This coupon is not active yet');
   if (coupon.expiresAt && coupon.expiresAt < now) throw ApiError.badRequest('This coupon has expired');
   if (coupon.usageLimit != null && coupon.usedCount >= coupon.usageLimit) {

@@ -15,6 +15,9 @@ import { AddressCard, AddressForm, emptyAddress } from '../../components/Address
 import OrderTimeline from '../../components/OrderTimeline';
 import ImageDrop from '../../components/ImageDrop';
 import Coins, { CoinBalanceCard, useMyCoins } from './Coins';
+import Wallet from './Wallet';
+import { MyCouponsPanel } from '../../components/offers';
+import Refer from './Refer';
 import { ProductGrid, useProductsByIds } from '../../components/product';
 import { Button, CountrySelect, EmptyState, ErrorState, Field, Icon, Img, Input, Modal, Pagination, PhoneInput, Skeleton, Stars, StatusBadge, Textarea, useConfirm } from '../../components/ui';
 import { applyServerErrors } from '../Auth';
@@ -26,6 +29,9 @@ const NAV = [
   ['orders', 'receipt_long', 'My orders'],
   ['/returns-exchange', 'assignment_return', 'Returns & Exchange'],
   ['coins', 'savings', 'My coins'],
+  ['coupons', 'confirmation_number', 'My coupons'],
+  ['wallet', 'account_balance_wallet', 'Wallet'],
+  ['refer', 'group_add', 'Refer & earn'],
   ['profile', 'person', 'Profile'],
   ['addresses', 'location_on', 'Addresses'],
   ['reviews', 'reviews', 'My reviews'],
@@ -296,7 +302,7 @@ function Orders() {
               className={cn(
                 'h-9 px-4 rounded-full text-label-md font-bold whitespace-nowrap transition-all shadow-xs border',
                 group === value
-                  ? 'bg-gradient-to-r from-amber-600 via-amber-700 to-stone-900 text-white border-amber-400/50 shadow-md ring-1 ring-amber-400/30'
+                  ? 'bg-gradient-to-r from-rose-600 via-rose-700 to-stone-900 text-white border-rose-400/50 shadow-md ring-1 ring-rose-400/30'
                   : 'bg-surface-container/60 border-outline-variant/40 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high'
               )}
             >
@@ -372,7 +378,7 @@ function OrderList({ items, money, page, pages, onPage }) {
           <Link
             key={o._id}
             to={`/account/orders/${o.orderId}`}
-            className="group card p-4 sm:p-5 rounded-2xl border border-outline-variant/60 bg-surface-container-lowest/90 backdrop-blur-sm hover:border-amber-500/50 hover:shadow-xl transition-all duration-300 flex flex-col sm:flex-row sm:items-center gap-4"
+            className="group card p-4 sm:p-5 rounded-2xl border border-outline-variant/60 bg-surface-container-lowest/90 backdrop-blur-sm hover:border-rose-500/50 hover:shadow-xl transition-all duration-300 flex flex-col sm:flex-row sm:items-center gap-4"
           >
             {/* Image Preview Stack */}
             <div className="flex -space-x-4 shrink-0">
@@ -389,7 +395,7 @@ function OrderList({ items, money, page, pages, onPage }) {
             {/* Order Details */}
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap mb-1">
-                <span className="font-mono text-label-md font-bold text-amber-800 dark:text-amber-200 bg-amber-500/10 border border-amber-500/30 px-2.5 py-0.5 rounded-lg shadow-2xs">
+                <span className="font-mono text-label-md font-bold text-rose-800 dark:text-rose-200 bg-rose-500/10 border border-rose-500/30 px-2.5 py-0.5 rounded-lg shadow-2xs">
                   {o.orderId}
                 </span>
 
@@ -410,8 +416,8 @@ function OrderList({ items, money, page, pages, onPage }) {
                   </span>
                 )}
                 {!isDelivered && !isTransit && !isCancelled && (
-                  <span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-800 dark:text-amber-200 bg-amber-500/15 border border-amber-500/35 px-2.5 py-0.5 rounded-full">
-                    <Icon name="schedule" className="text-[13px] text-amber-600 dark:text-amber-400" /> {o.orderStatus}
+                  <span className="inline-flex items-center gap-1 text-[11px] font-bold text-rose-800 dark:text-rose-200 bg-rose-500/15 border border-rose-500/35 px-2.5 py-0.5 rounded-full">
+                    <Icon name="schedule" className="text-[13px] text-rose-600 dark:text-rose-400" /> {o.orderStatus}
                   </span>
                 )}
 
@@ -448,6 +454,78 @@ function OrderList({ items, money, page, pages, onPage }) {
   );
 }
 
+const REFUND_SOURCE = { razorpay: 'Original payment method', giftcard: 'Gift card', wallet: 'WILDTANE Wallet', cod: 'Cash on Delivery' };
+const REFUND_TONE = {
+  Processed: 'text-emerald-700 dark:text-emerald-300',
+  Pending: 'text-sky-700 dark:text-sky-300',
+  Failed: 'text-rose-700 dark:text-rose-300',
+};
+
+/** Cancellation + refund state exactly as the server recorded it (never assumed from the payment method). */
+function CancellationCard({ order: o, money }) {
+  const requested = o.cancellation?.status === 'Requested' && o.orderStatus !== 'Cancelled';
+  const r = o.refundDetails || {};
+  const parts = r.parts || [];
+  // Orders cancelled before refunds were tracked have no refund parts; their old label isn't proof of a refund.
+  const known = ['Processed', 'Pending', 'Failed', 'Not required', 'Awaiting approval'];
+  const status = parts.length
+    ? r.status
+    : known.includes(r.status)
+      ? r.status
+      : o.paymentStatus === 'Paid' || o.paymentStatus === 'Refunded' || o.paymentMethod === 'razorpay'
+        ? 'Review'
+        : 'Not required';
+  const headline = requested
+    ? 'Cancellation requested'
+    : status === 'Processed'
+      ? 'Cancellation confirmed · Refund processed'
+      : status === 'Pending' || status === 'Awaiting approval'
+        ? `Cancellation confirmed · Refund ${status === 'Awaiting approval' ? 'being prepared' : 'pending'}`
+        : status === 'Failed'
+          ? 'Cancellation confirmed · Refund needs assistance'
+          : status === 'Review'
+            ? 'Cancellation confirmed · Refund handled by our team'
+            : 'Cancellation confirmed';
+  return (
+    <div className="mt-3 p-4 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-on-surface flex flex-col gap-2.5 shadow-xs">
+      <div className="flex items-start gap-3">
+        <span className="w-9 h-9 rounded-xl bg-rose-500/20 text-rose-700 dark:text-rose-400 flex items-center justify-center shrink-0">
+          <Icon name={requested ? 'hourglass_top' : 'check_circle'} className="text-[22px]" />
+        </span>
+        <div className="flex-1">
+          <p className="font-bold text-[14px] text-rose-800 dark:text-rose-300">{headline}</p>
+          <p className="text-on-surface-variant text-[12.5px] leading-relaxed mt-0.5">
+            {requested
+              ? 'We have received your cancellation request and are processing it. This page updates once it is confirmed.'
+              : status === 'Not required'
+                ? 'Your order has been cancelled. No payment was collected, so no refund is needed.'
+                : status === 'Processed'
+                  ? `Your refund of ${money(r.amount)} has been processed.`
+                  : status === 'Failed'
+                    ? 'Your order is cancelled, but the refund could not be completed automatically. Our care team has been alerted — please contact us if you don’t hear back within one working day.'
+                  : status === 'Review'
+                    ? 'This order was cancelled before automatic refund tracking. Our care team handles its refund — contact us for the latest status.'
+                    : `Your refund of ${money(r.amount)} has been initiated.${r.eta ? ` Your refund will be processed within ${r.eta}.` : ''}`}
+            {!requested && o.coinsRedeemed > 0 && ' Coins used on this order have been returned to your balance.'}
+          </p>
+        </div>
+      </div>
+      {parts.length > 0 && (
+        <div className="rounded-xl bg-surface-container-low border border-outline-variant/40 divide-y divide-outline-variant/30 text-[12px]">
+          {parts.map((p) => (
+            <div key={p.source} className="p-2.5 flex items-center justify-between gap-2">
+              <span className="text-outline font-medium">{REFUND_SOURCE[p.source] || p.source} · {money(p.amount)}</span>
+              <span className={cn('font-bold', REFUND_TONE[p.status])}>
+                {p.status === 'Processed' ? `Refunded${p.processedAt ? ` ${formatDate(p.processedAt)}` : ''}` : p.status === 'Failed' ? 'Needs assistance' : 'Refund pending'}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function OrderDetail() {
   const { id } = useParams();
   const money = useMoney();
@@ -458,8 +536,15 @@ function OrderDetail() {
   const { data: o, isLoading, isError, error, refetch } = useQuery({ queryKey: ['order', id], queryFn: () => api.myOrder(id), select: (d) => d.order });
   const cancel = useMutation({
     mutationFn: () => api.cancelOrder(id, reason),
-    onSuccess: () => {
-      toast.success('Order cancelled. Refund will be issued within 5–7 working days.');
+    onSuccess: (res) => {
+      const rs = res.order?.refundDetails?.status;
+      toast.success(
+        rs === 'Processed' ? 'Order cancelled and refund processed.'
+          : rs === 'Pending' ? 'Order cancelled. Your refund has been initiated.'
+          : rs === 'Failed' ? 'Order cancelled. Our team will help complete your refund.'
+          : 'Order cancelled.'
+      );
+      qc.setQueryData(['order', id], { order: res.order });
       setCancelOpen(false);
       qc.invalidateQueries({ queryKey: ['order', id] });
       qc.invalidateQueries({ queryKey: ['orders'] });
@@ -471,7 +556,7 @@ function OrderDetail() {
   if (isError) return <ErrorState error={error} onRetry={refetch} />;
   const a = o.shippingAddress;
   // Cancellation policy: within 24 hours of ordering and before it ships (the server checks too).
-  const canCancel = ['Pending', 'Confirmed'].includes(o.orderStatus) && Date.now() - new Date(o.createdAt).getTime() < 24 * 60 * 60 * 1000;
+  const canCancel = ['Pending', 'Confirmed'].includes(o.orderStatus) && o.cancellation?.status !== 'Requested' && Date.now() - new Date(o.createdAt).getTime() < 24 * 60 * 60 * 1000;
   const deliveryTime = o.deliveredAt ? new Date(o.deliveredAt).getTime() : o.statusHistory?.find((s) => s.status === 'Delivered')?.at ? new Date(o.statusHistory.find((s) => s.status === 'Delivered').at).getTime() : null;
   const isDelivered = o.orderStatus === 'Delivered' && deliveryTime != null;
   const returnDeadline = deliveryTime ? deliveryTime + 7 * 24 * 60 * 60 * 1000 : null;
@@ -486,7 +571,7 @@ function OrderDetail() {
       <div className="card p-space-lg flex flex-wrap items-center justify-between gap-space-md border border-outline-variant/60 bg-surface-container-lowest/90 backdrop-blur-sm rounded-2xl shadow-sm">
         <div>
           <span className="text-label-sm font-bold uppercase tracking-wider text-outline">Order Reference</span>
-          <h2 className="text-headline-md font-mono font-bold text-amber-800 dark:text-amber-200">{o.orderId}</h2>
+          <h2 className="text-headline-md font-mono font-bold text-rose-800 dark:text-rose-200">{o.orderId}</h2>
           <p className="text-body-sm text-on-surface-variant">Placed on {formatDateTime(o.createdAt)}</p>
         </div>
         <div className="flex items-center gap-2.5 flex-wrap">
@@ -497,7 +582,7 @@ function OrderDetail() {
             className="btn bg-surface-container-high hover:bg-surface-container-highest text-on-surface font-semibold text-[12px] h-8 px-3 rounded-xl flex items-center gap-1.5 shadow-2xs border border-outline-variant/60 transition-all"
             download={`WILDTANE_Tax_Invoice_${o.orderId}.pdf`}
           >
-            <Icon name="download" className="text-[16px] text-amber-600 dark:text-amber-400" /> Invoice PDF
+            <Icon name="download" className="text-[16px] text-rose-600 dark:text-rose-400" /> Invoice PDF
           </a>
           <button
             type="button"
@@ -597,49 +682,21 @@ function OrderDetail() {
             <div className="flex justify-between"><span className="text-on-surface-variant">Subtotal</span><span className="font-medium">{money(o.subtotal)}</span></div>
             {o.discount > 0 && <div className="flex justify-between text-secondary font-medium"><span>Discount {o.coupon?.code && `(${o.coupon.code})`}</span><span>−{money(o.discount)}</span></div>}
             {o.coinDiscount > 0 && <div className="flex justify-between text-emerald-600 font-medium"><span>Coins used ({o.coinsRedeemed})</span><span>−{money(o.coinDiscount)}</span></div>}
+            {o.giftCard?.amount > 0 && <div className="flex justify-between text-emerald-600 font-medium"><span>Gift card ({o.giftCard.code})</span><span>−{money(o.giftCard.amount)}</span></div>}
+            {o.walletAmount > 0 && <div className="flex justify-between text-emerald-600 font-medium"><span>WILDTANE Wallet</span><span>−{money(o.walletAmount)}</span></div>}
             <div className="flex justify-between"><span className="text-on-surface-variant">Shipping ({o.shippingMethod?.label})</span><span className="font-medium">{o.shipping ? money(o.shipping) : 'Free'}</span></div>
             <div className="flex justify-between"><span className="text-on-surface-variant">Tax</span><span className="font-medium">{money(o.tax)}</span></div>
             <div className="flex justify-between text-headline-sm pt-1 border-t border-surface-container-high mt-1"><span>Total</span><span className="font-black font-sans">{money(o.grandTotal)}</span></div>
             <p className="text-label-sm font-normal text-outline mt-0.5">Paid via {PAYMENT_LABELS[o.paymentMethod] || o.paymentMethod}</p>
-            {o.orderStatus === 'Cancelled' ? (
-              <div className="mt-3 p-4 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-on-surface flex flex-col gap-2.5 shadow-xs">
-                <div className="flex items-start gap-3">
-                  <span className="w-9 h-9 rounded-xl bg-rose-500/20 text-rose-700 dark:text-rose-400 flex items-center justify-center shrink-0">
-                    <Icon name="check_circle" className="text-[22px]" />
-                  </span>
-                  <div className="flex-1">
-                    <p className="font-bold text-[14px] text-rose-800 dark:text-rose-300">
-                      Cancellation Confirmed
-                    </p>
-                    <p className="text-on-surface-variant text-[12.5px] leading-relaxed mt-0.5">
-                      Your order has been cancelled successfully.{' '}
-                      {o.paymentStatus === 'Refunded' || o.paymentMethod === 'razorpay' ? (
-                        <span className="font-semibold text-emerald-700 dark:text-emerald-300">
-                          Refund of {money(o.grandTotal)} will be issued within 5–7 working days to your original payment method.
-                        </span>
-                      ) : (
-                        <span>For Cash on Delivery orders, no payment was charged.</span>
-                      )}{' '}
-                      Any coins used at checkout have been restored to your wallet balance.
-                    </p>
-                  </div>
-                </div>
-                <div className="p-2.5 rounded-xl bg-surface-container-low border border-outline-variant/40 flex items-center justify-between text-[12px]">
-                  <span className="text-outline font-medium">Refund Status</span>
-                  <span className="font-bold text-secondary">
-                    {o.paymentStatus === 'Refunded' || o.paymentMethod === 'razorpay'
-                      ? `${o.refundDetails?.status || 'Initiated'} · Refund will be issued within 5–7 working days`
-                      : 'Completed (No payment charged)'}
-                  </span>
-                </div>
-              </div>
+            {o.orderStatus === 'Cancelled' || o.cancellation?.status === 'Requested' ? (
+              <CancellationCard order={o} money={money} />
             ) : o.coinsEarned > 0 ? (
-              <div className="mt-3 p-3.5 rounded-2xl bg-gradient-to-r from-amber-500/15 via-amber-500/10 to-amber-600/10 border border-amber-500/30 text-on-surface flex items-start gap-3 shadow-xs">
-                <span className="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-700 dark:text-amber-300 flex items-center justify-center shrink-0">
+              <div className="mt-3 p-3.5 rounded-2xl bg-gradient-to-r from-rose-500/15 via-rose-500/10 to-rose-600/10 border border-rose-500/30 text-on-surface flex items-start gap-3 shadow-xs">
+                <span className="w-8 h-8 rounded-xl bg-rose-500/20 text-rose-700 dark:text-rose-300 flex items-center justify-center shrink-0">
                   <Icon name="savings" className="text-[20px]" />
                 </span>
                 <div className="flex-1">
-                  <p className="font-bold text-[13.5px] text-amber-900 dark:text-amber-200">
+                  <p className="font-bold text-[13.5px] text-rose-900 dark:text-rose-200">
                     {o.coinsDisbursed ? `✨ +${o.coinsEarned} WILDTANE Coins Disbursed to Wallet` : `⏳ +${o.coinsEarned} WILDTANE Coins Reserved`}
                   </p>
                   <p className="text-on-surface-variant text-[12px] leading-relaxed mt-0.5">
@@ -666,11 +723,22 @@ function OrderDetail() {
                 <span>{a.phone}</span>
               </p>
             </div>
-            {(o.trackingNumber || o.courier) && (
+            {(o.trackingNumber || o.courier || o.shipment?.awb) && (
               <div>
                 <p className="text-label-sm uppercase tracking-wider text-outline mb-1">Tracking</p>
-                <p className="text-body-sm">{o.courier}</p>
-                <p className="text-label-lg">{o.trackingNumber}</p>
+                <p className="text-body-sm">{o.shipment?.courier || o.courier}</p>
+                <p className="text-label-lg">{o.shipment?.awb || o.trackingNumber}</p>
+                {o.shipment?.status && (
+                  <p className="text-label-sm font-normal text-on-surface-variant mt-0.5">
+                    Courier status: {o.shipment.status}
+                    {o.shipment.lastSyncedAt ? ` · updated ${formatDateTime(o.shipment.lastSyncedAt)}` : ''}
+                  </p>
+                )}
+                {o.shipment?.trackingUrl && (
+                  <a href={o.shipment.trackingUrl} target="_blank" rel="noopener noreferrer" className="text-label-md text-secondary hover:underline inline-flex items-center gap-1 mt-1">
+                    Track with courier <Icon name="open_in_new" className="text-[14px]" />
+                  </a>
+                )}
               </div>
             )}
           </div>
@@ -682,12 +750,15 @@ function OrderDetail() {
       </div>
       <Modal open={cancelOpen} onClose={() => setCancelOpen(false)} title="Cancel this order?" size="sm">
         <div className="flex flex-col gap-space-md">
-          <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-900 dark:text-amber-200 text-body-sm flex items-start gap-2.5">
-            <Icon name="info" className="text-[20px] text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+          <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-900 dark:text-rose-200 text-body-sm flex items-start gap-2.5">
+            <Icon name="info" className="text-[20px] text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
             <div>
               <p className="font-bold">Cancellation & Refund Notice</p>
               <p className="text-[12.5px] leading-relaxed mt-0.5">
-                Items will be released back to stock. {o.paymentStatus === 'Paid' || o.paymentMethod === 'razorpay' ? `Your refund of ${money(o.grandTotal)} will be issued within 5–7 working days to your original payment method.` : 'For Cash on Delivery orders, no payment was collected.'} Any coins used will be restored to your wallet.
+                {o.paymentStatus === 'Paid' || o.giftCard?.amount > 0 || o.walletAmount > 0
+                  ? 'Once cancelled, we start the refund straight away to where you paid from (payment method, gift card or wallet). You will see its status on this page.'
+                  : 'No payment has been collected for this order, so no refund is needed.'}{' '}
+                {o.coinsRedeemed > 0 && 'Coins used on this order will be returned to your balance.'}
               </p>
             </div>
           </div>
@@ -890,6 +961,9 @@ export default function Account() {
             <Route path="orders" element={<Orders />} />
             <Route path="orders/:id" element={<OrderDetail />} />
             <Route path="coins" element={<Coins />} />
+            <Route path="coupons" element={<MyCouponsPanel />} />
+            <Route path="wallet" element={<Wallet />} />
+            <Route path="refer" element={<Refer />} />
             <Route path="addresses" element={<Addresses />} />
             <Route path="reviews" element={<MyReviews />} />
             <Route path="recent" element={<Recent />} />

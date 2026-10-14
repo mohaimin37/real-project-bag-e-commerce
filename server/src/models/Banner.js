@@ -2,7 +2,8 @@ import mongoose from 'mongoose';
 
 const bannerSchema = new mongoose.Schema(
   {
-    placement: { type: String, enum: ['hero', 'promo', 'announcement'], required: true, index: true },
+    // 'offers' = the sliding banners at the top of the Offers page.
+    placement: { type: String, enum: ['hero', 'promo', 'announcement', 'offers'], required: true, index: true },
     eyebrow: { type: String, trim: true, default: '', maxlength: 60 },
     title: { type: String, required: true, trim: true, maxlength: 120 },
     subtitle: { type: String, trim: true, default: '', maxlength: 400 },

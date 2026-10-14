@@ -6,6 +6,7 @@ import { adminApi } from '../lib/api';
 import { cn, initials } from '../lib/format';
 import { setThemeOpen, toggleTheme } from '../store';
 import ThemeDrawer from '../components/theme/ThemePanel';
+import { useSiteAppearanceSync } from '../components/theme/siteAppearance';
 import { useAuthActions } from '../hooks/useAuth';
 import { Icon, PageLoader } from '../components/ui';
 import { LogoMark } from '../components/Brand';
@@ -25,10 +26,12 @@ const Categories = lazy(() => import('./Categories'));
 const Orders = lazy(() => import('./Orders'));
 const OrderDetail = lazy(() => import('./OrderDetail'));
 const Returns = lazy(() => import('./Returns'));
+const Payments = lazy(() => import('./Payments'));
 const Customers = lazy(() => import('./Customers'));
 const CustomerDetail = lazy(() => import('./CustomerDetail'));
 const Inventory = lazy(() => import('./Inventory'));
 const Coupons = lazy(() => import('./Coupons'));
+const GiftCards = lazy(() => import('./GiftCards'));
 const Reviews = lazy(() => import('./Reviews'));
 const Comments = lazy(() => import('./Comments'));
 const Enquiries = lazy(() => import('./Enquiries'));
@@ -217,6 +220,7 @@ function Topbar({ onMenu, onCollapse }) {
 }
 
 export default function AdminApp() {
+  useSiteAppearanceSync();
   const [open, setOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(() => {
     try {
@@ -263,9 +267,11 @@ export default function AdminApp() {
               <Route path="orders" element={<Orders />} />
               <Route path="orders/:id" element={<OrderDetail />} />
               <Route path="returns" element={<Returns />} />
+              <Route path="payments" element={<Payments />} />
               <Route path="customers" element={<Customers />} />
               <Route path="customers/:id" element={<CustomerDetail />} />
               <Route path="coupons" element={<Coupons />} />
+              <Route path="giftcards" element={<GiftCards />} />
               <Route path="reviews" element={<Reviews />} />
               <Route path="comments" element={<Comments />} />
               <Route path="enquiries/:kind" element={<Enquiries />} />

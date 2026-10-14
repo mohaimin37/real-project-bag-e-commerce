@@ -201,7 +201,7 @@ function Board({ p, set }) {
   });
   const d = query.data;
   if (query.isError) return <ErrorState error={query.error} onRetry={query.refetch} />;
-  const tiles = d
+  const tiles = d?.summary
     ? [
         ['groups', 'Customers', d.summary.customers, ''],
         ['mark_email_unread', 'Unread messages', d.summary.unreadMessages, 'unread'],
@@ -243,16 +243,16 @@ function Board({ p, set }) {
 
       {!d ? (
         <div className="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-4">{[1, 2, 3].map((i) => <Skeleton key={i} className="h-[420px] rounded-xl" />)}</div>
-      ) : d.items.length === 0 && d.guests.length === 0 ? (
+      ) : !d.items?.length && !d.guests?.length ? (
         <EmptyState icon="group" title="Nobody matches" description="Try another search or filter." />
       ) : (
         <div className={cn('grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-4 items-start transition-opacity', query.isPlaceholderData && 'opacity-60')}>
-          {d.items.map((c) => <CustomerCard key={c._id} c={c} />)}
+          {(d.items || []).map((c) => <CustomerCard key={c._id} c={c} />)}
         </div>
       )}
       <Pagination page={d?.page} pages={d?.pages} onChange={(page) => set({ page })} />
 
-      {d?.guests.length > 0 && (
+      {d?.guests?.length > 0 && (
         <section className="flex flex-col gap-3 pt-2">
           <h2 className="text-[15px] font-semibold flex items-center gap-2"><Icon name="person" className="text-secondary" /> Guests who wrote to you <span className="text-[12px] font-normal text-outline">— no account yet</span></h2>
           <div className="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-4 items-start">{d.guests.map((g) => <GuestCard key={g.email} g={g} />)}</div>

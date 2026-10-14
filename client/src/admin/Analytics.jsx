@@ -12,7 +12,10 @@ export default function Analytics() {
   const axis = { fontSize: 11, fill: cc.axis };
   const tip = { contentStyle: { background: cc.tipBg, border: 'none', borderRadius: 12, color: cc.tipFg, fontSize: 12 }, itemStyle: { color: cc.tipFg } };
   const [days, setDays] = useState(90);
-  const { data, isLoading, isError, error, refetch } = useQuery({ queryKey: ['admin', 'analytics', days], queryFn: () => adminApi.analytics(days) });
+  const { data, isLoading, isError, error, refetch } = useQuery({ queryKey: ['admin', 'analytics', days], queryFn: () => adminApi.analytics(days),
+    // Every list defaults to empty, so a period with no sales (or a partial reply) still renders.
+    select: (d) => ({ ...d, byCategory: d?.byCategory || [], byPayment: d?.byPayment || [], byCountry: d?.byCountry || [], coupons: d?.coupons || [] }),
+  });
   if (isError) return <ErrorState error={error} onRetry={refetch} />;
   const maxCountry = Math.max(1, ...(data?.byCountry || []).map((c) => c.revenue));
 

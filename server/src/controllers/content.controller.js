@@ -9,6 +9,7 @@ import { escapeRegex, paginated, parsePagination } from '../utils/helpers.js';
 import { uniqueSlug } from '../services/product.service.js';
 import { uploadFile, deleteFile } from '../services/upload.service.js';
 import { listPaymentMethods } from '../services/payment.service.js';
+import env from '../config/env.js';
 
 // ── Blog (public) ────────────────────────────────────────────
 
@@ -204,6 +205,17 @@ export const publicConfig = asyncHandler(async (req, res) => {
       pricesIncludeTax: s.pricesIncludeTax,
       freeShippingThreshold: s.freeShippingThreshold,
       loyalty: loyaltyRules(s),
+      // Only switched-on offers inside their start/end dates reach the storefront.
+      promoRibbon: (s.promoRibbon || [])
+        .filter((p) => p.isActive && p.label && p.to && (!p.startsAt || p.startsAt <= new Date()) && (!p.endsAt || p.endsAt > new Date()))
+        .map((p) => ({ label: p.label, to: p.to, icon: p.icon || '' })),
+      wallet: { enabled: s.wallet?.enabled !== false, maxRedeemPercent: s.wallet?.maxRedeemPercent ?? 100 },
+      giftCardsEnabled: s.giftCardsEnabled !== false,
+      refundEta: s.refundEta || '',
+      // null = the storefront's built-in Shop menu content.
+      shopShowcase: s.shopShowcase?.customized ? s.shopShowcase : null,
+      homepage: s.homepage || null,
+      footer: s.footer || null,
       shippingMethods: s.shippingMethods,
       paymentMethods: listPaymentMethods(s, 0),
       social: s.social,
@@ -216,13 +228,46 @@ export const publicConfig = asyncHandler(async (req, res) => {
   });
 });
 
+/**
+ * Settings for the admin, without secrets: the Razorpay webhook secret is replaced by whether one
+ * is set (and where), plus the webhook URL and the last call Razorpay made.
+ */
+function adminView(settings) {
+  const s = settings.toObject();
+  const w = s.razorpayWebhook || {};
+  s.razorpayWebhook = {
+    url: `${env.siteUrl}/api/orders/razorpay/webhook`,
+    secretSet: Boolean(env.razorpay.webhookSecret || w.secret),
+    secretSource: env.razorpay.webhookSecret ? 'server' : w.secret ? 'admin' : '',
+    secretHint: !env.razorpay.webhookSecret && w.secret ? `••••${w.secret.slice(-4)}` : '',
+    lastReceivedAt: w.lastReceivedAt || null,
+    lastEvent: w.lastEvent || '',
+    lastStatus: w.lastStatus || '',
+    lastError: w.lastError || '',
+  };
+  return s;
+}
+
 export const getSettings = asyncHandler(async (req, res) => {
-  res.json({ success: true, settings: await Setting.get() });
+  res.json({ success: true, settings: adminView(await Setting.get()) });
 });
 
 export const updateSettings = asyncHandler(async (req, res) => {
   const settings = await Setting.get();
-  settings.set(req.body);
+  // Nested groups are merged, so saving one form (e.g. loyalty rates) never wipes fields another form owns.
+  const { loyalty, wallet, shippingPackage, spinToWin, cancellationRefunds, razorpayWebhookSecret, ...rest } = req.body;
+  // '' clears the saved secret; anything else replaces it. Leaving the field out keeps it.
+  if (razorpayWebhookSecret !== undefined) settings.set('razorpayWebhook.secret', razorpayWebhookSecret);
+  settings.set(rest);
+  if (spinToWin) {
+    settings.set('spinToWin.enabled', spinToWin.enabled);
+    if (spinToWin.slices) settings.set('spinToWin.slices', spinToWin.slices);
+  }
+  for (const k of ['shopShowcase', 'homepage', 'footer']) if (k in rest) settings.markModified(k);
+  if (cancellationRefunds) settings.set('cancellationRefunds.automatic', cancellationRefunds.automatic);
+  if (loyalty) settings.set('loyalty', { ...settings.toObject().loyalty, ...loyalty });
+  if (wallet) settings.set('wallet', { ...settings.toObject().wallet, ...wallet });
+  if (shippingPackage) settings.set('shippingPackage', { ...settings.toObject().shippingPackage, ...shippingPackage });
   await settings.save();
-  res.json({ success: true, settings });
+  res.json({ success: true, settings: adminView(settings) });
 });

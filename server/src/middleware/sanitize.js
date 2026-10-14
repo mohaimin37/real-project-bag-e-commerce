@@ -4,7 +4,7 @@ import { filterXSS } from 'xss';
 // xss whitelist instead of being fully escaped.
 const RICH_FIELDS = new Set(['content']);
 // Secrets are hashed or compared as-is, never rendered, so they must not be altered.
-const RAW_FIELDS = new Set(['password', 'currentPassword', 'newPassword', 'confirmPassword', 'token']);
+const RAW_FIELDS = new Set(['password', 'currentPassword', 'newPassword', 'confirmPassword', 'token', 'razorpayWebhookSecret']);
 
 function clean(value, key) {
   if (RAW_FIELDS.has(key)) return value;

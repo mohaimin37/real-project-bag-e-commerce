@@ -495,7 +495,8 @@ export function Toggle({ checked, onChange, label, disabled, ariaLabel }) {
 
 export function PageLoader() {
   return (
-    <div className="min-h-[50vh] flex items-center justify-center">
+    // Fills the screen, so the footer stays below until the page arrives (no jump when it does).
+    <div className="min-h-[100vh] flex items-center justify-center">
       <Spinner className="w-8 h-8 text-secondary" />
     </div>
   );

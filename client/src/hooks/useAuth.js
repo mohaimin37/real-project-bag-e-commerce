@@ -47,7 +47,13 @@ export function useAuthActions() {
       qc.removeQueries({ queryKey: ['wishlist'] });
       return res.user;
     },
-    register: async (values) => afterAuth(await api.register(values)),
+    // Returns { user, rewards } so the page can confirm exactly what the server awarded.
+    register: async (values) => {
+      const res = await api.register(values);
+      const user = await afterAuth(res);
+      qc.invalidateQueries({ queryKey: ['my-coins'] });
+      return { user, rewards: res.rewards || {} };
+    },
     resetPasswordOtp: async (values) => afterAuth(await api.resetPasswordOtp(values)),
     resetPassword: async (values) => afterAuth(await api.resetPassword(values)),
     logout: async () => {

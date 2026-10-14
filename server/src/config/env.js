@@ -63,6 +63,23 @@ env.gemini = {
   model: process.env.GEMINI_MODEL || 'gemini-flash-lite-latest',
   enabled: Boolean(process.env.GEMINI_API_KEY),
 };
+// Shiprocket shipping (forward shipments, tracking, reverse pickups). Optional.
+env.shiprocket = {
+  email: process.env.SHIPROCKET_EMAIL || '',
+  password: process.env.SHIPROCKET_PASSWORD || '',
+  // Shared secret Shiprocket sends in the "x-api-key" header of tracking webhooks.
+  webhookToken: process.env.SHIPROCKET_WEBHOOK_TOKEN || '',
+  // Where customer returns are delivered.
+  warehouse: {
+    name: process.env.SHIPROCKET_WAREHOUSE_NAME || '',
+    address: process.env.SHIPROCKET_WAREHOUSE_ADDRESS || '',
+    city: process.env.SHIPROCKET_WAREHOUSE_CITY || '',
+    state: process.env.SHIPROCKET_WAREHOUSE_STATE || '',
+    pincode: process.env.SHIPROCKET_WAREHOUSE_PINCODE || '',
+    phone: process.env.SHIPROCKET_WAREHOUSE_PHONE || '',
+  },
+};
+env.shiprocket.enabled = Boolean(env.shiprocket.email && env.shiprocket.password);
 env.razorpay.enabled = Boolean(env.razorpay.keyId && env.razorpay.keySecret);
 env.cloudinary.enabled = Boolean(env.cloudinary.cloudName && env.cloudinary.apiKey && env.cloudinary.apiSecret);
 env.whatsapp.enabled = Boolean(env.whatsapp.token && env.whatsapp.phoneNumberId);

@@ -8,7 +8,7 @@ import { BrandLogoFull } from '../components/Brand';
 import BrandValues from '../components/BrandValues';
 import Seo, { breadcrumbLd, organizationLd } from '../components/Seo';
 import { useConfig } from '../hooks/useStore';
-import { AVATAR_GRADIENTS, SEED_CUSTOMER_REVIEWS, WriteReviewModal } from '../components/CustomerReviews';
+import { AVATAR_GRADIENTS, WriteReviewModal } from '../components/CustomerReviews';
 
 const TAGLINE = 'Crafted to carry, built to last.';
 
@@ -23,10 +23,10 @@ const COLORFUL_PILLARS = [
     icon: 'architecture',
     title: 'Architectural Durability',
     badge: '1680D Ballistic Nylon',
-    gradient: 'from-amber-500/15 via-orange-500/5 to-transparent',
-    border: 'border-amber-500/30',
-    iconColor: 'text-amber-500 dark:text-amber-400',
-    badgeBg: 'bg-amber-500/15 text-amber-700 dark:text-amber-300',
+    gradient: 'from-rose-500/15 via-orange-500/5 to-transparent',
+    border: 'border-rose-500/30',
+    iconColor: 'text-rose-500 dark:text-rose-400',
+    badgeBg: 'bg-rose-500/15 text-rose-700 dark:text-rose-300',
     description: 'Reinforced bar-tack stress points, Japanese YKK smooth-glide zippers, and water-repellent weaves engineered to endure 25 kg loads day in and day out.',
   },
   {
@@ -66,20 +66,20 @@ const MILESTONES = [
     number: '01',
     step: 'Conceived in Bengaluru',
     desc: 'Prototyped and tested on crowded metro coaches and monsoon downpours.',
-    accent: 'text-amber-500',
-    glow: 'bg-amber-500/10',
+    accent: 'text-rose-500',
+    glow: 'bg-rose-500/10',
   },
   {
     number: '02',
-    step: '140+ Airports Worldwide',
-    desc: 'Tested to slide smoothly under seats on IndiGo, Air India, Emirates and more.',
+    step: 'Made for Travel',
+    desc: 'Cabin-friendly sizes, with dimensions listed on every product so you can check your airline.',
     accent: 'text-sky-500',
     glow: 'bg-sky-500/10',
   },
   {
     number: '03',
-    step: '50,000+ Journeys Powered',
-    desc: 'Trusted by founders, creatives, students, and frequent flyers across 28 states.',
+    step: 'Delivered Across India',
+    desc: 'Tracked delivery to your door, with cash on delivery and 7-day returns.',
     accent: 'text-emerald-500',
     glow: 'bg-emerald-500/10',
   },
@@ -107,8 +107,10 @@ export default function About() {
     staleTime: 60 * 1000,
   });
 
-  const allReviews = commentsData?.comments?.length ? commentsData.comments : SEED_CUSTOMER_REVIEWS;
-  const avgRating = commentsData?.average ? Number(commentsData.average).toFixed(1) : '4.6';
+  const allReviews = commentsData?.comments || [];
+  // Only real, approved comments count: no made-up average.
+  const hasRealReviews = Boolean(commentsData?.comments?.length && commentsData?.average);
+  const avgRating = hasRealReviews ? Number(commentsData.average).toFixed(1) : '';
   const totalCount = commentsData?.count || allReviews.length;
 
   // Filter reviews by rating point category
@@ -133,16 +135,16 @@ export default function About() {
     <>
       <Seo
         title="About Us — Colorful Story, Craftsmanship & Customer Reviews"
-        description="Meet WILDTANE: architectural bags, laptop backpacks, and travel gear crafted in India. Explore our colorful journey, brand values, and 30+ verified customer reviews."
+        description="Meet WILDTANE: architectural bags, laptop backpacks, and travel gear crafted in India. Explore our colorful journey, brand values, and customer comments."
         canonical="/about"
         image="/brand/logo-full.jpg"
         jsonLd={[breadcrumbLd(crumbs), { ...organizationLd(config), slogan: TAGLINE }]}
       />
 
       {/* ── 1. COLORFUL LUMINOUS HERO SECTION ── */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-amber-500/10 via-rose-500/10 to-indigo-600/15 border-b border-surface-container-high py-12 md:py-24">
+      <section className="relative overflow-hidden bg-gradient-to-br from-rose-500/10 via-rose-500/10 to-indigo-600/15 border-b border-surface-container-high py-12 md:py-24">
         {/* Soft Glowing Ambient Orbs */}
-        <div aria-hidden="true" className="absolute -top-24 -left-20 w-96 h-96 rounded-full bg-amber-400/20 blur-3xl pointer-events-none" />
+        <div aria-hidden="true" className="absolute -top-24 -left-20 w-96 h-96 rounded-full bg-rose-400/20 blur-3xl pointer-events-none" />
         <div aria-hidden="true" className="absolute top-1/2 -right-20 w-96 h-96 rounded-full bg-rose-500/20 blur-3xl pointer-events-none" />
         <div aria-hidden="true" className="absolute -bottom-24 left-1/3 w-96 h-96 rounded-full bg-indigo-500/20 blur-3xl pointer-events-none" />
 
@@ -150,7 +152,7 @@ export default function About() {
           {/* Hero Content */}
           <div className="flex flex-col gap-4 text-center lg:text-left">
             <div className="inline-flex items-center gap-2 self-center lg:self-start px-3.5 py-1.5 rounded-full bg-surface/80 backdrop-blur-md ring-1 ring-secondary/30 shadow-sm">
-              <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+              <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
               <span className="text-[11.5px] font-bold uppercase tracking-wider text-secondary">
                 Architectural Carry • Handcrafted in India
               </span>
@@ -158,7 +160,7 @@ export default function About() {
 
             <h1 className="font-display text-[38px] sm:text-[48px] md:text-[60px] leading-[1.08] tracking-tight text-on-surface">
               Carry Your World in{' '}
-              <span className="bg-gradient-to-r from-amber-500 via-rose-500 to-indigo-600 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-rose-500 via-rose-500 to-indigo-600 bg-clip-text text-transparent">
                 Color & Craft.
               </span>
             </h1>
@@ -173,27 +175,27 @@ export default function About() {
 
             {/* Colorful Stat Pills */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-2">
-              <div className="p-3 rounded-2xl bg-amber-500/10 ring-1 ring-amber-500/25 flex flex-col items-center lg:items-start">
-                <span className="text-[18px] md:text-[22px] font-extrabold text-amber-700 dark:text-amber-300">50,000+</span>
-                <span className="text-[11px] font-semibold text-on-surface-variant">Journeys Made</span>
+              <div className="p-3 rounded-2xl bg-rose-500/10 ring-1 ring-rose-500/25 flex flex-col items-center lg:items-start">
+                <span className="text-[18px] md:text-[22px] font-extrabold text-rose-700 dark:text-rose-300">COD</span>
+                <span className="text-[11px] font-semibold text-on-surface-variant">Pay on delivery</span>
               </div>
               <div className="p-3 rounded-2xl bg-emerald-500/10 ring-1 ring-emerald-500/25 flex flex-col items-center lg:items-start">
-                <span className="text-[18px] md:text-[22px] font-extrabold text-emerald-700 dark:text-emerald-300">4.6★</span>
-                <span className="text-[11px] font-semibold text-on-surface-variant">{totalCount} Reviews</span>
+                <span className="text-[18px] md:text-[22px] font-extrabold text-emerald-700 dark:text-emerald-300">{hasRealReviews ? `${avgRating}★` : 'Secure'}</span>
+                <span className="text-[11px] font-semibold text-on-surface-variant">{hasRealReviews ? `${totalCount} Reviews` : 'UPI & card checkout'}</span>
               </div>
               <div className="p-3 rounded-2xl bg-sky-500/10 ring-1 ring-sky-500/25 flex flex-col items-center lg:items-start">
-                <span className="text-[18px] md:text-[22px] font-extrabold text-sky-700 dark:text-sky-300">100%</span>
-                <span className="text-[11px] font-semibold text-on-surface-variant">Recycled Linings</span>
+                <span className="text-[18px] md:text-[22px] font-extrabold text-sky-700 dark:text-sky-300">Free</span>
+                <span className="text-[11px] font-semibold text-on-surface-variant">Delivery over ₹10,000</span>
               </div>
               <div className="p-3 rounded-2xl bg-rose-500/10 ring-1 ring-rose-500/25 flex flex-col items-center lg:items-start">
                 <span className="text-[18px] md:text-[22px] font-extrabold text-rose-700 dark:text-rose-300">7-Day</span>
-                <span className="text-[11px] font-semibold text-on-surface-variant">Home Trial</span>
+                <span className="text-[11px] font-semibold text-on-surface-variant">Easy returns</span>
               </div>
             </div>
 
             {/* CTAs */}
             <div className="flex flex-wrap gap-3 justify-center lg:justify-start pt-3">
-              <Link to="/catalogue" className="btn bg-gradient-to-r from-amber-600 via-rose-600 to-indigo-600 text-white font-semibold shadow-md hover:brightness-110 active:scale-95 transition-all">
+              <Link to="/catalogue" className="btn bg-gradient-to-r from-rose-600 via-rose-600 to-indigo-600 text-white font-semibold shadow-md hover:brightness-110 active:scale-95 transition-all">
                 Explore The Catalogue
               </Link>
               <a
@@ -225,8 +227,8 @@ export default function About() {
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
               <div className="absolute bottom-5 left-5 right-5 text-white">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-amber-300">Field Tested</span>
-                <p className="text-[15px] font-semibold leading-snug">Designed for 140+ international airlines & daily metro commutes.</p>
+                <span className="text-[11px] font-bold uppercase tracking-wider text-rose-300">Made to travel</span>
+                <p className="text-[15px] font-semibold leading-snug">Designed for daily commutes and weekend trips.</p>
               </div>
             </div>
 
@@ -243,16 +245,16 @@ export default function About() {
               </span>
             </div>
 
-            {/* Floating Rating Pill */}
-            <div className="absolute -top-4 -right-2 sm:-right-6 px-4 py-2.5 rounded-2xl bg-surface/95 backdrop-blur-md ring-1 ring-surface-container-high shadow-lift flex items-center gap-2.5">
-              <span className="w-9 h-9 rounded-full bg-amber-500 text-white flex items-center justify-center font-bold text-[14px]">
+            {/* Floating Rating Pill — only with real, approved comments */}
+            {hasRealReviews && <div className="absolute -top-4 -right-2 sm:-right-6 px-4 py-2.5 rounded-2xl bg-surface/95 backdrop-blur-md ring-1 ring-surface-container-high shadow-lift flex items-center gap-2.5">
+              <span className="w-9 h-9 rounded-full bg-rose-500 text-white flex items-center justify-center font-bold text-[14px]">
                 ★
               </span>
               <div className="flex flex-col">
-                <span className="text-[13px] font-extrabold text-on-surface">4.6 / 5.0 Rating</span>
-                <span className="text-[11px] text-on-surface-variant">Verified by {totalCount} buyers</span>
+                <span className="text-[13px] font-extrabold text-on-surface">{avgRating} / 5.0 Rating</span>
+                <span className="text-[11px] text-on-surface-variant">From {totalCount} customer comments</span>
               </div>
-            </div>
+            </div>}
           </div>
         </div>
       </section>
@@ -269,7 +271,7 @@ export default function About() {
       {/* ── 2. OUR COLORFUL STORY & DESIGN PHILOSOPHY ── */}
       <section className="container-x py-14 md:py-20 grid lg:grid-cols-2 gap-10 md:gap-16 items-center" aria-labelledby="story-heading">
         <div className="flex flex-col gap-5">
-          <div className="inline-flex items-center gap-2 self-start px-3 py-1 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-300 text-[11.5px] font-bold uppercase tracking-wider">
+          <div className="inline-flex items-center gap-2 self-start px-3 py-1 rounded-full bg-rose-500/10 text-rose-700 dark:text-rose-300 text-[11.5px] font-bold uppercase tracking-wider">
             <Icon name="history_edu" className="text-[14px]" /> Our Story
           </div>
           <h2 id="story-heading" className="font-display text-[30px] md:text-[42px] leading-tight text-on-surface">
@@ -282,7 +284,7 @@ export default function About() {
           ))}
 
           {/* Pull Quote */}
-          <div className="mt-2 p-5 rounded-2xl bg-gradient-to-r from-amber-500/10 via-rose-500/10 to-indigo-500/10 border-l-4 border-secondary text-on-surface">
+          <div className="mt-2 p-5 rounded-2xl bg-gradient-to-r from-rose-500/10 via-rose-500/10 to-indigo-500/10 border-l-4 border-secondary text-on-surface">
             <p className="font-serif italic text-[16px] md:text-[17px] leading-snug">
               “We don’t believe in fragile luxury that you are afraid to set on a wet cafe floor. A great bag should look exquisite in a boardroom and tough enough for a monsoonal trek.”
             </p>
@@ -304,7 +306,7 @@ export default function About() {
               />
             </div>
             <div className="p-4 rounded-2xl bg-surface-container-lowest ring-1 ring-surface-container-high text-center">
-              <span className="font-display text-[26px] font-bold text-amber-600 dark:text-amber-400">1680D</span>
+              <span className="font-display text-[26px] font-bold text-rose-600 dark:text-rose-400">1680D</span>
               <p className="text-[12px] text-on-surface-variant mt-0.5">Ballistic High-Tensile Weave</p>
             </div>
           </div>
@@ -372,7 +374,7 @@ export default function About() {
         {/* Section Title & Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10 pb-8 border-b border-surface-container-high">
           <div className="flex flex-col gap-2 max-w-2xl">
-            <div className="inline-flex items-center gap-2 self-start px-3 py-1 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-300 text-[11.5px] font-bold uppercase tracking-wider">
+            <div className="inline-flex items-center gap-2 self-start px-3 py-1 rounded-full bg-rose-500/10 text-rose-700 dark:text-rose-300 text-[11.5px] font-bold uppercase tracking-wider">
               <Icon name="favorite" className="text-[14px]" /> Customer Love & Feedback
             </div>
             <h2 className="font-display text-[30px] md:text-[42px] leading-tight text-on-surface">
@@ -396,11 +398,11 @@ export default function About() {
           </div>
         </div>
 
-        {/* ── Customer Rating Points Summary Card ── */}
-        <div className="grid lg:grid-cols-[1fr_1.4fr] gap-6 p-6 md:p-8 rounded-3xl bg-gradient-to-br from-amber-500/10 via-rose-500/5 to-indigo-500/10 ring-1 ring-secondary/20 shadow-sm mb-10 items-center">
+        {/* ── Customer Rating Points Summary Card (only with real, approved comments) ── */}
+        {hasRealReviews && <div className="grid lg:grid-cols-[1fr_1.4fr] gap-6 p-6 md:p-8 rounded-3xl bg-gradient-to-br from-rose-500/10 via-rose-500/5 to-indigo-500/10 ring-1 ring-secondary/20 shadow-sm mb-10 items-center">
           {/* Big Score Block */}
           <div className="flex flex-col sm:flex-row items-center sm:items-start lg:items-center gap-6 text-center sm:text-left">
-            <div className="w-24 h-24 rounded-3xl bg-gradient-to-br from-amber-500 to-orange-500 text-white flex flex-col items-center justify-center shadow-lg shrink-0">
+            <div className="w-24 h-24 rounded-3xl bg-gradient-to-br from-rose-500 to-orange-500 text-white flex flex-col items-center justify-center shadow-lg shrink-0">
               <span className="text-[34px] font-extrabold leading-none">{avgRating}</span>
               <span className="text-[11px] font-bold uppercase tracking-wider text-white/90">out of 5.0</span>
             </div>
@@ -410,11 +412,8 @@ export default function About() {
                 <span className="text-[14px] font-bold text-on-surface ml-1">{avgRating} Rating Points</span>
               </div>
               <p className="text-[14px] font-semibold text-on-surface">
-                Based on <span className="text-secondary">{totalCount} authentic customer comments</span>
+                Based on <span className="text-secondary">{totalCount} customer comments</span>
               </p>
-              <div className="inline-flex items-center justify-center sm:justify-start gap-1 text-[12px] text-emerald-600 dark:text-emerald-400 font-semibold">
-                <Icon name="check_circle" className="text-[15px]" /> 98% of buyers recommend WILDTANE to colleagues
-              </div>
             </div>
           </div>
 
@@ -423,7 +422,7 @@ export default function About() {
             <div className="flex items-center gap-3 text-[13px]">
               <span className="w-24 font-semibold text-on-surface shrink-0">5.0 Stars</span>
               <div className="flex-1 h-3 rounded-full bg-surface-container-high overflow-hidden">
-                <div className="h-full bg-gradient-to-r from-amber-500 to-orange-500 rounded-full transition-all duration-700" style={{ width: `${pct5}%` }} />
+                <div className="h-full bg-gradient-to-r from-rose-500 to-orange-500 rounded-full transition-all duration-700" style={{ width: `${pct5}%` }} />
               </div>
               <span className="w-12 text-right font-bold text-on-surface-variant">{pct5}%</span>
             </div>
@@ -442,7 +441,7 @@ export default function About() {
               <span className="w-12 text-right font-bold text-on-surface-variant">{pctBelow}%</span>
             </div>
           </div>
-        </div>
+        </div>}
 
         {/* ── Rating Points Filter Tabs ── */}
         <div className="flex flex-wrap items-center gap-2 mb-8">
@@ -484,7 +483,7 @@ export default function About() {
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-1.5">
                     <Stars value={r.rating} size={15} />
-                    <span className="px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-700 dark:text-amber-300 text-[12px] font-bold">
+                    <span className="px-2 py-0.5 rounded-md bg-rose-500/10 text-rose-700 dark:text-rose-300 text-[12px] font-bold">
                       {Number(r.rating).toFixed(1)}
                     </span>
                   </div>
@@ -564,7 +563,7 @@ export default function About() {
       </section>
 
       {/* Brand Values component */}
-      <BrandValues className="py-12 md:py-16" title="Why 50,000+ Explorers Choose Us" eyebrow="The WILDTANE Standard" />
+      <BrandValues className="py-12 md:py-16" title="Why Shoppers Choose Us" eyebrow="The WILDTANE Standard" />
 
       {/* Official Corporate Entity & Registration Details */}
       <section className="container-x pb-12">
@@ -595,12 +594,12 @@ export default function About() {
 
       {/* ── 6. COLORFUL CLOSING CALL TO ACTION ── */}
       <section className="container-x pb-14 md:pb-24">
-        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-amber-600 via-rose-600 to-indigo-700 text-white p-8 md:p-14 shadow-2xl flex flex-col lg:flex-row lg:items-center justify-between gap-8">
+        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-rose-600 via-rose-600 to-indigo-700 text-white p-8 md:p-14 shadow-2xl flex flex-col lg:flex-row lg:items-center justify-between gap-8">
           {/* Subtle Ambient Texture */}
           <div aria-hidden="true" className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,rgba(255,255,255,0.2),transparent_70%)] pointer-events-none" />
 
           <div className="relative flex flex-col gap-3 max-w-xl">
-            <span className="text-[11px] font-bold uppercase tracking-widest text-amber-200">
+            <span className="text-[11px] font-bold uppercase tracking-widest text-rose-200">
               Ready for your next journey?
             </span>
             <h2 className="font-display text-[30px] md:text-[42px] leading-tight text-white font-bold">
@@ -612,10 +611,10 @@ export default function About() {
           </div>
 
           <div className="relative flex flex-wrap gap-3">
-            <Link to="/men" className="btn bg-white text-zinc-950 font-bold hover:bg-amber-100 shadow-md">
+            <Link to="/men" className="btn bg-white text-zinc-950 font-bold hover:bg-rose-100 shadow-md">
               Shop Men
             </Link>
-            <Link to="/women" className="btn bg-amber-400 text-zinc-950 font-bold hover:bg-amber-300 shadow-md">
+            <Link to="/women" className="btn bg-rose-400 text-zinc-950 font-bold hover:bg-rose-300 shadow-md">
               Shop Women
             </Link>
             <button

@@ -6,6 +6,7 @@ import { z } from 'zod';
 import toast from 'react-hot-toast';
 import { api } from '../lib/api';
 import { useAuthActions } from '../hooks/useAuth';
+import { useConfig } from '../hooks/useStore';
 import { Button, CountrySelect, Field, Icon, Img, Input, PhoneInput } from '../components/ui';
 import { BrandLogo, BrandLogoFull } from '../components/Brand';
 import { cn } from '../lib/format';
@@ -73,7 +74,7 @@ function AuthShell({ title, subtitle, children, footer }) {
             <span className="font-serif tracking-wider font-bold text-[18px] text-on-surface uppercase">
               WILDTANE
             </span>
-            <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded-full bg-gradient-to-r from-amber-500 to-amber-600 text-white text-[8px] font-black uppercase tracking-tight">
+            <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded-full bg-gradient-to-r from-rose-500 to-rose-600 text-white text-[8px] font-black uppercase tracking-tight">
               <Icon name="bolt" className="text-[9px]" /> Assured
             </span>
           </div>
@@ -202,6 +203,9 @@ const registerSchema = z
 
 export function Register() {
   const { register: signUp } = useAuthActions();
+  const { data: config } = useConfig();
+  const bonus = config?.loyalty?.enabled !== false ? config?.loyalty?.signupBonus || 0 : 0;
+  const referralBonus = config?.loyalty?.referralBonus || 0;
   const navigate = useNavigate();
   const next = useNext();
   const [searchParams] = useSearchParams();
@@ -216,8 +220,14 @@ export function Register() {
   });
   const onSubmit = async ({ confirm, terms, ...values }) => {
     try {
-      const user = await signUp({ ...values, country: 'IN', nationality: 'IN' });
-      toast.success(`🎉 +50 Welcome Coins added to your wallet! Welcome to WILDTANE, ${user.name.split(' ')[0]}!`, { duration: 5000 });
+      const { user, rewards } = await signUp({ ...values, country: 'IN', nationality: 'IN' });
+      const first = user.name.split(' ')[0];
+      toast.success(
+        rewards.signupBonus > 0 ? `Welcome to WILDTANE, ${first}! ${rewards.signupBonus} welcome coins have been added to your account.` : `Welcome to WILDTANE, ${first}!`,
+        { duration: 5000 }
+      );
+      if (rewards.referral === 'invalid') toast.error('That referral code wasn’t recognised, so no referral was recorded.');
+      else if (rewards.referral === 'rejected') toast.error('That referral code can’t be used for this account.');
       navigate(next || '/', { replace: true });
     } catch (err) {
       applyServerErrors(err, setError);
@@ -225,19 +235,21 @@ export function Register() {
     }
   };
   return (
-    <AuthShell title="Create your account." subtitle="Get 50 Welcome Coins immediately upon joining." footer={<>Already a member? <Link to={`/login${next ? `?next=${encodeURIComponent(next)}` : ''}`} className="text-secondary font-semibold hover:underline">Sign in</Link></>}>
+    <AuthShell title="Create your account." subtitle={bonus > 0 ? `Get ${bonus} welcome coins when your account is created.` : 'Track orders, save addresses and check out faster.'} footer={<>Already a member? <Link to={`/login${next ? `?next=${encodeURIComponent(next)}` : ''}`} className="text-secondary font-semibold hover:underline">Sign in</Link></>}>
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-space-md" noValidate>
         {errors.root && <p className="p-space-sm rounded-lg bg-error-container text-on-error-container text-body-sm flex items-center gap-2" role="alert"><Icon name="error" /> {errors.root.message}</p>}
-        
-        {/* Signup Bonus 50 Coins Banner */}
-        <div className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-2xl bg-gradient-to-r from-amber-500/15 via-amber-500/10 to-amber-600/10 border border-amber-500/30 text-amber-900 dark:text-amber-200 text-label-md shadow-2xs">
-          <span className="w-7 h-7 rounded-lg bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
-            <Icon name="savings" className="text-[18px]" />
-          </span>
-          <span className="text-[12px] leading-tight">
-            <strong>Welcome Bonus:</strong> +50 Loyalty Coins credited instantly to your wallet upon registration!
-          </span>
-        </div>
+
+        {/* Signup bonus (amount from Admin → Settings → Loyalty) */}
+        {bonus > 0 && (
+          <div className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-2xl bg-gradient-to-r from-rose-500/15 via-rose-500/10 to-rose-600/10 border border-rose-500/30 text-rose-900 dark:text-rose-200 text-label-md shadow-2xs">
+            <span className="w-7 h-7 rounded-lg bg-rose-500/20 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0">
+              <Icon name="savings" className="text-[18px]" />
+            </span>
+            <span className="text-[12px] leading-tight">
+              <strong>Welcome bonus:</strong> {bonus} loyalty coins are added to your account once registration is complete (one bonus per customer).
+            </span>
+          </div>
+        )}
 
         <Field label="Full name" error={errors.name?.message} htmlFor="name" required>
           <Input id="name" autoComplete="name" error={errors.name} {...register('name')} />
@@ -270,7 +282,7 @@ export function Register() {
         <Field
           label="Referral Code (Optional)"
           error={errors.referralCode?.message}
-          hint="Enter friend's referral code to give them +100 bonus coins"
+          hint={referralBonus > 0 ? `Your friend earns ${referralBonus} coins ${config?.loyalty?.referralQualifyOn === 'signup' ? 'when you join' : 'when your first order is delivered'}` : undefined}
           htmlFor="referralCode"
         >
           <Input
@@ -297,7 +309,6 @@ export function ForgotPassword() {
   const [step, setStep] = useState(1); // 1: Email, 2: OTP, 3: New Password
   const [email, setEmail] = useState('');
   const [otp, setOtp] = useState('');
-  const [fastOtp, setFastOtp] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -337,15 +348,10 @@ export function ForgotPassword() {
     setLoading(true);
     try {
       const res = await api.forgotPassword({ email: cleanEmail });
-      toast.success('Verification code sent to your email inbox!');
+      toast.success('Request received. Check your email for the code.');
       setStep(2);
-      setOtpExpiresIn(res?.data?.expiresInSeconds || res?.expiresInSeconds || 600);
-      setResendCooldown(15);
-      const devCode = res?.data?.devOtp || res?.devOtp;
-      if (devCode) {
-        setFastOtp(devCode);
-        toast.success(`Fast OTP Ready: ${devCode}`, { icon: '⚡', duration: 4000 });
-      }
+      setOtpExpiresIn(res?.expiresInSeconds || 600);
+      setResendCooldown(res?.resendAfterSeconds || 60);
     } catch (err) {
       setError(err.message || 'Failed to send verification code. Please check your email.');
     } finally {
@@ -381,15 +387,10 @@ export function ForgotPassword() {
     setLoading(true);
     try {
       const res = await api.forgotPassword({ email: email.trim().toLowerCase() });
-      toast.success('New verification code sent to your email inbox!');
+      toast.success('If an account exists, a new code is on its way.');
       setOtp('');
-      setOtpExpiresIn(res?.data?.expiresInSeconds || res?.expiresInSeconds || 600);
-      setResendCooldown(15);
-      const devCode = res?.data?.devOtp || res?.devOtp;
-      if (devCode) {
-        setFastOtp(devCode);
-        toast.success(`Fast OTP Ready: ${devCode}`, { icon: '⚡', duration: 4000 });
-      }
+      setOtpExpiresIn(res?.expiresInSeconds || 600);
+      setResendCooldown(res?.resendAfterSeconds || 60);
     } catch (err) {
       setError(err.message || 'Failed to resend code');
     } finally {
@@ -431,8 +432,8 @@ export function ForgotPassword() {
     3: 'Choose a new password.',
   };
   const subtitles = {
-    1: 'Enter your account email to verify whether you have an account and receive a one-time verification code.',
-    2: `We sent a 6-digit code to ${email}. Enter it below to verify your identity.`,
+    1: 'Enter your account email and we’ll send you a one-time verification code.',
+    2: 'Enter the 6-digit code from your email to verify your identity.',
     3: 'Enter your new password below. Once saved, you will be automatically signed in.',
   };
 
@@ -520,39 +521,12 @@ export function ForgotPassword() {
           <div className="p-space-sm rounded-xl border border-outline-variant/60 bg-surface-container-low text-body-sm flex items-start gap-3">
             <Icon name="mark_email_read" className="text-[22px] text-secondary shrink-0 mt-0.5" />
             <div className="flex flex-col gap-0.5">
-              <span className="font-semibold text-on-surface">Verification code sent to your email</span>
+              <span className="font-semibold text-on-surface">Request received</span>
               <span className="text-on-surface-variant">
-                We sent a 6-digit code to <b className="text-on-surface">{email}</b>. Open your email inbox or spam folder to find the code.
+                If <b className="text-on-surface">{email}</b> has a WILDTANE account, we’ve emailed it a 6-digit code. Check your inbox and spam folder. The code works once and you have 5 tries.
               </span>
             </div>
           </div>
-
-          {/* Instant Code Card when available */}
-          {fastOtp && (
-            <div className="p-3 rounded-2xl bg-gradient-to-r from-emerald-500/15 via-secondary/15 to-amber-500/15 border border-emerald-500/40 flex items-center justify-between gap-3 shadow-xs animate-fade-in">
-              <div className="flex items-center gap-2.5 min-w-0">
-                <span className="w-8 h-8 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-xs">
-                  <Icon name="bolt" className="text-[19px]" />
-                </span>
-                <div className="flex flex-col min-w-0">
-                  <span className="text-[12px] font-bold text-on-surface">Instant Code Ready</span>
-                  <span className="text-[13px] font-mono font-black text-emerald-600 dark:text-emerald-400 tracking-wider">
-                    {fastOtp}
-                  </span>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => {
-                  setOtp(fastOtp);
-                  toast.success(`Verification code ${fastOtp} auto-filled!`, { icon: '⚡' });
-                }}
-                className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white text-[11.5px] font-bold shadow-xs transition-all shrink-0"
-              >
-                Auto-Fill Code
-              </button>
-            </div>
-          )}
 
           {/* 10-Minute Expiration Countdown Card */}
           <div
@@ -561,7 +535,7 @@ export function ForgotPassword() {
               otpExpiresIn > 60
                 ? 'bg-surface-container-low border-outline-variant/60'
                 : otpExpiresIn > 0
-                ? 'bg-amber-500/10 border-amber-500/40 text-amber-900 dark:text-amber-200'
+                ? 'bg-rose-500/10 border-rose-500/40 text-rose-900 dark:text-rose-200'
                 : 'bg-error-container/30 border-error/40 text-error'
             )}
           >
@@ -580,7 +554,7 @@ export function ForgotPassword() {
                 otpExpiresIn > 60
                   ? 'bg-surface-container-high text-on-surface'
                   : otpExpiresIn > 0
-                  ? 'bg-amber-500/20 text-amber-700 dark:text-amber-300 animate-pulse'
+                  ? 'bg-rose-500/20 text-rose-700 dark:text-rose-300 animate-pulse'
                   : 'bg-error text-white'
               )}
             >
@@ -618,7 +592,7 @@ export function ForgotPassword() {
             )}>
               {otpExpiresIn <= 0
                 ? 'This code has expired. Click "Resend code" below.'
-                : 'Delivered instantly. Check your email inbox and spam folder'}
+                : 'Emails can take a minute to arrive. Check your inbox and spam folder.'}
             </p>
           </div>
 

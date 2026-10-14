@@ -70,7 +70,7 @@ function ContactCard({ config }) {
   const email = config?.supportEmail || 'info@wildtane.com';
   const phone = config?.supportPhone || '8920550465';
   return (
-    <section aria-labelledby="support-title" className="rounded-2xl bg-band text-on-band ring-1 ring-accent/30 p-5 md:p-7 grid md:grid-cols-[1fr_auto] gap-5 items-center">
+    <section aria-labelledby="support-title" className="rounded-2xl bg-band text-on-band ring-1 ring-rose-400/30 p-5 md:p-7 grid md:grid-cols-[1fr_auto] gap-5 items-center">
       <div className="flex flex-col gap-2">
         <h2 id="support-title" className="font-display text-[24px] md:text-[28px] leading-tight">Still need help?</h2>
         <p className="text-[14px] text-on-band/75">
@@ -79,7 +79,7 @@ function ContactCard({ config }) {
         <p className="text-[13px] text-on-band/60">Please always share: {SUPPORT.share.join(' · ')}.</p>
       </div>
       <div className="flex flex-wrap gap-2">
-        <a href={`tel:${phone.replace(/\s/g, '')}`} className="btn bg-accent text-on-accent hover:brightness-105"><Icon name="call" className="text-[18px]" /> Call {phone}</a>
+        <a href={`tel:${phone.replace(/\s/g, '')}`} className="btn bg-rose-600 text-white hover:bg-rose-500"><Icon name="call" className="text-[18px]" /> Call {phone}</a>
         <a href={`mailto:${email}`} className="btn border border-on-band/25 text-on-band hover:bg-on-band/10"><Icon name="mail" className="text-[18px]" /> Email us</a>
         <Link to="/contact" className="btn border border-on-band/25 text-on-band hover:bg-on-band/10">Contact form</Link>
       </div>
@@ -94,7 +94,7 @@ function Tips() {
       <ul className="grid grid-cols-2 lg:grid-cols-4 gap-2.5">
         {TIPS.map(([icon, text]) => (
           <li key={text} className="flex flex-col gap-2 p-4 rounded-2xl bg-surface-container-lowest ring-1 ring-black/[0.04] dark:ring-white/[0.05]">
-            <span className="w-10 h-10 rounded-xl bg-band text-accent flex items-center justify-center"><Icon name={icon} className="text-[20px]" /></span>
+            <span className="w-10 h-10 rounded-xl bg-band text-rose-300 flex items-center justify-center"><Icon name={icon} className="text-[20px]" /></span>
             <span className="text-[13px] leading-snug">{text}</span>
           </li>
         ))}
@@ -141,8 +141,8 @@ export default function HelpCentre() {
               <span className="text-[13px] font-semibold leading-tight">{s.title}</span>
             </a>
           ))}
-          <Link to="/faq" className="flex flex-col gap-2 p-4 rounded-2xl bg-band text-on-band ring-1 ring-accent/30 hover:shadow-lift transition-shadow">
-            <Icon name="quiz" className="text-[24px] text-accent" />
+          <Link to="/faq" className="flex flex-col gap-2 p-4 rounded-2xl bg-band text-on-band ring-1 ring-rose-400/30 hover:shadow-lift transition-shadow">
+            <Icon name="quiz" className="text-[24px] text-rose-300" />
             <span className="text-[13px] font-semibold leading-tight">FAQs</span>
           </Link>
         </nav>

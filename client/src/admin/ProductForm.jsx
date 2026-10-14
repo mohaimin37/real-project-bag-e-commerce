@@ -15,7 +15,56 @@ import AskAI from './AskAI';
 
 const MATERIALS = ['Recycled Cordura® 840D', 'Waterproof Ballistic Nylon', 'Full-Grain Italian Calfskin', 'Vegetable-Tanned Leather', 'Waxed Organic Canvas', 'Bio-Based Vegan Polyurethane', 'Stainless Steel'];
 const FEATURES = ['Laptop 16" Sleeve', 'Laptop 14" Sleeve', 'IPX5 Waterproof', 'Trolley Pass-Through', 'RFID Blocking Pocket', 'Fidlock® Magnetic Fasteners', 'Shoe Compartment'];
-const PURPOSES = ['work', 'travel', 'transit', 'business', 'creative'];
+const PURPOSES = ['work', 'travel', 'transit', 'business', 'creative', 'college', 'gym', 'everyday'];
+const OCCASIONS = ['casual', 'office', 'party', 'wedding', 'festive', 'travel'];
+const CLOSURES = [['', 'Not set'], ['zip', 'Zip'], ['magnetic', 'Magnetic'], ['buckle', 'Buckle'], ['drawstring', 'Drawstring'], ['flap', 'Flap'], ['clasp', 'Clasp'], ['open', 'Open top']];
+const BLANK_ATTRS = { laptopSize: '', compartments: '', closureType: '', waterResistant: false, occasions: [], dimensions: '', weight: '', seoTitle: '', seoDescription: '' };
+
+/** Every category with its full path, for the "Extra categories" picker. */
+function flatCats(tree) {
+  const out = [];
+  const walk = (nodes, path) => (nodes || []).forEach((n) => {
+    out.push({ _id: n._id, label: [...path, n.name].join(' › '), department: n.department });
+    walk(n.children, [...path, n.name]);
+  });
+  walk(tree, []);
+  return out;
+}
+
+/**
+ * Extra categories: the same product also appears in these listings (many-to-many). It is one
+ * product record — stock, price and reviews are shared — never a copy.
+ */
+export function ExtraCategories({ value, onChange, tree, exclude }) {
+  const [q, setQ] = useState('');
+  const all = useMemo(() => flatCats(tree), [tree]);
+  const picked = all.filter((c) => value.includes(c._id));
+  const term = q.trim().toLowerCase();
+  const options = term ? all.filter((c) => !value.includes(c._id) && !exclude.includes(c._id) && c.label.toLowerCase().includes(term)).slice(0, 12) : [];
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="flex flex-wrap gap-1.5">
+        {picked.length === 0 && <span className="text-label-sm font-normal text-outline">None — the product shows only in its main category.</span>}
+        {picked.map((c) => (
+          <span key={c._id} className="chip h-7 bg-surface-container-low gap-1">
+            {c.label}
+            <button type="button" aria-label={`Remove ${c.label}`} onClick={() => onChange(value.filter((id) => id !== c._id))}><Icon name="close" className="text-[14px]" /></button>
+          </span>
+        ))}
+      </div>
+      <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search categories to add (e.g. school, travel organizers)…" aria-label="Search categories" />
+      {options.length > 0 && (
+        <div className="card divide-y divide-surface-container-high max-h-56 overflow-y-auto">
+          {options.map((c) => (
+            <button key={c._id} type="button" className="w-full text-left px-3 py-2 text-body-sm hover:bg-surface-container-low" onClick={() => { onChange([...value, c._id]); setQ(''); }}>
+              {c.label}{c.department && c.department !== 'all' ? <span className="text-outline"> · {c.department}</span> : null}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 const FAMILIES = ['navy', 'teal', 'tan', 'onyx', 'olive', 'grey', 'orange', 'brown', 'white', 'red', 'pink', 'blue', 'green'];
 
 const variantSchema = z.object({
@@ -88,6 +137,9 @@ export default function ProductForm() {
   const [lists, setLists] = useState({ materials: [], features: [], purposes: [], tags: [] });
   const [specs, setSpecs] = useState([]);
   const [faqs, setFaqs] = useState([]);
+  const [extraCats, setExtraCats] = useState([]);
+  const [attrs, setAttrs] = useState(BLANK_ATTRS);
+  const setAttr = (patch) => setAttrs((a) => ({ ...a, ...patch }));
 
   const form = useForm({ resolver: zodResolver(schema), defaultValues: blank });
   const { register, control, handleSubmit, watch, reset, setValue, setError, formState: { errors, isDirty } } = form;
@@ -108,6 +160,18 @@ export default function ProductForm() {
     setLists({ materials: p.materials || [], features: p.features || [], purposes: p.purposes || [], tags: p.tags || [] });
     setSpecs(p.specifications || []);
     setFaqs(p.faqs || []);
+    setExtraCats((p.categories || []).map((c) => String(c._id || c)));
+    setAttrs({
+      laptopSize: p.laptopSize ?? '',
+      compartments: p.compartments ?? '',
+      closureType: p.closureType || '',
+      waterResistant: Boolean(p.waterResistant),
+      occasions: p.occasions || [],
+      dimensions: p.dimensions || '',
+      weight: p.weight || '',
+      seoTitle: p.seoTitle || '',
+      seoDescription: p.seoDescription || '',
+    });
   }, [existing.data, reset]);
 
   const category = watch('category');
@@ -157,6 +221,10 @@ export default function ProductForm() {
       ...lists,
       specifications: specs.filter((s) => s.label && s.value),
       faqs: faqs.filter((f) => f.question && f.answer),
+      categories: extraCats.filter((cid) => cid !== values.category && cid !== values.subcategory),
+      ...attrs,
+      laptopSize: attrs.laptopSize === '' ? null : Number(attrs.laptopSize),
+      compartments: attrs.compartments === '' ? null : Number(attrs.compartments),
     });
   };
 
@@ -371,6 +439,39 @@ export default function ProductForm() {
                 </Select>
               </Field>
               <Field label="Capacity"><Input placeholder="24L" {...register('capacity')} /></Field>
+              <Field label="Extra categories" hint="List this same product in more places (e.g. a backpack in School Bags and Travel). Not a copy.">
+                <ExtraCategories value={extraCats} onChange={setExtraCats} tree={cats} exclude={[category, watch('subcategory')].filter(Boolean)} />
+              </Field>
+            </div>
+          </Panel>
+
+          <Panel title="Shopping details (optional)">
+            <div className="flex flex-col gap-space-md">
+              <p className="text-label-sm font-normal text-outline">Fill only what you know for certain. Each one turns on a store filter once products have it.</p>
+              <div className="grid grid-cols-2 gap-2">
+                <Field label="Fits laptop up to (inches)"><Input type="number" min={10} max={20} step="0.1" value={attrs.laptopSize} onChange={(e) => setAttr({ laptopSize: e.target.value })} /></Field>
+                <Field label="Compartments"><Input type="number" min={1} max={30} value={attrs.compartments} onChange={(e) => setAttr({ compartments: e.target.value })} /></Field>
+                <Field label="Closure">
+                  <Select value={attrs.closureType} onChange={(e) => setAttr({ closureType: e.target.value })}>{CLOSURES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</Select>
+                </Field>
+                <div className="flex items-end pb-2"><Toggle checked={attrs.waterResistant} onChange={(v) => setAttr({ waterResistant: v })} label="Water-resistant" /></div>
+                <Field label="Dimensions"><Input placeholder="40 × 30 × 15 cm" maxLength={60} value={attrs.dimensions} onChange={(e) => setAttr({ dimensions: e.target.value })} /></Field>
+                <Field label="Weight"><Input placeholder="1.2 kg" maxLength={30} value={attrs.weight} onChange={(e) => setAttr({ weight: e.target.value })} /></Field>
+              </div>
+              <Field label="Occasions" hint="Powers the Occasion filter and collections like Party & Evening">
+                <div className="flex flex-wrap gap-1.5">
+                  {OCCASIONS.map((o) => {
+                    const on = attrs.occasions.includes(o);
+                    return (
+                      <button key={o} type="button" onClick={() => setAttr({ occasions: on ? attrs.occasions.filter((x) => x !== o) : [...attrs.occasions, o] })} className={cn('chip h-7 capitalize', on ? 'bg-primary text-on-primary' : 'bg-surface-container-low')}>
+                        {o}
+                      </button>
+                    );
+                  })}
+                </div>
+              </Field>
+              <Field label="SEO title" hint="Blank = product name"><Input maxLength={120} value={attrs.seoTitle} onChange={(e) => setAttr({ seoTitle: e.target.value })} /></Field>
+              <Field label="SEO description"><Textarea rows={2} maxLength={250} value={attrs.seoDescription} onChange={(e) => setAttr({ seoDescription: e.target.value })} /></Field>
             </div>
           </Panel>
 

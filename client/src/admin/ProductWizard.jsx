@@ -9,6 +9,7 @@ import { Button, Field, Icon, Img, Input, Modal, Select, Spinner, Textarea, Togg
 import { ProductCard, Swatches } from '../components/product';
 import { ChipInput, ImageUploader, KeyValueEditor } from './kit';
 import AskAI, { parseReply } from './AskAI';
+import { ExtraCategories } from './ProductForm';
 
 /*
  * Guided "Add product": 4 short steps with suggestions from similar products, a live preview of the
@@ -25,7 +26,7 @@ const STEPS = [
   ['visibility', 'Preview & publish'],
 ];
 const BADGES = ['New', 'Bestseller', 'Limited Edition', 'Cabin Approved', 'Gift Pick'];
-const PURPOSES = ['work', 'travel', 'transit', 'business', 'creative'];
+const PURPOSES = ['work', 'travel', 'transit', 'business', 'creative', 'college', 'gym', 'everyday'];
 const COLOUR_PRESETS = [
   ['Onyx Black', '#17171a', 'onyx'], ['Midnight Navy', '#1b263b', 'navy'], ['Cognac', '#96582c', 'brown'], ['Tan', '#b8875a', 'tan'],
   ['Olive', '#5b5f3a', 'olive'], ['Slate Grey', '#6b6e74', 'grey'], ['Ivory', '#f4f1ea', 'white'], ['Burgundy', '#5e1a24', 'red'],
@@ -35,6 +36,7 @@ const blank = () => ({
   name: '', images: [], category: '', subcategory: '', gender: 'unisex', price: '', salePrice: '', sku: '',
   tagline: '', badge: 'New', shortDescription: '', description: '', capacity: '',
   materials: [], features: [], purposes: [], tags: [], specifications: [], faqs: [],
+  categories: [], // extra categories this same product also appears in
   variants: [], isNewArrival: true, isFeatured: false, isBestseller: false,
   lowStockThreshold: 10,
 });
@@ -313,6 +315,7 @@ export default function ProductWizard() {
         description: p.description,
         category: p.category,
         subcategory: p.subcategory || null,
+        categories: (p.categories || []).filter((id) => id !== p.category && id !== p.subcategory),
         gender: p.gender,
         price: toNum(p.price),
         salePrice: p.salePrice === '' ? null : toNum(p.salePrice),
@@ -484,6 +487,9 @@ export default function ProductWizard() {
                   {s?.subcategory && (s.subcategory._id !== p.subcategory || s.category?._id !== p.category) && (
                     <Hint>Suggested: <Pick onClick={() => set({ category: s.category._id, subcategory: s.subcategory._id })}>{s.category?.name} › {s.subcategory.name}</Pick></Hint>
                   )}
+                  <Field label="Also show it in (optional)" hint="e.g. a backpack in “School Bags” and “Travel”. It stays one product — same stock and price.">
+                    <ExtraCategories value={p.categories || []} onChange={(v) => set({ categories: v })} tree={cats} exclude={[p.category, p.subcategory].filter(Boolean)} />
+                  </Field>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-space-md">
                     <Field label="Made for">
                       <div className="flex gap-1.5">

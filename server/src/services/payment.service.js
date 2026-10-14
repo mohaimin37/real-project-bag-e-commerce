@@ -87,6 +87,8 @@ const giftcard = {
   label: 'Gift Card',
   description: 'Redeem a WILDTANE gift card code at checkout',
   icon: 'card_giftcard',
+  // Applied at checkout alongside any method (its own section), so it is not listed as a separate choice.
+  hidden: true,
   isAvailable({ settings }) {
     if (settings?.giftCardsEnabled === false) {
       return { available: false, reason: 'Gift cards are currently unavailable' };
@@ -98,10 +100,26 @@ const giftcard = {
   },
 };
 
+// Used when the WILDTANE Wallet alone covers an order. Not offered as a choice: the wallet is a toggle at checkout.
+const wtwallet = {
+  code: 'wtwallet',
+  label: 'WILDTANE Wallet',
+  description: 'Paid from your WILDTANE Wallet balance',
+  icon: 'account_balance_wallet',
+  hidden: true,
+  isAvailable({ settings }) {
+    return settings?.wallet?.enabled === false ? { available: false, reason: 'Wallet payments are currently unavailable' } : { available: true };
+  },
+  async initiate() {
+    return { paymentStatus: 'Pending' };
+  },
+};
+
 const providers = [
   razorpay,
   cod,
   giftcard,
+  wtwallet,
   comingSoon('card', 'Credit / Debit Card', 'Visa, Mastercard, RuPay, Amex via secure gateway', 'credit_card'),
   comingSoon('upi', 'UPI / Net Banking', 'Google Pay, PhonePe, Paytm and all major banks', 'account_balance'),
   comingSoon('wallet', 'Apple Pay / Google Pay', 'One-tap express wallet checkout', 'contactless'),
@@ -112,7 +130,7 @@ export function getProvider(code) {
 }
 
 export function listPaymentMethods(settings, total) {
-  return providers.map((p) => ({
+  return providers.filter((p) => !p.hidden).map((p) => ({
     code: p.code,
     label: p.label,
     description: p.description,
@@ -120,6 +138,12 @@ export function listPaymentMethods(settings, total) {
     ...p.isAvailable({ settings, total }),
   }));
 }
+
+const safeEqual = (a, b) => {
+  const x = Buffer.from(String(a));
+  const y = Buffer.from(String(b));
+  return x.length === y.length && crypto.timingSafeEqual(x, y);
+};
 
 export function verifyRazorpaySignature({ razorpayOrderId, razorpayPaymentId, razorpaySignature }) {
   if (!env.razorpay.keySecret || !razorpayOrderId || !razorpayPaymentId || !razorpaySignature) {
@@ -129,16 +153,77 @@ export function verifyRazorpaySignature({ razorpayOrderId, razorpayPaymentId, ra
     .createHmac('sha256', env.razorpay.keySecret)
     .update(`${razorpayOrderId}|${razorpayPaymentId}`)
     .digest('hex');
-  return expectedSignature === razorpaySignature;
+  return safeEqual(expectedSignature, razorpaySignature);
 }
 
-export function verifyRazorpayWebhookSignature(rawBody, signature) {
-  if (!env.razorpay.webhookSecret || !rawBody || !signature) return false;
+/** `secret`: the env secret by default; the webhook handler passes the admin-saved one when env has none. */
+export function verifyRazorpayWebhookSignature(rawBody, signature, secret = env.razorpay.webhookSecret) {
+  if (!secret || !rawBody || !signature) return false;
   const expected = crypto
-    .createHmac('sha256', env.razorpay.webhookSecret)
+    .createHmac('sha256', secret)
     .update(rawBody)
     .digest('hex');
-  return expected === signature;
+  return safeEqual(expected, signature);
+}
+
+/**
+ * The signature only proves Razorpay saw *a* payment for that gateway order. This also checks the
+ * payment belongs to the order, was captured/authorised, and paid exactly `expectedAmount` (₹).
+ */
+export async function confirmRazorpayPayment({ razorpayOrderId, razorpayPaymentId }, expectedAmount) {
+  const rzp = getRazorpay();
+  if (!rzp) return { ok: false, reason: 'Online payment is not configured.' };
+  let payment;
+  try {
+    payment = await rzp.payments.fetch(razorpayPaymentId);
+  } catch (err) {
+    return { ok: false, reason: err?.error?.description || 'The payment could not be checked with Razorpay.', gatewayError: true };
+  }
+  const expectedPaise = Math.round(Number(expectedAmount) * 100);
+  if (payment.order_id !== razorpayOrderId) return { ok: false, reason: 'Payment does not belong to this checkout.', payment };
+  if (!['captured', 'authorized'].includes(payment.status)) return { ok: false, reason: `Payment is ${payment.status}.`, payment };
+  if (Number(payment.amount) !== expectedPaise) return { ok: false, reason: 'The amount paid does not match your order total.', payment };
+  // An authorized payment is only a hold: Razorpay releases it after a few days unless it is captured.
+  if (payment.status === 'authorized') {
+    try {
+      payment = await rzp.payments.capture(razorpayPaymentId, payment.amount, payment.currency || 'INR');
+    } catch (err) {
+      // Already captured by the account's auto-capture setting in the meantime is fine.
+      const again = await rzp.payments.fetch(razorpayPaymentId).catch(() => null);
+      if (again?.status !== 'captured') return { ok: false, reason: err?.error?.description || 'The payment could not be captured.', payment };
+      payment = again;
+    }
+  }
+  return { ok: true, payment };
+}
+
+/**
+ * Money was taken but the order could not be created (stock ran out, amount mismatch…):
+ * give it straight back. Returns the refund, or null if it could not be issued (logged for staff).
+ */
+export async function refundUnusedPayment(payment, reason) {
+  if (!payment?.id || payment.status !== 'captured') return null;
+  try {
+    return await refundRazorpayPayment(payment.id, { amount: Number(payment.amount) / 100, notes: { reason: String(reason).slice(0, 200) }, receipt: `void_${payment.id}`.slice(0, 40) });
+  } catch (err) {
+    console.error(`[payment] Could not refund unused payment ${payment.id}: ${err?.error?.description || err.message}`);
+    return null;
+  }
+}
+
+/** Creates a gateway refund. `amount` in ₹. Razorpay returns { id, status: pending|processed|failed, … }. */
+export async function refundRazorpayPayment(paymentId, { amount, notes = {}, receipt }) {
+  const rzp = getRazorpay();
+  if (!rzp) throw new Error('Razorpay is not configured');
+  return rzp.payments.refund(paymentId, { amount: Math.round(Number(amount) * 100), speed: 'normal', notes, receipt });
+}
+
+/** Refunds already made against a payment (used to avoid refunding twice after a retry). */
+export async function listRazorpayRefunds(paymentId) {
+  const rzp = getRazorpay();
+  if (!rzp) return [];
+  const res = await rzp.payments.fetchMultipleRefund(paymentId, { count: 100 });
+  return res?.items || [];
 }
 
 export async function createRazorpayOrder({ amount, currency = 'INR', receipt, notes = {} }) {

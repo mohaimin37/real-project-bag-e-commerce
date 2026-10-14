@@ -14,7 +14,10 @@ import {
 } from '../services/product.service.js';
 import { uploadMany, deleteFile } from '../services/upload.service.js';
 import { writeListing } from '../services/ai.service.js';
+import { sendEmail } from '../services/email.service.js';
+import BackInStockAlert from '../models/BackInStockAlert.js';
 import env from '../config/env.js';
+import { COLLECTIONS } from '../config/collections.js';
 
 const populateCats = [
   { path: 'category', select: 'name slug' },
@@ -24,14 +27,46 @@ const populateCats = [
 // ── Public ───────────────────────────────────────────────────
 
 export const listProducts = asyncHandler(async (req, res) => {
-  const { page, limit, skip } = parsePagination(req.query, { defaultLimit: 12, maxLimit: 48 });
+  // Listing pages show a whole department at once (grouped by category), so they may ask for up to 120.
+  const { page, limit, skip } = parsePagination(req.query, { defaultLimit: 12, maxLimit: 120 });
   const filter = await buildProductFilter(req.query);
+  if (req.query.sort === 'discount') {
+    // Highest discount first: rank ids by real % off, then load the page of cards.
+    const [ranked, total] = await Promise.all([
+      Product.aggregate([
+        { $match: filter },
+        { $addFields: { _d: { $cond: [{ $gt: ['$price', 0] }, { $divide: [{ $subtract: ['$price', '$finalPrice'] }, '$price'] }, 0] } } },
+        { $sort: { _d: -1, soldCount: -1, _id: 1 } },
+        { $skip: skip },
+        { $limit: limit },
+        { $project: { _id: 1 } },
+      ]),
+      Product.countDocuments(filter),
+    ]);
+    const ids = ranked.map((r) => r._id);
+    const docs = await Product.find({ _id: { $in: ids } }).select(PUBLIC_PRODUCT_FIELDS).populate(populateCats).lean();
+    const byId = new Map(docs.map((d) => [String(d._id), d]));
+    return res.json({ success: true, ...paginated(ids.map((i) => byId.get(String(i))).filter(Boolean), total, page, limit) });
+  }
   const sort = SORTS[req.query.sort] || SORTS.featured;
   const [items, total] = await Promise.all([
     Product.find(filter).select(PUBLIC_PRODUCT_FIELDS).populate(populateCats).sort(sort).skip(skip).limit(limit).lean(),
     Product.countDocuments(filter),
   ]);
   res.json({ success: true, ...paginated(items, total, page, limit) });
+});
+
+/** Curated collections for a landing page (men / women), with live product counts; empty ones are left out. */
+export const collectionCounts = asyncHandler(async (req, res) => {
+  const audience = ['men', 'women'].includes(req.query.audience) ? req.query.audience : null;
+  const gender = audience ? `${audience},unisex` : undefined;
+  const list = COLLECTIONS.filter((c) => !audience || c.audiences.includes(audience));
+  const counts = await Promise.all(list.map(async (c) => Product.countDocuments(await buildProductFilter({ ...c.query, ...(gender ? { gender } : {}) }))));
+  res.set('Cache-Control', 'public, max-age=300');
+  res.json({
+    success: true,
+    collections: list.map((c, i) => ({ key: c.key, label: c.label, query: c.query, count: counts[i] })).filter((c) => c.count > 0),
+  });
 });
 
 export const productFacets = asyncHandler(async (req, res) => {
@@ -131,6 +166,13 @@ async function assertCategories(body) {
     if (!sub || String(sub.parent) !== String(cat._id)) {
       throw ApiError.badRequest('Subcategory must belong to the chosen category', [{ field: 'subcategory', message: 'Mismatch' }]);
     }
+  }
+  // Extra categories (many-to-many): the same product record listed in more places, never a copy.
+  if (Array.isArray(body.categories)) {
+    body.categories = [...new Set(body.categories.map(String))];
+    if (body.categories.length > 12) throw ApiError.badRequest('A product can be listed in at most 12 extra categories', [{ field: 'categories', message: 'Too many' }]);
+    const found = await Category.countDocuments({ _id: { $in: body.categories } });
+    if (found !== body.categories.length) throw ApiError.badRequest('One of the extra categories no longer exists', [{ field: 'categories', message: 'Not found' }]);
   }
 }
 
@@ -383,14 +425,42 @@ export const uploadProductImages = asyncHandler(async (req, res) => {
 export const updateStock = asyncHandler(async (req, res) => {
   const product = await Product.findById(req.params.id);
   if (!product) throw ApiError.notFound('Product not found');
+  let hasRestocked = false;
   for (const { _id, stock } of req.body.variants) {
     const variant = product.variants.id(_id);
-    if (variant) variant.stock = stock;
+    if (variant) {
+      if (Number(variant.stock) <= 0 && Number(stock) > 0) hasRestocked = true;
+      variant.stock = stock;
+    }
   }
   if (req.body.lowStockThreshold !== undefined) {
     product.lowStockThreshold = Number(req.body.lowStockThreshold);
   }
   await product.save();
+
+  if (hasRestocked) {
+    // Notify any pending back-in-stock alerts in background
+    BackInStockAlert.find({ product: product._id, isNotified: false })
+      .then(async (alerts) => {
+        for (const alert of alerts) {
+          try {
+            await sendEmail({
+              to: alert.email,
+              subject: `${product.name} is back in stock at WILDTANE!`,
+              text: `Great news! ${product.name} is back in stock. Order now before it runs out: ${env.clientUrls[0]}/product/${product.slug}`,
+              html: `<h2>Good news!</h2><p><strong>${product.name}</strong> is back in stock and ready to ship.</p><p><a href="${env.clientUrls[0]}/product/${product.slug}" style="background:#000;color:#fff;padding:12px 24px;text-decoration:none;border-radius:6px;display:inline-block;">Shop Now</a></p>`,
+            });
+            alert.isNotified = true;
+            alert.notifiedAt = new Date();
+            await alert.save();
+          } catch (e) {
+            console.error('[backInStock:email] error notifying', alert.email, e.message);
+          }
+        }
+      })
+      .catch((err) => console.error('[backInStock] query error', err.message));
+  }
+
   res.json({ success: true, product });
 });
 

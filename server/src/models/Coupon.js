@@ -4,7 +4,10 @@ const couponSchema = new mongoose.Schema(
   {
     code: { type: String, required: true, unique: true, uppercase: true, trim: true, maxlength: 30 },
     description: { type: String, trim: true, default: '', maxlength: 200 },
-    type: { type: String, enum: ['percentage', 'fixed'], required: true },
+    type: { type: String, enum: ['percentage', 'fixed', 'free_shipping'], required: true },
+    // Personal codes (spin-wheel prizes) work only for this customer and stay out of public/admin lists.
+    owner: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    source: { type: String, default: '' },
     value: { type: Number, required: true, min: 0 },
     minOrder: { type: Number, default: 0, min: 0 },
     maxDiscount: { type: Number, default: null, min: 0 }, // cap for percentage coupons

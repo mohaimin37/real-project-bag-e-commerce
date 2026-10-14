@@ -19,7 +19,9 @@ const TONES = [
   { card: 'bg-violet-500/10 ring-violet-500/30', icon: 'bg-violet-600' },
 ];
 
-export default function BrandValues({ className, title = 'Why choose WILDTANE', eyebrow = 'Our promise', as: Heading = 'h2' }) {
+export default function BrandValues({ className, title = 'Why choose WILDTANE', eyebrow = 'Our promise', as: Heading = 'h2', items }) {
+  // Homepage passes the admin's cards (Settings → Homepage); the About page uses the built-in ones.
+  const cards = items?.length ? items.map((v) => [v.icon || 'verified', v.title, v.text]) : VALUES;
   return (
     <section className={cn('container-x', className)} aria-labelledby="values-title">
       <div className="flex flex-col items-center text-center gap-2 mb-6 md:mb-8">
@@ -27,14 +29,14 @@ export default function BrandValues({ className, title = 'Why choose WILDTANE', 
         <Heading id="values-title" className="font-display text-[26px] md:text-[34px] leading-tight">{title}</Heading>
       </div>
       <ul className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2.5 md:gap-4">
-        {VALUES.map(([icon, heading, text], i) => (
+        {cards.map(([icon, heading, text], i) => (
           <li
             key={heading}
             className={cn(
               'group relative flex flex-col gap-3 p-4 md:p-5 rounded-2xl ring-1 transition-all duration-300 hover:-translate-y-1 hover:shadow-lift',
               TONES[i % TONES.length].card,
               // Odd card out spans the row on phones so the grid stays even.
-              i === VALUES.length - 1 && 'col-span-2 md:col-span-1'
+              i === cards.length - 1 && cards.length % 2 === 1 && 'col-span-2 md:col-span-1'
             )}
           >
             <span className={cn('w-11 h-11 rounded-xl text-white flex items-center justify-center transition-transform duration-300 group-hover:scale-110', TONES[i % TONES.length].icon)}>

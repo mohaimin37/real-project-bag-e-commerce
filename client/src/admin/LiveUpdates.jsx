@@ -77,7 +77,7 @@ export default function LiveUpdates() {
   const qc = useQueryClient();
   const confirm = useConfirm();
   const [editing, setEditing] = useState(null);
-  const { data, isLoading, isError, error, refetch } = useQuery({ queryKey: ['admin', 'updates'], queryFn: adminApi.liveUpdates, select: (d) => d.updates });
+  const { data, isLoading, isError, error, refetch } = useQuery({ queryKey: ['admin', 'updates'], queryFn: adminApi.liveUpdates, select: (d) => d?.updates || [] });
   const patch = useMutation({
     mutationFn: ({ u, changes }) =>
       adminApi.updateLiveUpdate(u._id, { title: u.title, body: u.body, kind: u.kind, link: u.link, linkLabel: u.linkLabel, image: u.image?.url ? u.image : null, pinned: u.pinned, isPublished: u.isPublished, ...changes }),

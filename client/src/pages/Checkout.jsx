@@ -133,6 +133,26 @@ export default function Checkout() {
   const [giftCardPin, setGiftCardPin] = useState('');
   const [giftCardData, setGiftCardData] = useState(null); // verified gift card info
   const [giftCardVerifying, setGiftCardVerifying] = useState(false);
+  const [useWallet, setUseWallet] = useState(false);
+  const { data: config } = useConfig();
+  const wallet = useQuery({ queryKey: ['my-wallet'], queryFn: api.myWallet, select: (d) => d.wallet, enabled: Boolean(user) });
+
+  // Display only: the server recomputes every amount from the real card and wallet balances.
+  const round2 = (n) => Math.round(n * 100) / 100;
+  const orderTotal = summary?.grandTotal || 0;
+  const giftCardApplied = giftCardData ? round2(Math.min(giftCardData.balance || 0, orderTotal)) : 0;
+  const afterGiftCard = round2(orderTotal - giftCardApplied);
+  const walletPct = config?.wallet?.maxRedeemPercent ?? 100;
+  const walletApplied =
+    useWallet && config?.wallet?.enabled !== false
+      ? round2(Math.max(0, Math.min(wallet.data?.balance || 0, (afterGiftCard * walletPct) / 100, afterGiftCard)))
+      : 0;
+  const due = round2(Math.max(0, afterGiftCard - walletApplied));
+  const coveredByStoredValue = due <= 0 && (giftCardApplied > 0 || walletApplied > 0);
+  const storedValue = {
+    ...(giftCardData ? { giftCardCode: giftCardData.code, giftCardPin: giftCardPin || undefined } : {}),
+    useWallet: walletApplied > 0,
+  };
 
   const addresses = useQuery({ queryKey: ['addresses'], queryFn: api.addresses, select: (d) => d.addresses });
   const methods = useQuery({ queryKey: ['payment-methods', summary?.grandTotal], queryFn: api.paymentMethods, select: (d) => d.methods, enabled: Boolean(summary) });
@@ -215,8 +235,28 @@ export default function Checkout() {
     }
 
     setSubmitting(true);
+    const done = (orderRes, message) => {
+      qc.invalidateQueries({ queryKey: ['cart'] });
+      qc.invalidateQueries({ queryKey: ['addresses'] });
+      qc.invalidateQueries({ queryKey: ['orders'] });
+      qc.invalidateQueries({ queryKey: ['my-coins'] });
+      qc.invalidateQueries({ queryKey: ['my-wallet'] });
+      toast.success(message);
+      navigate(`/order/${orderRes.order.orderId}/success`, { replace: true });
+    };
     try {
-      if (payment === 'razorpay') {
+      if (coveredByStoredValue) {
+        // Gift card and/or wallet cover the whole order: nothing to pay through a gateway.
+        const orderRes = await api.placeOrder({
+          customer: resolvedCustomer,
+          ...addressChoice,
+          shippingMethod: summary?.shippingMethod?.code || 'standard',
+          paymentMethod: giftCardApplied > 0 ? 'giftcard' : 'wtwallet',
+          customerNote: note,
+          ...storedValue,
+        });
+        done(orderRes, 'Order placed and paid.');
+      } else if (payment === 'razorpay') {
         const loaded = await loadRazorpayScript();
         if (!loaded) {
           toast.error('Unable to load Razorpay payment gateway. Please check your connection.');
@@ -227,6 +267,7 @@ export default function Checkout() {
         // 1. Create gateway payment session without creating an order in database
         const initRes = await api.initiateOnlinePayment({
           shippingMethod: summary?.shippingMethod?.code || 'standard',
+          ...storedValue,
         });
 
         const options = {
@@ -246,20 +287,14 @@ export default function Checkout() {
                 shippingMethod: summary?.shippingMethod?.code || 'standard',
                 paymentMethod: 'razorpay',
                 customerNote: note,
+                ...storedValue,
                 paymentDetails: {
                   razorpayOrderId: response.razorpay_order_id,
                   razorpayPaymentId: response.razorpay_payment_id,
                   razorpaySignature: response.razorpay_signature,
                 },
               });
-
-              qc.invalidateQueries({ queryKey: ['cart'] });
-              qc.invalidateQueries({ queryKey: ['addresses'] });
-              qc.invalidateQueries({ queryKey: ['orders'] });
-              qc.invalidateQueries({ queryKey: ['my-coins'] });
-
-              toast.success('Payment verified & order placed successfully!');
-              navigate(`/order/${orderRes.order.orderId}/success`, { replace: true });
+              done(orderRes, 'Payment verified & order placed successfully!');
             } catch (err) {
               toast.error(err.message || 'Payment received but failed to record order. Please contact support.');
               setSubmitting(false);
@@ -289,46 +324,17 @@ export default function Checkout() {
           toast.error(response.error?.description || 'Payment was declined or failed. Please try again.');
         });
         rzp.open();
-      } else if (payment === 'giftcard') {
-        // Gift Card: validate code first, then place order
-        if (!giftCardData) {
-          toast.error('Please verify your gift card code first.');
-          setSubmitting(false);
-          return;
-        }
-        const orderRes = await api.placeOrder({
-          customer: resolvedCustomer,
-          ...addressChoice,
-          shippingMethod: summary?.shippingMethod?.code || 'standard',
-          paymentMethod: 'giftcard',
-          customerNote: note,
-          giftCardCode: giftCardData.code,
-          giftCardPin,
-          giftCard: { code: giftCardData.code, pin: giftCardPin },
-        });
-        qc.invalidateQueries({ queryKey: ['cart'] });
-        qc.invalidateQueries({ queryKey: ['addresses'] });
-        qc.invalidateQueries({ queryKey: ['orders'] });
-        qc.invalidateQueries({ queryKey: ['my-coins'] });
-        toast.success('Order placed with gift card!');
-        navigate(`/order/${orderRes.order.orderId}/success`, { replace: true });
       } else {
-        // COD: Place order directly
+        // COD (the gift card / wallet part, if any, is taken now; the rest is paid at the door)
         const orderRes = await api.placeOrder({
           customer: resolvedCustomer,
           ...addressChoice,
           shippingMethod: summary?.shippingMethod?.code || 'standard',
           paymentMethod: payment,
           customerNote: note,
+          ...storedValue,
         });
-
-        qc.invalidateQueries({ queryKey: ['cart'] });
-        qc.invalidateQueries({ queryKey: ['addresses'] });
-        qc.invalidateQueries({ queryKey: ['orders'] });
-        qc.invalidateQueries({ queryKey: ['my-coins'] });
-
-        toast.success('Order placed successfully!');
-        navigate(`/order/${orderRes.order.orderId}/success`, { replace: true });
+        done(orderRes, 'Order placed successfully!');
       }
     } catch (err) {
       toast.error(err.message || 'Failed to place order. Please try again.');
@@ -498,7 +504,7 @@ export default function Checkout() {
                 {selectedPayment?.code === 'cod' && (
                   <div className="p-space-md rounded-2xl bg-secondary-container/30 flex items-start gap-3 text-body-sm">
                     <Icon name="info" className="text-secondary" />
-                    <p>Pay {money.inr(summary.grandTotal)} in cash or by UPI to the courier at delivery. No card details are collected or stored.</p>
+                    <p>Pay {money.inr(due)} in cash or by UPI to the courier at delivery. No card details are collected or stored.</p>
                   </div>
                 )}
                 {selectedPayment?.code === 'razorpay' && (
@@ -507,18 +513,16 @@ export default function Checkout() {
                     <p>Pay securely via UPI (Google Pay, PhonePe, Paytm), Credit / Debit Cards, Net Banking or Wallets through Razorpay with 256-bit encryption.</p>
                   </div>
                 )}
-                {selectedPayment?.code === 'giftcard' && (
-                  <div className="flex flex-col gap-3">
-                    <div className="p-space-md rounded-2xl bg-secondary-container/30 flex items-start gap-3 text-body-sm">
-                      <Icon name="card_giftcard" className="text-secondary" />
-                      <p>Enter your WILDTANE gift card code to check available balance and pay.</p>
-                    </div>
+                {/* Gift card and WILDTANE Wallet: applied first, the chosen method pays what is left. */}
+                <div className="card p-space-md flex flex-col gap-3">
+                  <h3 className="text-headline-sm flex items-center gap-2"><Icon name="card_giftcard" className="text-secondary" /> Gift card & WILDTANE Wallet</h3>
+                  {config?.giftCardsEnabled !== false && (
                     <div className="flex flex-col gap-2">
                       <Field label="Gift Card Code" htmlFor="gc-code">
                         <div className="flex gap-2">
                           <Input
                             id="gc-code"
-                            placeholder="e.g. GIFT-XXXX-XXXX"
+                            placeholder="e.g. WT-XXXX-XXXX-XXXX"
                             value={giftCardCode}
                             onChange={(e) => { setGiftCardCode(e.target.value.toUpperCase()); setGiftCardData(null); }}
                             className="flex-1"
@@ -549,6 +553,9 @@ export default function Checkout() {
                         <Input
                           id="gc-pin"
                           type="password"
+                          inputMode="numeric"
+                          autoComplete="off"
+                          data-lpignore="true"
                           placeholder="4-digit PIN (optional)"
                           value={giftCardPin}
                           onChange={(e) => { setGiftCardPin(e.target.value); setGiftCardData(null); }}
@@ -558,22 +565,47 @@ export default function Checkout() {
                       {giftCardData && (
                         <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/25 flex items-center gap-3">
                           <Icon name="check_circle" className="text-[22px] text-emerald-600 dark:text-emerald-400 shrink-0" />
-                          <div>
-                            <p className="font-bold text-[13px] text-emerald-900 dark:text-emerald-200">Gift Card Verified ✓</p>
-                            <p className="text-[12px] text-on-surface-variant mt-0.5">Available balance: <strong className="text-emerald-700 dark:text-emerald-300">₹{giftCardData.balance?.toLocaleString('en-IN')}</strong></p>
+                          <div className="flex-1">
+                            <p className="font-bold text-[13px] text-emerald-900 dark:text-emerald-200">Gift card {giftCardData.code} applied</p>
+                            <p className="text-[12px] text-on-surface-variant mt-0.5">
+                              Balance {money.inr(giftCardData.balance)} · using <strong className="text-emerald-700 dark:text-emerald-300">{money.inr(giftCardApplied)}</strong> on this order
+                            </p>
                           </div>
+                          <button type="button" className="text-label-md text-secondary hover:underline" onClick={() => { setGiftCardData(null); setGiftCardCode(''); setGiftCardPin(''); }}>Remove</button>
                         </div>
                       )}
                     </div>
-                  </div>
-                )}
+                  )}
+                  {config?.wallet?.enabled !== false && (wallet.data?.balance || 0) > 0 && (
+                    <label className="flex items-center justify-between gap-3 p-3 rounded-xl bg-surface-container-low cursor-pointer">
+                      <span className="flex items-center gap-2.5">
+                        <Icon name="account_balance_wallet" className="text-secondary" />
+                        <span>
+                          <span className="block text-label-lg">Use WILDTANE Wallet</span>
+                          <span className="block text-[12px] text-on-surface-variant">
+                            Balance {money.inr(wallet.data.balance)}{walletApplied > 0 ? ` · using ${money.inr(walletApplied)}` : ''}
+                          </span>
+                        </span>
+                      </span>
+                      <input type="checkbox" className="w-5 h-5 accent-primary" checked={useWallet} onChange={(e) => setUseWallet(e.target.checked)} />
+                    </label>
+                  )}
+                  {(giftCardApplied > 0 || walletApplied > 0) && (
+                    <div className="flex flex-col gap-1 text-body-sm border-t border-surface-container-high pt-2">
+                      <div className="flex justify-between"><span className="text-on-surface-variant">Order total</span><span>{money.inr(orderTotal)}</span></div>
+                      {giftCardApplied > 0 && <div className="flex justify-between text-emerald-700 dark:text-emerald-300"><span>Gift card</span><span>−{money.inr(giftCardApplied)}</span></div>}
+                      {walletApplied > 0 && <div className="flex justify-between text-emerald-700 dark:text-emerald-300"><span>Wallet</span><span>−{money.inr(walletApplied)}</span></div>}
+                      <div className="flex justify-between font-bold"><span>{coveredByStoredValue ? 'Nothing left to pay' : 'Left to pay'}</span><span>{money.inr(due)}</span></div>
+                    </div>
+                  )}
+                </div>
                 <Field label="Order note (optional)" htmlFor="note">
 
                   <Textarea id="note" rows={3} maxLength={500} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Delivery instructions, gift message…" />
                 </Field>
                 <div className="flex justify-between">
                   <Button variant="tonal" icon="arrow_back" onClick={() => setStep(1)}>Back</Button>
-                  <Button iconRight="arrow_forward" disabled={!selectedPayment?.available} onClick={() => setStep(3)}>Review order</Button>
+                  <Button iconRight="arrow_forward" disabled={!coveredByStoredValue && !selectedPayment?.available} onClick={() => setStep(3)}>Review order</Button>
                 </div>
               </section>
             )}
@@ -587,7 +619,12 @@ export default function Checkout() {
                   {[
                     ['person', 'Your details', 0, [(currentCustomer?.name || user?.name || 'Customer'), `${currentCustomer?.phone?.dialCode || user?.phone?.dialCode || '+91'} ${currentCustomer?.phone?.number || user?.phone?.number || ''}`, (currentCustomer?.email || user?.email || '')]],
                     ['home', 'We deliver to', 1, selectedAddress ? [selectedAddress.fullName, selectedAddress.addressLine1, selectedAddress.addressLine2, `${selectedAddress.city}, ${selectedAddress.state} ${selectedAddress.postalCode}`, countryName(selectedAddress.country)] : ['No address selected']],
-                    ['payments', 'Payment & delivery', 2, [selectedPayment?.label, `${summary?.shippingMethod?.label || 'Standard'} · ${summary?.shippingMethod?.eta || ''}`]],
+                    ['payments', 'Payment & delivery', 2, [
+                      coveredByStoredValue ? 'Gift card / wallet' : selectedPayment?.label,
+                      giftCardApplied > 0 ? `Gift card −${money.inr(giftCardApplied)}` : '',
+                      walletApplied > 0 ? `Wallet −${money.inr(walletApplied)}` : '',
+                      `${summary?.shippingMethod?.label || 'Standard'} · ${summary?.shippingMethod?.eta || ''}`,
+                    ]],
                   ].map(([icon, title, s, lines]) => (
                     <div key={title} className="card p-space-md flex flex-col gap-1 min-w-0 break-words [overflow-wrap:anywhere]">
                       <div className="flex items-start justify-between gap-2 mb-1">
@@ -598,24 +635,29 @@ export default function Checkout() {
                     </div>
                   ))}
                 </div>
-                {payment === 'cod' && selectedPayment?.available && (
+                {coveredByStoredValue && (
                   <p className="flex items-center gap-2 p-space-md rounded-xl bg-secondary-container/40 text-body-sm">
-                    <Icon name="payments" className="text-secondary" /> Pay <strong>{money(summary.grandTotal)}</strong> in cash when your bag arrives. Nothing to pay now.
+                    <Icon name="card_giftcard" className="text-secondary" /> Your gift card / wallet covers this order. Nothing else to pay.
                   </p>
                 )}
-                {payment === 'razorpay' && selectedPayment?.available && (
+                {!coveredByStoredValue && payment === 'cod' && selectedPayment?.available && (
                   <p className="flex items-center gap-2 p-space-md rounded-xl bg-secondary-container/40 text-body-sm">
-                    <Icon name="lock" className="text-secondary" /> You will be redirected to the secure Razorpay popup to pay <strong>{money(summary.grandTotal)}</strong> via UPI, Card or Net Banking.
+                    <Icon name="payments" className="text-secondary" /> Pay <strong>{money(due)}</strong> in cash when your bag arrives.{giftCardApplied + walletApplied > 0 ? ' Your gift card / wallet amount is taken when you place the order.' : ' Nothing to pay now.'}
                   </p>
                 )}
-                {selectedPayment && !selectedPayment.available && (
+                {!coveredByStoredValue && payment === 'razorpay' && selectedPayment?.available && (
+                  <p className="flex items-center gap-2 p-space-md rounded-xl bg-secondary-container/40 text-body-sm">
+                    <Icon name="lock" className="text-secondary" /> You will be redirected to the secure Razorpay popup to pay <strong>{money(due)}</strong> via UPI, Card or Net Banking.
+                  </p>
+                )}
+                {!coveredByStoredValue && selectedPayment && !selectedPayment.available && (
                   <p className="p-space-md rounded-xl bg-error-container text-on-error-container text-body-sm" role="alert">
                     {selectedPayment.label} isn't available for this order. <button type="button" className="underline font-semibold" onClick={() => setStep(2)}>Choose another way to pay</button>
                   </p>
                 )}
                 {hasIssues && <p className="p-space-md rounded-xl bg-error-container text-on-error-container text-body-sm" role="alert">Some items in your bag changed. <Link to="/cart" className="underline">Review your bag</Link> before ordering.</p>}
-                <Button variant="secondary" className="w-full h-14 text-body-md" icon={payment === 'razorpay' ? 'lock' : 'check_circle'} loading={submitting} disabled={hasIssues || submitting || (selectedPayment && !selectedPayment.available)} onClick={handlePlaceOrder}>
-                  {payment === 'razorpay' ? `Pay online · ${money(summary.grandTotal)}` : `Place my order · ${money(summary.grandTotal)}`}
+                <Button variant="secondary" className="w-full h-14 text-body-md" icon={payment === 'razorpay' && !coveredByStoredValue ? 'lock' : 'check_circle'} loading={submitting} disabled={hasIssues || submitting || (!coveredByStoredValue && selectedPayment && !selectedPayment.available)} onClick={handlePlaceOrder}>
+                  {payment === 'razorpay' && !coveredByStoredValue ? `Pay online · ${money(due)}` : `Place my order · ${money(due)}`}
                 </Button>
                 <div className="flex items-center justify-between gap-3 pt-1">
                   <Button variant="tonal" icon="arrow_back" onClick={() => setStep(2)}>
@@ -655,9 +697,16 @@ export default function Checkout() {
             <CouponBox />
             <UseCoinsCard summary={summary} busy={setUseCoins.isPending} onToggle={(use) => setUseCoins.mutate(use)} />
             <SummaryRows summary={summary} />
+            {(giftCardApplied > 0 || walletApplied > 0) && (
+              <div className="flex flex-col gap-1 text-body-sm -mt-2">
+                {giftCardApplied > 0 && <div className="flex justify-between text-emerald-700 dark:text-emerald-300"><span>Gift card</span><span>−{money(giftCardApplied)}</span></div>}
+                {walletApplied > 0 && <div className="flex justify-between text-emerald-700 dark:text-emerald-300"><span>WILDTANE Wallet</span><span>−{money(walletApplied)}</span></div>}
+                <div className="flex justify-between font-bold text-body-md"><span>To pay now / on delivery</span><span>{money(due)}</span></div>
+              </div>
+            )}
             {step === 3 ? (
-              <Button variant="secondary" className="w-full h-12" icon="lock" loading={submitting} disabled={hasIssues || submitting || (selectedPayment && !selectedPayment.available)} onClick={handlePlaceOrder}>
-                {payment === 'razorpay' ? 'Pay now' : 'Place order'}
+              <Button variant="secondary" className="w-full h-12" icon="lock" loading={submitting} disabled={hasIssues || submitting || (!coveredByStoredValue && selectedPayment && !selectedPayment.available)} onClick={handlePlaceOrder}>
+                {payment === 'razorpay' && !coveredByStoredValue ? 'Pay now' : 'Place order'}
               </Button>
             ) : (
               <p className="text-label-sm font-normal text-outline text-center">Complete the steps to place your order.</p>

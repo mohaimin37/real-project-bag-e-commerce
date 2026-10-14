@@ -16,10 +16,13 @@ const coinTransactionSchema = new mongoose.Schema(
     orderId: { type: String, default: '' },
     note: { type: String, default: '', maxlength: 200 },
     by: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null }, // admin, for manual adjustments
+    // One-time rewards carry a key (e.g. "signup:<userId>", "referral:<refereeId>") so they can never be paid twice.
+    key: { type: String, default: undefined },
   },
   { timestamps: true }
 );
 
 coinTransactionSchema.index({ user: 1, createdAt: -1 });
+coinTransactionSchema.index({ key: 1 }, { unique: true, partialFilterExpression: { key: { $type: 'string' } } });
 
 export default mongoose.model('CoinTransaction', coinTransactionSchema);

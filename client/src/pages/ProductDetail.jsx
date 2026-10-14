@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -12,11 +12,12 @@ import { countryName } from '../lib/countries';
 import { pushRecent } from '../store';
 import { useCart } from '../hooks/useCart';
 import { useConfig, useMoney, useUser } from '../hooks/useStore';
-import { ProductCard, Swatches, WishlistButton, firstAvailable } from '../components/product';
+import { ProductCard, Swatches, WishlistButton, firstAvailable, isSized, useProductsByIds } from '../components/product';
 import { Badge, Breadcrumbs, Button, CountrySelect, EmptyState, ErrorState, Field, Icon, Img, Input, Modal, Pagination, QuantityStepper, Skeleton, StarInput, Stars, Textarea } from '../components/ui';
 import NotFound from './NotFound';
 import Seo, { breadcrumbLd, faqPageLd, productLd } from '../components/Seo';
 import { EarnCoins } from '../components/coins';
+import { BackInStockModal } from '../components/growth/BackInStockModal';
 
 const FEATURE_ICON = { 'IPX5 Waterproof': 'water_drop', 'Laptop 16" Sleeve': 'laptop_mac', 'Laptop 14" Sleeve': 'laptop_mac', 'Trolley Pass-Through': 'luggage', 'RFID Blocking Pocket': 'security', 'Fidlock® Magnetic Fasteners': 'adjust', 'Shoe Compartment': 'steps' };
 
@@ -358,9 +359,9 @@ function StockShowcaseBox({ variant }) {
           : isCritical
           ? 'bg-rose-500/10 dark:bg-rose-950/25 border-rose-500/35 ring-1 ring-rose-500/20'
           : isLow
-          ? 'bg-amber-500/10 dark:bg-amber-950/25 border-amber-500/35 ring-1 ring-amber-500/20'
+          ? 'bg-rose-500/10 dark:bg-rose-950/25 border-rose-500/35 ring-1 ring-rose-500/20'
           : isNotice
-          ? 'bg-amber-500/5 dark:bg-amber-950/15 border-amber-500/20'
+          ? 'bg-rose-500/5 dark:bg-rose-950/15 border-rose-500/20'
           : 'bg-emerald-500/5 dark:bg-emerald-950/15 border-emerald-500/20'
       )}
     >
@@ -368,7 +369,7 @@ function StockShowcaseBox({ variant }) {
         <div className="flex items-center gap-2">
           <span className="relative flex h-3 w-3">
             {!soldOut && (isCritical || isLow) && (
-              <span className={cn('animate-ping absolute inline-flex h-full w-full rounded-full opacity-75', isCritical ? 'bg-rose-500' : 'bg-amber-500')} />
+              <span className={cn('animate-ping absolute inline-flex h-full w-full rounded-full opacity-75', isCritical ? 'bg-rose-500' : 'bg-rose-500')} />
             )}
             <span
               className={cn(
@@ -378,9 +379,9 @@ function StockShowcaseBox({ variant }) {
                   : isCritical
                   ? 'bg-rose-600'
                   : isLow
-                  ? 'bg-amber-500'
+                  ? 'bg-rose-500'
                   : isNotice
-                  ? 'bg-amber-400'
+                  ? 'bg-rose-400'
                   : 'bg-emerald-600'
               )}
             />
@@ -394,11 +395,11 @@ function StockShowcaseBox({ variant }) {
                 🔥 CRITICAL STOCK: Only {stock} {stock === 1 ? 'item' : 'items'} left!
               </span>
             ) : isLow ? (
-              <span className="text-amber-600 dark:text-amber-400 font-bold flex items-center gap-1">
+              <span className="text-rose-600 dark:text-rose-400 font-bold flex items-center gap-1">
                 ⚡ HIGH DEMAND: Only {stock} units left in stock!
               </span>
             ) : isNotice ? (
-              <span className="text-amber-700 dark:text-amber-300 font-semibold flex items-center gap-1">
+              <span className="text-rose-700 dark:text-rose-300 font-semibold flex items-center gap-1">
                 ⏱ Low Inventory: Only {stock} available
               </span>
             ) : (
@@ -416,7 +417,7 @@ function StockShowcaseBox({ variant }) {
               isCritical
                 ? 'bg-rose-600 text-white border-rose-700'
                 : isLow
-                ? 'bg-amber-500 text-white border-amber-600'
+                ? 'bg-rose-500 text-white border-rose-600'
                 : 'bg-surface-container-lowest text-on-surface border-surface-container-highest'
             )}
           >
@@ -434,9 +435,9 @@ function StockShowcaseBox({ variant }) {
                 isCritical
                   ? 'bg-gradient-to-r from-rose-600 via-rose-500 to-pink-500 animate-pulse'
                   : isLow
-                  ? 'bg-gradient-to-r from-amber-500 to-orange-500'
+                  ? 'bg-gradient-to-r from-rose-500 to-orange-500'
                   : isNotice
-                  ? 'bg-gradient-to-r from-amber-400 to-yellow-500'
+                  ? 'bg-gradient-to-r from-rose-400 to-pink-500'
                   : 'bg-gradient-to-r from-emerald-500 to-teal-500'
               )}
               style={{ width: `${barPercent}%` }}
@@ -463,6 +464,143 @@ function StockShowcaseBox({ variant }) {
   );
 }
 
+function FrequentlyBoughtTogether({ product, companion, onAddBundle, isPending }) {
+  const money = useMoney();
+  if (!companion) return null;
+  const bundleTotal = (product.finalPrice || product.price) + (companion.finalPrice || companion.price);
+  const bundleDiscount = Math.round(bundleTotal * 0.05); // 5% bundle savings
+  const finalBundlePrice = bundleTotal - bundleDiscount;
+
+  return (
+    <section className="w-full py-6 bg-surface-container-low/40 rounded-3xl border border-outline-variant/30 my-6">
+      <div className="container-x">
+        <div className="flex items-center gap-2 mb-4">
+          <span className="w-7 h-7 rounded-lg bg-rose-500/15 text-rose-600 dark:text-rose-400 flex items-center justify-center font-bold">
+            <Icon name="auto_awesome" className="text-[18px]" />
+          </span>
+          <h3 className="text-headline-sm font-black text-on-surface">Frequently Bought Together</h3>
+          <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-success/15 text-success">
+            Save 5% Extra
+          </span>
+        </div>
+
+        <div className="flex flex-col lg:flex-row items-center gap-6 justify-between">
+          <div className="flex items-center gap-3 sm:gap-4 flex-wrap sm:flex-nowrap">
+            <div className="flex items-center gap-3 p-3 rounded-2xl bg-surface-container-lowest border border-outline-variant/30 shadow-xs max-w-xs">
+              <Img src={product.images?.[0]?.url} alt={product.name} className="w-16 h-16 rounded-xl shrink-0 object-cover" w={80} />
+              <div className="min-w-0">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-outline">This item</span>
+                <p className="text-label-md font-bold text-on-surface truncate">{product.name}</p>
+                <p className="text-label-md font-black text-on-surface">{money(product.finalPrice || product.price)}</p>
+              </div>
+            </div>
+
+            <span className="w-8 h-8 rounded-full bg-surface-container-high flex items-center justify-center text-outline font-bold text-lg shrink-0">
+              +
+            </span>
+
+            <Link to={`/product/${companion.slug}`} className="flex items-center gap-3 p-3 rounded-2xl bg-surface-container-lowest border border-outline-variant/30 shadow-xs max-w-xs hover:border-secondary transition-all">
+              <Img src={companion.images?.[0]?.url} alt={companion.name} className="w-16 h-16 rounded-xl shrink-0 object-cover" w={80} />
+              <div className="min-w-0">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-secondary">Matching Carry</span>
+                <p className="text-label-md font-bold text-on-surface truncate">{companion.name}</p>
+                <p className="text-label-md font-black text-on-surface">{money(companion.finalPrice || companion.price)}</p>
+              </div>
+            </Link>
+          </div>
+
+          <div className="flex flex-col sm:flex-row lg:flex-col items-end gap-3 text-right w-full lg:w-auto">
+            <div>
+              <div className="text-label-sm text-outline">
+                Combined price: <span className="line-through">{money(bundleTotal)}</span>
+              </div>
+              <div className="text-headline-sm font-black text-on-surface">
+                Bundle Price: <span className="text-success">{money(finalBundlePrice)}</span>
+              </div>
+            </div>
+            <Button
+              variant="primary"
+              icon="add_shopping_cart"
+              loading={isPending}
+              onClick={() => onAddBundle(companion)}
+              className="w-full sm:w-auto font-bold"
+            >
+              Add Both to Bag
+            </Button>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function RecentlyViewedSection({ currentId }) {
+  const recentIds = useSelector((s) => s.guestLists?.recent || []);
+  const filteredIds = useMemo(() => recentIds.filter((id) => id !== currentId).slice(0, 4), [recentIds, currentId]);
+  const { data: products } = useProductsByIds(filteredIds);
+
+  if (!products || products.length === 0) return null;
+
+  return (
+    <section className="w-full py-8 border-t border-surface-container-high">
+      <div className="container-x flex flex-col gap-space-md">
+        <div className="flex items-center gap-2">
+          <Icon name="history" className="text-secondary text-[22px]" />
+          <h3 className="text-headline-md font-black text-on-surface">Recently Viewed by You</h3>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 md:gap-3">
+          {products.map((p) => (
+            <ProductCard key={p._id} product={p} />
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/** Copies text, falling back to a hidden textarea where the Clipboard API isn't allowed (e.g. plain http). */
+async function copyText(text) {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.setAttribute('readonly', '');
+    ta.style.cssText = 'position:fixed;opacity:0;top:0;left:0';
+    document.body.appendChild(ta);
+    ta.select();
+    let ok = false;
+    try {
+      ok = document.execCommand('copy');
+    } catch {
+      ok = false;
+    }
+    ta.remove();
+    return ok;
+  }
+}
+
+/**
+ * Shares the product's clean public URL (no query string, ids or tokens): the native share sheet
+ * where the device has one, otherwise a copied link.
+ */
+async function shareProduct(product) {
+  const url = `${window.location.origin}/product/${encodeURIComponent(product.slug)}`;
+  const text = [product.tagline, product.shortDescription].filter(Boolean).join(' — ').slice(0, 160) || `${product.name} at WILDTANE`;
+  const data = { title: `${product.name} — WILDTANE`, text, url };
+  if (navigator.share && (!navigator.canShare || navigator.canShare(data))) {
+    try {
+      await navigator.share(data);
+      return;
+    } catch (err) {
+      if (err?.name === 'AbortError') return; // the shopper closed the share sheet
+    }
+  }
+  if (await copyText(url)) toast.success('Product link copied');
+  else toast.error(`Couldn’t copy automatically. Link: ${url}`, { duration: 8000 });
+}
+
 export default function ProductDetail() {
   const { slug } = useParams();
   const navigate = useNavigate();
@@ -475,6 +613,7 @@ export default function ProductDetail() {
   const product = data?.product;
   const [variant, setVariant] = useState(null);
   const [qty, setQty] = useState(1);
+  const [showBackInStock, setShowBackInStock] = useState(false);
   const ctaRef = useRef(null);
   const [showBar, setShowBar] = useState(false);
 
@@ -521,11 +660,25 @@ export default function ProductDetail() {
 
   const addToBag = (then) => add.mutate({ productId: product._id, variantId: variant._id, quantity: qty, openDrawer: !then, silent: Boolean(then) }, { onSuccess: then });
 
+  const addBundle = (companion) => {
+    addToBag();
+    const compVariant = firstAvailable(companion);
+    if (compVariant) {
+      add.mutate({
+        productId: companion._id,
+        variantId: compVariant._id,
+        quantity: 1,
+        openDrawer: true,
+      });
+      toast.success('Bundle added to bag with 5% extra savings!', { icon: '🛍️' });
+    }
+  };
+
   return (
     <>
       <Seo
-        title={`${product.name}${product.subcategory ? ` — ${product.subcategory.name}` : ''}`}
-        description={`${product.shortDescription || product.description} ${product.ratingCount ? `Rated ${product.ratingAverage.toFixed(1)}/5. ` : ''}Tracked delivery and 7-day returns.`}
+        title={product.seoTitle || `${product.name}${product.subcategory ? ` — ${product.subcategory.name}` : ''}`}
+        description={product.seoDescription || `${product.shortDescription || product.description} ${product.ratingCount ? `Rated ${product.ratingAverage.toFixed(1)}/5. ` : ''}Tracked delivery and 7-day returns.`}
         image={product.images?.[0]?.url}
         type="product"
         canonical={`/product/${product.slug}`}
@@ -588,7 +741,9 @@ export default function ProductDetail() {
 
           <div className="flex flex-col gap-space-sm pt-space-xs">
             <div className="flex items-center justify-between">
-              <span className="text-label-lg">Colour: <span className="font-normal text-on-surface-variant">{variant.name}</span></span>
+              <span className="text-label-lg">
+                {isSized(product.variants) ? 'Size' : 'Colour'}: <span className="font-normal text-on-surface-variant">{isSized(product.variants) ? variant.size : variant.name}</span>
+              </span>
               {product.isBestseller && <span className="text-label-sm text-secondary">Best seller</span>}
             </div>
             <Swatches variants={product.variants} selected={variant} onSelect={(v) => { setVariant(v); setQty(1); }} withNames />
@@ -620,26 +775,7 @@ export default function ProductDetail() {
               <WishlistButton product={product} className="w-12 h-12 rounded-lg border border-surface-container-high" />
               <button
                 type="button"
-                onClick={async () => {
-                  const shareData = {
-                    title: `${product.name} — WILDTANE`,
-                    text: `Discover ${product.name} at WILDTANE: ${product.tagline || 'Modern luxury carry'}`,
-                    url: window.location.href,
-                  };
-                  if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
-                    try {
-                      await navigator.share(shareData);
-                    } catch (err) {
-                      if (err.name !== 'AbortError') {
-                        await navigator.clipboard.writeText(window.location.href);
-                        toast.success('Product link copied to clipboard!');
-                      }
-                    }
-                  } else {
-                    await navigator.clipboard.writeText(window.location.href);
-                    toast.success('Product link copied to clipboard!', { icon: '🔗' });
-                  }
-                }}
+                onClick={() => shareProduct(product)}
                 aria-label="Share this product"
                 title="Share product with friends"
                 className="w-12 h-12 rounded-lg border border-surface-container-high flex items-center justify-center text-on-surface hover:text-secondary hover:bg-surface-container transition-all active:scale-95 shadow-2xs cursor-pointer shrink-0"
@@ -647,9 +783,21 @@ export default function ProductDetail() {
                 <Icon name="share" className="text-[20px]" />
               </button>
             </div>
-            <Button variant="secondary" icon="bolt" className="w-full h-12" disabled={soldOut} onClick={() => addToBag(() => navigate('/checkout'))}>
-              Buy now
-            </Button>
+            {soldOut ? (
+              <Button
+                type="button"
+                variant="tonal"
+                icon="notifications_active"
+                className="w-full h-12 border border-secondary/40 text-secondary font-bold"
+                onClick={() => setShowBackInStock(true)}
+              >
+                Notify Me When Back in Stock
+              </Button>
+            ) : (
+              <Button variant="secondary" icon="bolt" className="w-full h-12" onClick={() => addToBag(() => navigate('/checkout'))}>
+                Buy now
+              </Button>
+            )}
           </div>
 
           <DeliveryEstimator product={product} />
@@ -719,12 +867,20 @@ export default function ProductDetail() {
       <Reviews product={product} breakdown={data.ratingBreakdown} />
       <Faq faqs={product.faqs} />
 
+      {data.related?.[0] && (
+        <FrequentlyBoughtTogether
+          product={product}
+          companion={data.related[0]}
+          onAddBundle={addBundle}
+          isPending={add.isPending}
+        />
+      )}
+
       {data.related?.length > 0 && (
         <section className="w-full py-6">
           <div className="container-x flex flex-col gap-space-lg">
             <div className="flex items-end justify-between gap-4">
               <div>
-                
                 <h3 className="text-headline-md">You may also like</h3>
               </div>
               <Link to={`/shop/${product.category?.slug || ''}`} className="text-label-md text-secondary hover:underline flex items-center gap-1 shrink-0">
@@ -737,6 +893,9 @@ export default function ProductDetail() {
           </div>
         </section>
       )}
+
+      <RecentlyViewedSection currentId={product._id} />
+
       <p className="sr-only">Last updated {formatDate(product.updatedAt)}</p>
 
       {/* Spacer to prevent mobile/tablet sticky buy bar from covering page/footer content */}
@@ -760,16 +919,34 @@ export default function ProductDetail() {
         >
           {soldOut ? 'Sold out' : 'Add to Bag'}
         </Button>
-        <Button
-          variant="primary"
-          icon="bolt"
-          className="flex-1 h-11 text-xs min-[380px]:text-label-md font-semibold"
-          disabled={soldOut}
-          onClick={() => addToBag(() => navigate('/checkout'))}
-        >
-          {soldOut ? 'Unavailable' : 'Buy Now'}
-        </Button>
+        {soldOut ? (
+          <Button
+            variant="tonal"
+            icon="notifications_active"
+            className="flex-1 h-11 text-xs min-[380px]:text-label-md font-semibold border border-secondary/40 text-secondary"
+            onClick={() => setShowBackInStock(true)}
+          >
+            Notify Me
+          </Button>
+        ) : (
+          <Button
+            variant="primary"
+            icon="bolt"
+            className="flex-1 h-11 text-xs min-[380px]:text-label-md font-semibold"
+            disabled={soldOut}
+            onClick={() => addToBag(() => navigate('/checkout'))}
+          >
+            Buy Now
+          </Button>
+        )}
       </div>
+
+      <BackInStockModal
+        open={showBackInStock}
+        onClose={() => setShowBackInStock(false)}
+        product={product}
+        variant={variant}
+      />
     </>
   );
 }

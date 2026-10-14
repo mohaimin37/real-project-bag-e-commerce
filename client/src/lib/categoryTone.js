@@ -5,6 +5,7 @@
 const TONES = {
   // Hard-shell luggage, trunks, weekenders: travel navy.
   navy: {
+    grad: 'from-blue-700 via-sky-500 to-indigo-600',
     tint: 'bg-blue-600/10',
     ring: 'ring-blue-600/40',
     ringOn: 'ring-blue-700',
@@ -15,6 +16,7 @@ const TONES = {
   },
   // Leather wallets, briefcases, card holders: cognac brown.
   leather: {
+    grad: 'from-orange-900 via-orange-600 to-rose-700',
     tint: 'bg-orange-900/10',
     ring: 'ring-orange-800/40',
     ringOn: 'ring-orange-800',
@@ -25,6 +27,7 @@ const TONES = {
   },
   // Keychains and metal hardware: brushed steel.
   steel: {
+    grad: 'from-zinc-600 via-zinc-400 to-slate-600',
     tint: 'bg-zinc-500/15',
     ring: 'ring-zinc-500/50',
     ringOn: 'ring-zinc-600',
@@ -35,6 +38,7 @@ const TONES = {
   },
   // Handbags, clutches, totes: wine rose.
   rose: {
+    grad: 'from-rose-600 via-pink-500 to-fuchsia-600',
     tint: 'bg-rose-600/10',
     ring: 'ring-rose-600/40',
     ringOn: 'ring-rose-600',
@@ -45,6 +49,7 @@ const TONES = {
   },
   // Backpacks and outdoor packs: forest green.
   forest: {
+    grad: 'from-green-800 via-emerald-500 to-teal-600',
     tint: 'bg-green-700/10',
     ring: 'ring-green-700/40',
     ringOn: 'ring-green-700',
@@ -55,6 +60,7 @@ const TONES = {
   },
   // Slings and belt bags: teal nylon.
   teal: {
+    grad: 'from-teal-700 via-cyan-500 to-sky-600',
     tint: 'bg-teal-600/10',
     ring: 'ring-teal-600/40',
     ringOn: 'ring-teal-600',
@@ -65,6 +71,7 @@ const TONES = {
   },
   // Straw, jute, canvas: natural stone.
   straw: {
+    grad: 'from-stone-600 via-stone-400 to-orange-700',
     tint: 'bg-stone-500/15',
     ring: 'ring-stone-500/50',
     ringOn: 'ring-stone-600',
@@ -75,6 +82,7 @@ const TONES = {
   },
   // Bottles, flasks, toiletry kits: water blue.
   water: {
+    grad: 'from-sky-600 via-cyan-400 to-blue-600',
     tint: 'bg-sky-500/10',
     ring: 'ring-sky-500/40',
     ringOn: 'ring-sky-600',
@@ -85,6 +93,7 @@ const TONES = {
   },
   // Laptop and tech gear: graphite.
   tech: {
+    grad: 'from-slate-800 via-slate-500 to-indigo-700',
     tint: 'bg-slate-600/10',
     ring: 'ring-slate-600/40',
     ringOn: 'ring-slate-700',
@@ -95,6 +104,7 @@ const TONES = {
   },
   // Organisers, pouches, comfort: soft violet.
   violet: {
+    grad: 'from-violet-700 via-purple-500 to-pink-600',
     tint: 'bg-violet-600/10',
     ring: 'ring-violet-600/40',
     ringOn: 'ring-violet-600',
@@ -105,6 +115,7 @@ const TONES = {
   },
   // Eyewear and passport covers: indigo.
   indigo: {
+    grad: 'from-indigo-700 via-blue-500 to-violet-600',
     tint: 'bg-indigo-600/10',
     ring: 'ring-indigo-600/40',
     ringOn: 'ring-indigo-600',

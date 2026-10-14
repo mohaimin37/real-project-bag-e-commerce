@@ -8,6 +8,8 @@ export const registerSchema = z.object({
   phone: phone.optional(),
   country: countryCode.optional().default('IN'),
   nationality: countryCode.optional().default('IN'),
+  // Without this the validator stripped the code and referrals were never recorded.
+  referralCode: z.string().trim().toUpperCase().max(20).regex(/^[A-Z0-9-]*$/, 'Referral codes use letters and numbers only').optional().default(''),
 });
 
 export const loginSchema = z.object({
@@ -38,7 +40,14 @@ export const profileSchema = z.object({
   phone: phone.optional(),
   country: countryCode.optional(),
   nationality: countryCode.optional(),
+  birthday: z.coerce.date().optional().nullable(),
+  notificationPreferences: z.object({
+    orderUpdates: z.boolean().optional(),
+    promotions: z.boolean().optional(),
+    whatsapp: z.boolean().optional(),
+  }).optional(),
 });
+
 
 export const changePasswordSchema = z.object({
   currentPassword: z.string().min(1, 'Enter your current password'),

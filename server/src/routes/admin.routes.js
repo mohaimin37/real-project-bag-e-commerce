@@ -14,9 +14,19 @@ import * as content from '../controllers/content.controller.js';
 import * as enquiries from '../controllers/enquiry.controller.js';
 import * as comments from '../controllers/comment.controller.js';
 import * as returns from '../controllers/return.controller.js';
+import * as payments from '../controllers/payments.controller.js';
+import * as giftcards from '../controllers/giftcard.controller.js';
 
 import { productSchema, categorySchema, stockUpdateSchema, quickProductSchema, bulkProductSchema } from '../validators/catalog.validators.js';
-import { orderStatusSchema, paymentStatusSchema, couponSchema, coinAdjustSchema } from '../validators/commerce.validators.js';
+import {
+  orderStatusSchema,
+  paymentStatusSchema,
+  couponSchema,
+  coinAdjustSchema,
+  walletAdjustSchema,
+  giftCardIssueSchema,
+  giftCardAdjustSchema,
+} from '../validators/commerce.validators.js';
 import { blogSchema, liveUpdateSchema, bannerSchema, settingsSchema, enquiryUpdateSchema, adminCommentSchema } from '../validators/content.validators.js';
 
 const r = Router();
@@ -47,6 +57,7 @@ r.get('/inventory/summary', admin.inventorySummary);
 r.post('/categories', validate(categorySchema), categories.createCategory);
 r.put('/categories/:id', validate(categorySchema), categories.updateCategory);
 r.delete('/categories/:id', categories.deleteCategory);
+r.post('/categories/:id/move-products', categories.reassignProducts);
 
 // Orders
 r.get('/orders', orders.adminListOrders);
@@ -59,13 +70,34 @@ r.post('/orders/:id/send-email-invoice', orders.adminSendInvoiceEmail);
 r.post('/orders/:id/send-whatsapp-invoice', orders.adminSendInvoiceWhatsApp);
 r.patch('/orders/:id/status', validate(orderStatusSchema), orders.adminUpdateStatus);
 r.patch('/orders/:id/payment', validate(paymentStatusSchema), orders.adminUpdatePayment);
+r.post('/orders/:id/refund/retry', orders.adminRetryRefund);
+r.post('/orders/:id/shipment', orders.adminCreateShipment);
+r.post('/orders/:id/shipment/sync', orders.adminSyncShipment);
+r.get('/shipping/status', orders.shippingStatus);
 r.post('/notifications/:notificationId/resend', orders.adminResendNotification);
 r.get('/notifications', admin.listNotifications);
 
+// Payments: who paid how much, refunds sent and still to send
+r.get('/payments/summary', payments.summary);
+r.get('/payments/transactions', payments.transactions);
+r.get('/payments/customers', payments.byCustomer);
+r.get('/payments/refunds', payments.refundQueue);
+
 // Returns & Exchanges
 r.get('/returns', returns.adminListReturns);
+r.post('/returns', returns.adminCreateReturn);
+r.get('/returns/order/:orderId', returns.adminReturnOrderLookup);
+r.patch('/returns/:id/refund-destination', returns.adminUpdateRefundDestination);
 r.get('/returns/:id', returns.adminGetReturn);
 r.patch('/returns/:id', returns.adminUpdateReturnStatus);
+r.post('/returns/:id/pickup', returns.adminSchedulePickup);
+r.post('/returns/:id/refund-processed', returns.adminMarkReturnRefunded);
+
+// Gift cards
+r.get('/giftcards', giftcards.adminListGiftCards);
+r.post('/giftcards', validate(giftCardIssueSchema), giftcards.adminIssueGiftCard);
+r.get('/giftcards/:id', giftcards.adminGetGiftCard);
+r.patch('/giftcards/:id', validate(giftCardAdjustSchema), giftcards.adminAdjustGiftCard);
 
 // Customers
 r.get('/customers', admin.listCustomers);
@@ -73,6 +105,8 @@ r.get('/customers/board', admin.customerBoard);
 r.get('/customers/:id', admin.getCustomer);
 r.patch('/customers/:id', admin.updateCustomer);
 r.post('/customers/:id/coins', validate(coinAdjustSchema), admin.adjustCustomerCoins);
+r.get('/customers/:id/wallet', admin.customerWalletLedger);
+r.post('/customers/:id/wallet', validate(walletAdjustSchema), admin.adjustCustomerWallet);
 
 // Coupons
 r.get('/coupons', coupons.listCoupons);

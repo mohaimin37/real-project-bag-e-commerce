@@ -1,0 +1,206 @@
+{
+ "categories": [
+  {
+   "_id": "6ace33b8f233166eb93e46f7",
+   "slug": "clothing"
+  },
+  {
+   "_id": "6ace33b9f233166eb93e46f8",
+   "slug": "clothing-t-shirts"
+  },
+  {
+   "_id": "6ace33b9f233166eb93e46f9",
+   "slug": "clothing-shirts"
+  },
+  {
+   "_id": "6ace33b9f233166eb93e46fa",
+   "slug": "clothing-jackets"
+  },
+  {
+   "_id": "6ace33b9f233166eb93e46fb",
+   "slug": "clothing-knitwear"
+  },
+  {
+   "_id": "6ace33b9f233166eb93e46fc",
+   "slug": "clothing-jeans"
+  },
+  {
+   "_id": "6ace33b9f233166eb93e46fd",
+   "slug": "clothing-dresses"
+  },
+  {
+   "_id": "6ace33b9f233166eb93e46fe",
+   "slug": "fragrance"
+  },
+  {
+   "_id": "6ace33b9f233166eb93e46ff",
+   "slug": "perfumes-eau-de-parfum"
+  },
+  {
+   "_id": "6ace33b9f233166eb93e4700",
+   "slug": "perfumes-attars"
+  },
+  {
+   "_id": "6ace33b9f233166eb93e4701",
+   "slug": "perfumes-minis"
+  }
+ ],
+ "products": [
+  {
+   "_id": "6ace33baf233166eb93e4702",
+   "sku": "WT-CL01",
+   "name": "Everyday Crew-Neck Tee",
+   "slug": "everyday-crew-neck-tee"
+  },
+  {
+   "_id": "6ace33baf233166eb93e4707",
+   "sku": "WT-CL02",
+   "name": "Essential Cotton Tee (Pack of 3)",
+   "slug": "essential-cotton-tee-pack-of-3"
+  },
+  {
+   "_id": "6ace33baf233166eb93e470c",
+   "sku": "WT-CL03",
+   "name": "Heavyweight White Tee",
+   "slug": "heavyweight-white-tee"
+  },
+  {
+   "_id": "6ace33baf233166eb93e4711",
+   "sku": "WT-CL04",
+   "name": "Striped Oxford Shirt",
+   "slug": "striped-oxford-shirt"
+  },
+  {
+   "_id": "6ace33baf233166eb93e4716",
+   "sku": "WT-CL05",
+   "name": "Washed Denim Shirt",
+   "slug": "washed-denim-shirt"
+  },
+  {
+   "_id": "6ace33baf233166eb93e471b",
+   "sku": "WT-CL06",
+   "name": "Check Flannel Shirt",
+   "slug": "check-flannel-shirt"
+  },
+  {
+   "_id": "6ace33baf233166eb93e4720",
+   "sku": "WT-CL07",
+   "name": "Corduroy Field Jacket",
+   "slug": "corduroy-field-jacket"
+  },
+  {
+   "_id": "6ace33bbf233166eb93e4725",
+   "sku": "WT-CL08",
+   "name": "Quilted Puffer Jacket",
+   "slug": "quilted-puffer-jacket"
+  },
+  {
+   "_id": "6ace33bbf233166eb93e472a",
+   "sku": "WT-CL09",
+   "name": "Tailored Navy Blazer",
+   "slug": "tailored-navy-blazer"
+  },
+  {
+   "_id": "6ace33bbf233166eb93e472f",
+   "sku": "WT-CL10",
+   "name": "Light-Wash Denim Jacket",
+   "slug": "light-wash-denim-jacket"
+  },
+  {
+   "_id": "6ace33bbf233166eb93e4734",
+   "sku": "WT-CL11",
+   "name": "Short-Sleeve Denim Overshirt",
+   "slug": "short-sleeve-denim-overshirt"
+  },
+  {
+   "_id": "6ace33bbf233166eb93e4739",
+   "sku": "WT-CL12",
+   "name": "Chunky Knit Pullover",
+   "slug": "chunky-knit-pullover"
+  },
+  {
+   "_id": "6ace33bbf233166eb93e473e",
+   "sku": "WT-CL13",
+   "name": "Puff-Sleeve Knit Sweater",
+   "slug": "puff-sleeve-knit-sweater"
+  },
+  {
+   "_id": "6ace33bbf233166eb93e4743",
+   "sku": "WT-CL14",
+   "name": "Soft Fleece Hoodie",
+   "slug": "soft-fleece-hoodie"
+  },
+  {
+   "_id": "6ace33bcf233166eb93e4748",
+   "sku": "WT-CL15",
+   "name": "Classic Blue Jeans",
+   "slug": "classic-blue-jeans"
+  },
+  {
+   "_id": "6ace33bcf233166eb93e474d",
+   "sku": "WT-CL16",
+   "name": "Straight-Fit Dark Jeans",
+   "slug": "straight-fit-dark-jeans"
+  },
+  {
+   "_id": "6ace33bcf233166eb93e4752",
+   "sku": "WT-CL17",
+   "name": "Floral Print Midi Dress",
+   "slug": "floral-print-midi-dress"
+  },
+  {
+   "_id": "6ace33bcf233166eb93e4757",
+   "sku": "WT-CL18",
+   "name": "Strappy Sundress",
+   "slug": "strappy-sundress"
+  },
+  {
+   "_id": "6ace33bcf233166eb93e475c",
+   "sku": "WT-CL19",
+   "name": "White Off-Shoulder Dress",
+   "slug": "white-off-shoulder-dress"
+  },
+  {
+   "_id": "6ace33bcf233166eb93e4761",
+   "sku": "WT-PF01",
+   "name": "Signature Eau de Parfum Trio",
+   "slug": "signature-eau-de-parfum-trio"
+  },
+  {
+   "_id": "6ace33bcf233166eb93e4763",
+   "sku": "WT-PF02",
+   "name": "Amber Blossom Eau de Parfum",
+   "slug": "amber-blossom-eau-de-parfum"
+  },
+  {
+   "_id": "6ace33bcf233166eb93e4765",
+   "sku": "WT-PF03",
+   "name": "Violet Bloom Eau de Parfum",
+   "slug": "violet-bloom-eau-de-parfum"
+  },
+  {
+   "_id": "6ace33bdf233166eb93e4767",
+   "sku": "WT-PF04",
+   "name": "Amber & Vetiver Perfume Oil Duo",
+   "slug": "amber-and-vetiver-perfume-oil-duo"
+  },
+  {
+   "_id": "6ace33bdf233166eb93e4769",
+   "sku": "WT-PF05",
+   "name": "Wildflower Perfume Oil",
+   "slug": "wildflower-perfume-oil"
+  },
+  {
+   "_id": "6ace33bdf233166eb93e476b",
+   "sku": "WT-PF06",
+   "name": "Aqua Travel Mini",
+   "slug": "aqua-travel-mini"
+  },
+  {
+   "_id": "6ace33bdf233166eb93e476d",
+   "sku": "WT-PF07",
+   "name": "Midnight Cobalt Travel Mini",
+   "slug": "midnight-cobalt-travel-mini"
+  }
+ ]
+}

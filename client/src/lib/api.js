@@ -81,6 +81,8 @@ export const api = {
   banners: () => http.get('/banners'),
   categories: (params) => http.get(`/categories${qs(params)}`),
   category: (slug) => http.get(`/categories/${slug}`),
+  categorySetCounts: (sets) => http.get(`/categories/set-counts${qs({ sets: sets.join(';') })}`),
+  collectionCounts: (audience) => http.get(`/products/collection-counts${qs({ audience })}`),
   products: (params) => http.get(`/products${qs(params)}`),
   facets: (params) => http.get(`/products/facets${qs(params)}`),
   suggest: (q) => http.get(`/products/suggest${qs({ q })}`),
@@ -103,7 +105,10 @@ export const api = {
   paymentMethods: () => http.get('/cart/payment-methods'),
   setUseCoins: (use) => http.put('/cart/coins', { use }),
   myCoins: () => http.get('/users/me/coins'),
+  myWallet: () => http.get('/users/me/wallet'),
+  myReferrals: () => http.get('/users/me/referrals'),
   publicCoupons: () => http.get('/coupons'),
+  myCoupons: () => http.get('/coupons/mine'),
 
   // wishlist
   wishlist: () => http.get('/wishlist'),
@@ -128,6 +133,10 @@ export const api = {
   myReturnOrders: () => http.get('/returns/orders'),
   orderReturnEligibility: (id, email) => http.get(`/returns/order/${encodeURIComponent(id)}${qs({ email })}`),
   submitReturnExchange: (body) => http.post('/returns/request', body),
+  myReturnRequests: () => http.get('/returns/requests'),
+  myReturnRequest: (requestId) => http.get(`/returns/requests/${encodeURIComponent(requestId)}`),
+  cancelReturnRequest: (requestId) => http.post(`/returns/requests/${encodeURIComponent(requestId)}/cancel`),
+  setReturnRefund: (requestId, body) => http.put(`/returns/requests/${encodeURIComponent(requestId)}/refund`, body),
 
   // reviews
   reviews: (productId, params) => http.get(`/reviews/product/${productId}${qs(params)}`),
@@ -147,7 +156,15 @@ export const api = {
   subscribe: (email) => http.post('/newsletter', { email }),
   comments: (limit) => http.get(`/comments${qs({ limit })}`),
   submitComment: (body) => http.post('/comments', body),
+
+  // growth & utility
+  trackOrderPublic: (body) => http.post('/orders/track', body),
+  estimatePincode: (pincode) => http.get(`/shipping/estimate-pincode${qs({ pincode })}`),
+  registerBackInStock: (productId, body) => http.post(`/products/${productId}/back-in-stock`, body),
+  spinStatus: () => http.get('/spin/status'),
+  spinPlay: () => http.post('/spin/play'),
 };
+
 
 export const adminApi = {
   dashboard: (days) => http.get(`/admin/dashboard${qs({ days })}`),
@@ -176,6 +193,7 @@ export const adminApi = {
   createCategory: (body) => http.post('/admin/categories', body),
   updateCategory: (id, body) => http.put(`/admin/categories/${id}`, body),
   deleteCategory: (id) => http.delete(`/admin/categories/${id}`),
+  moveCategoryProducts: (id, to) => http.post(`/admin/categories/${id}/move-products`, { to }),
 
   orders: (params) => http.get(`/admin/orders${qs(params)}`),
   order: (id) => http.get(`/admin/orders/${id}`),
@@ -187,12 +205,32 @@ export const adminApi = {
   invoicePdf: (id) => http.get(`/admin/orders/${id}/invoice.pdf`, { responseType: 'blob', timeout: 60000 }),
   orderStatus: (id, body) => http.patch(`/admin/orders/${id}/status`, body),
   orderPayment: (id, paymentStatus) => http.patch(`/admin/orders/${id}/payment`, { paymentStatus }),
+  retryRefund: (id) => http.post(`/admin/orders/${id}/refund/retry`),
+  createShipment: (id) => http.post(`/admin/orders/${id}/shipment`),
+  syncShipment: (id) => http.post(`/admin/orders/${id}/shipment/sync`),
+  shippingStatus: () => http.get('/admin/shipping/status'),
+  schedulePickup: (id) => http.post(`/admin/returns/${id}/pickup`),
+  markReturnRefunded: (id, reference) => http.post(`/admin/returns/${id}/refund-processed`, { reference }),
+
+  giftCards: (params) => http.get(`/admin/giftcards${qs(params)}`),
+  giftCard: (id) => http.get(`/admin/giftcards/${id}`),
+  issueGiftCard: (body) => http.post('/admin/giftcards', body),
+  adjustGiftCard: (id, body) => http.patch(`/admin/giftcards/${id}`, body),
+  customerWallet: (id) => http.get(`/admin/customers/${id}/wallet`),
+  adjustWallet: (id, body) => http.post(`/admin/customers/${id}/wallet`, body),
   resendNotification: (id) => http.post(`/admin/notifications/${id}/resend`),
   notifications: (params) => http.get(`/admin/notifications${qs(params)}`),
 
   returns: (params) => http.get(`/admin/returns${qs(params)}`),
   returnRequest: (id) => http.get(`/admin/returns/${id}`),
   updateReturnStatus: (id, body) => http.patch(`/admin/returns/${id}`, body),
+  returnOrderLookup: (orderId) => http.get(`/admin/returns/order/${encodeURIComponent(orderId)}`),
+  createReturn: (body) => http.post('/admin/returns', body),
+  updateRefundDestination: (id, body) => http.patch(`/admin/returns/${id}/refund-destination`, body),
+  paymentsSummary: (params) => http.get(`/admin/payments/summary${qs(params)}`),
+  paymentTransactions: (params) => http.get(`/admin/payments/transactions${qs(params)}`),
+  paymentCustomers: (params) => http.get(`/admin/payments/customers${qs(params)}`),
+  refundQueue: () => http.get('/admin/payments/refunds'),
 
   customers: (params) => http.get(`/admin/customers${qs(params)}`),
   customerBoard: (params) => http.get(`/admin/customers/board${qs(params)}`),

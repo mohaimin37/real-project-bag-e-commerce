@@ -44,6 +44,9 @@ export const productSchema = z.object({
   description: z.string().trim().max(5000).optional().default(''),
   category: objectId,
   subcategory: objectId.nullable().optional(),
+  // No defaults on these: an edit form that doesn't send them must not wipe what is saved.
+  categories: jsonArray(objectId).optional(),
+  productType: objectId.nullable().optional(),
   gender: z.enum(['unisex', 'women', 'men']).optional().default('unisex'),
   price: z.coerce.number().min(0),
   salePrice: z.preprocess((v) => (v === '' || v === undefined ? null : v), z.coerce.number().min(0).nullable()),
@@ -56,6 +59,19 @@ export const productSchema = z.object({
   capacity: z.string().trim().max(20).optional().default(''),
   specifications: jsonArray(z.object({ label: z.string().max(60), value: z.string().max(200) })).optional().default([]),
   faqs: jsonArray(z.object({ question: z.string().max(200), answer: z.string().max(1000) })).optional().default([]),
+  brand: z.string().trim().max(60).optional(),
+  warranty: z.string().trim().max(200).optional(),
+  careInstructions: z.string().trim().max(500).optional(),
+  // Optional shopping attributes. Only filled from real product information; filters appear only when set.
+  laptopSize: z.preprocess((v) => (v === '' || v == null ? null : v), z.coerce.number().min(10).max(20).nullable()).optional(),
+  compartments: z.preprocess((v) => (v === '' || v == null ? null : v), z.coerce.number().int().min(1).max(30).nullable()).optional(),
+  closureType: z.enum(['', 'zip', 'magnetic', 'buckle', 'drawstring', 'flap', 'open', 'clasp']).optional(),
+  waterResistant: boolish.optional(),
+  occasions: jsonArray(z.string().trim().toLowerCase().max(30)).optional(),
+  dimensions: z.string().trim().max(60).optional(),
+  weight: z.string().trim().max(30).optional(),
+  seoTitle: z.string().trim().max(120).optional(),
+  seoDescription: z.string().trim().max(250).optional(),
   lowStockThreshold: z.coerce.number().int().min(0).optional().default(5),
   isFeatured: boolish.optional().default(false),
   isBestseller: boolish.optional().default(false),
@@ -66,13 +82,21 @@ export const productSchema = z.object({
 export const categorySchema = z.object({
   name: z.string().trim().min(2).max(80),
   slug: z.string().trim().max(100).optional(),
+  // Audience. No default: editing must keep a Men/Women category's department (the model defaults new ones to 'all').
+  department: z.enum(['men', 'women', 'universal', 'all']).optional(),
+  icon: z.string().trim().max(60).optional(),
   tagline: z.string().trim().max(160).optional().default(''),
   description: z.string().trim().max(600).optional().default(''),
   image: z.object({ url: imageUrl, publicId: z.string().optional() }).nullable().optional(),
+  banner: z.object({ url: z.string().max(500).optional(), title: z.string().max(120).optional(), subtitle: z.string().max(200).optional() }).optional(),
+  metaTitle: z.string().trim().max(120).optional(),
+  metaDescription: z.string().trim().max(250).optional(),
   parent: objectId.nullable().optional(),
   sortOrder: z.coerce.number().int().optional().default(0),
   isActive: boolish.optional().default(true),
   showInMenu: boolish.optional().default(true),
+  showOnHome: boolish.optional(),
+  isFeatured: boolish.optional(),
 });
 
 export const stockUpdateSchema = z.object({

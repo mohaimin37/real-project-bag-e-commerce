@@ -4,9 +4,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { api } from '../lib/api';
 import { useUser, useMoney, useConfig } from '../hooks/useStore';
-import { cn, formatDate, formatDateTime, productImage } from '../lib/format';
+import { cn, formatDate, productImage } from '../lib/format';
 import { Icon, Img, Button, Modal, Field, Input, Textarea, Skeleton, ErrorState, StatusBadge } from '../components/ui';
-import { CoinIcon, useMyCoins } from '../components/coins';
 import Seo from '../components/Seo';
 
 const PHONE = '8920550465';
@@ -30,181 +29,307 @@ const EXCHANGE_REASONS = [
   'Fit or ergonomics not as expected',
 ];
 
-// The old "exchange" tab was merged into "return"; its links (and /exchange) land there.
-const TAB_ALIASES = { exchange: 'return', exchanges: 'return', return: 'return', returns: 'return', refund: 'return', refunds: 'return', track: 'track', status: 'track', tracking: 'track' };
+// Old links (?tab=exchange, ?tab=track, /exchange) land on the right tab.
+const TAB_ALIASES = { exchange: 'orders', exchanges: 'orders', return: 'orders', returns: 'orders', refund: 'orders', refunds: 'orders', orders: 'orders', track: 'requests', status: 'requests', tracking: 'requests', requests: 'requests' };
 
-/** Badge and sentence for the order lookup result, matching why the order can or can't be returned. */
+/** Badge and sentence for the guest order lookup, matching why the order can or can't be returned. */
 function lookupStatus(e = {}) {
-  if (e.isCancelled) return { badge: 'Order Cancelled', text: 'If an order gets cancelled, coin rewards will not come and returns or exchanges are not permitted.' };
-  if (e.canReturnOrExchange) return { badge: '7-Day Window Active', text: `${e.daysLeft} day${e.daysLeft === 1 ? '' : 's'} remaining to return or exchange.` };
-  if (!e.isDelivered) return { badge: 'Not Delivered Yet', text: 'Returns and exchanges open once your order is delivered, for 7 days.' };
-  if (e.hasActiveRequest) return { badge: 'Request In Progress', text: `A ${e.activeRequest?.type || 'return'} request is already in progress (${e.activeRequest?.status || 'Requested'}).` };
-  if (e.isExpired) return { badge: '7-Day Window Completed', text: 'Once 7 days are complete for a specific item, no return or exchange will happen.' };
-  return { badge: 'Window Closed', text: 'Once 7 days are complete for an item, no return or exchange will happen.' };
+  if (e.isCancelled) return { badge: 'Order cancelled', text: 'Cancelled orders can’t be returned or exchanged.' };
+  if (e.canReturnOrExchange) return { badge: '7-day window open', text: `${e.daysLeft} day${e.daysLeft === 1 ? '' : 's'} left to return or exchange. Sign in to start a request.` };
+  if (!e.isDelivered) return { badge: 'Not delivered yet', text: 'Returns and exchanges open when your order is delivered, for 7 days.' };
+  if (e.hasActiveRequest) return { badge: 'Request in progress', text: `A ${e.activeRequest?.type || 'return'} request is already in progress (${e.activeRequest?.status || 'Requested'}).` };
+  return { badge: 'Window closed', text: 'The 7-day return and exchange window for this order has ended.' };
 }
 
-// ── WIDGETS ────────────────────────────────────────────────────
+const METHOD_LABEL = { 'Original Payment Method': 'your original payment method', UPI: 'UPI', 'Bank Transfer': 'bank transfer', 'Store Coins Wallet': 'your WILDTANE Wallet' };
 
-function TrackRequestsWidget({ activeRequests, phone, onOpenExchange }) {
-  const [helpTarget, setHelpTarget] = useState(null);
+/** "₹2,999 sent to UPI on 14 Oct 2026 · Ref 4321…" — what the team confirmed in the admin. */
+function refundSentText(r) {
+  const amount = r.refundAmount ? `₹${Number(r.refundAmount).toLocaleString('en-IN')}` : 'Your refund';
+  const parts = [`${amount} sent to ${METHOD_LABEL[r.refundMethodUsed] || r.refundMethodUsed || 'you'}${r.refundProcessedAt ? ` on ${formatDate(r.refundProcessedAt)}` : ''}.`];
+  if (r.refundReference) parts.push(`Reference: ${r.refundReference}.`);
+  if (r.refundMethodUsed !== 'Store Coins Wallet') parts.push('It can take a little time to show in your bank or UPI app.');
+  return parts.join(' ');
+}
 
-  if (!activeRequests || activeRequests.length === 0) {
-    return (
-      <div className="card p-8 text-center flex flex-col items-center gap-3 bg-surface-container-lowest border border-surface-container-high">
-        <span className="w-14 h-14 rounded-2xl bg-teal-500/10 text-teal-600 flex items-center justify-center">
-          <Icon name="local_shipping" className="text-[28px]" />
-        </span>
-        <h3 className="text-headline-sm font-bold">No Active Return or Exchange Requests</h3>
-        <p className="text-body-sm text-on-surface-variant max-w-md">
-          You currently don't have any ongoing return or exchange dispatches. Delivered orders within their 7-day window can be returned or exchanged from the Return & Exchange tab.
-        </p>
-        <button type="button" onClick={onOpenExchange} className="btn-primary mt-2 flex items-center gap-2">
-          <Icon name="assignment_return" className="text-[18px]" />
-          Go to Return & Exchange
-        </button>
-      </div>
-    );
+/**
+ * What the customer sees for one delivered item, from its latest request:
+ * waiting for approval → approved (choose refund method) → pickup → done, or "cannot be returned".
+ */
+function itemState(elig, request, order) {
+  const what = request?.type === 'exchange' ? 'Exchange' : 'Return';
+  switch (request?.status) {
+    case 'Requested':
+      return { tone: 'info', icon: 'hourglass_top', title: `${what} in process`, text: 'Waiting for approval from our team. We usually reply within 1–2 working days.' };
+    case 'Approved':
+      return { tone: 'good', icon: 'task_alt', title: `${what} approved`, text: request.needsRefundDetails ? 'Tell us how you want your money back so we can send the refund.' : 'We’ll book a doorstep pickup and update you here.' };
+    case 'Pickup Scheduled':
+      return { tone: 'good', icon: 'local_shipping', title: 'Pickup booked', text: 'Keep the item packed with its tags for the courier.' };
+    case 'In Inspection':
+      return { tone: 'good', icon: 'search_check', title: 'Item received', text: 'We’re checking the item. Your refund or replacement follows.' };
+    case 'Completed':
+      return request.type === 'exchange'
+        ? { tone: 'done', icon: 'published_with_changes', title: 'Exchanged', text: 'This exchange is complete.' }
+        : request.refundStatus === 'Processed'
+          ? { tone: 'good', icon: 'task_alt', title: 'Refund sent', text: refundSentText(request) }
+          : { tone: 'done', icon: 'currency_rupee', title: 'Returned', text: request.refundStatus === 'Failed' ? 'Your refund needs attention — our team will contact you.' : 'We’ve received the item. Your refund is being sent — you’ll see “Refund sent” here with the reference.' };
+    case 'Rejected':
+      return { tone: 'bad', icon: 'block', title: 'This item cannot be returned or exchanged', text: 'Our team reviewed the request and could not approve it. Contact us if you have questions.' };
+    default:
+      if (order?.orderStatus === 'Cancelled') {
+        return { tone: 'bad', icon: 'cancel', title: 'Order cancelled', text: 'This order was cancelled and cannot be returned or exchanged.' };
+      }
+      if (!order?.returnDetails?.isDelivered) {
+        return { tone: 'info', icon: 'local_shipping', title: 'Delivery in progress', text: 'Return & exchange option opens for 7 days once this item is delivered.' };
+      }
+      if (elig?.canReturnOrExchange) return null; // show the Return / Exchange buttons
+      return { tone: 'muted', icon: 'lock', title: 'Return window closed', text: 'The 7-day return and exchange window for this item has ended.' };
   }
+}
+
+// Box + icon colour per state. Text stays on-surface so it reads in every theme, light or dark.
+const TONE = {
+  info: { box: 'bg-sky-500/10 border-sky-500/30', icon: 'text-sky-600 dark:text-sky-400' },
+  good: { box: 'bg-emerald-500/10 border-emerald-500/30', icon: 'text-emerald-600 dark:text-emerald-400' },
+  done: { box: 'bg-surface-container-high border-outline-variant/40', icon: 'text-secondary' },
+  bad: { box: 'bg-error/10 border-error/35', icon: 'text-error' },
+  muted: { box: 'bg-surface-container-low border-outline-variant/30', icon: 'text-outline' },
+};
+
+/** One order item: photo, details and either its request status or the Return / Exchange buttons when time is available. */
+function ItemRow({ order, it, elig, onStart, onCancel, cancelling }) {
+  const money = useMoney();
+  const request = elig?.request && elig.request.status !== 'Cancelled' ? elig.request : null;
+  const state = itemState(elig, request, order);
+  const daysLeft = elig?.daysLeft || order.returnDetails?.daysLeft || 0;
+  const hoursLeft = elig?.hoursLeft || order.returnDetails?.hoursLeft || 0;
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between border-b border-surface-container-high pb-3">
-        <div>
-          <h3 className="text-headline-sm font-serif font-bold text-on-surface">Active Return & Exchange Requests</h3>
-          <p className="text-body-sm text-on-surface-variant">Live reverse logistics, approval stages and courier dispatch tracking.</p>
+    <div className="flex flex-col gap-3 p-3.5 sm:p-4 rounded-2xl bg-surface-container-lowest border border-surface-container-high hover:border-outline-variant/60 transition-colors">
+      <div className="flex items-start gap-3">
+        <Img src={it.image} alt={it.productName} className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl object-cover shrink-0 ring-1 ring-surface-container-highest" />
+        <div className="flex-1 min-w-0">
+          <p className="text-[14px] sm:text-[15px] font-bold leading-snug">{it.productName}</p>
+          <p className="text-[12px] text-on-surface-variant mt-0.5">{it.variantName ? `${it.variantName} · ` : ''}Qty {it.quantity}</p>
+          <p className="text-[13px] font-semibold mt-0.5">{money(it.totalPrice || it.unitPrice * it.quantity)}</p>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-4">
-        {activeRequests.map(({ order, request }) => (
-          <div key={order._id} className="card p-5 bg-surface-container-lowest border-2 border-teal-500/25 shadow-card flex flex-col gap-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-surface-container-high pb-3">
-              <div className="flex items-center gap-3">
-                <span className="text-[16px] font-bold font-mono text-on-surface">{order.orderId}</span>
-                <span className="px-2.5 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider bg-teal-500/15 text-teal-700 dark:text-teal-300 border border-teal-500/30">
-                  {request.type === 'exchange' ? 'Exchange Request' : 'Return Request'}
-                </span>
-                <span className="text-[12px] text-on-surface-variant">
-                  Reference: <strong>{request.requestId}</strong>
-                </span>
-              </div>
-              <StatusBadge status={request.status || 'Requested'} />
+      {state ? (
+        <div className={cn('rounded-xl border p-3 flex flex-col gap-2.5 text-on-surface', TONE[state.tone].box)}>
+          <div className="flex items-start gap-2.5">
+            <Icon name={state.icon} className={cn('text-[20px] shrink-0 mt-px', TONE[state.tone].icon)} />
+            <div className="min-w-0 flex-1">
+              <p className="text-[13.5px] font-bold leading-snug">{state.title}</p>
+              <p className="text-[12px] text-on-surface-variant leading-relaxed mt-0.5">{state.text}</p>
+              {request && <p className="text-[11px] text-outline mt-1 font-mono">{request.requestId}</p>}
             </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="p-3 rounded-xl bg-surface-container-low">
-                <span className="text-[11px] uppercase font-bold text-outline">Reason</span>
-                <p className="text-[13px] font-semibold text-on-surface mt-0.5">{request.reason}</p>
-              </div>
-              <div className="p-3 rounded-xl bg-surface-container-low">
-                <span className="text-[11px] uppercase font-bold text-outline">Requested On</span>
-                <p className="text-[13px] font-semibold text-on-surface mt-0.5">{formatDate(request.requestedAt)}</p>
-              </div>
-              <div className="p-3 rounded-xl bg-surface-container-low">
-                <span className="text-[11px] uppercase font-bold text-outline">Doorstep Pickup</span>
-                <p className="text-[13px] font-semibold text-on-surface mt-0.5 truncate">{order.shippingAddress?.city}, {order.shippingAddress?.postalCode}</p>
-              </div>
-            </div>
-
-            {/* Automated Doorstep Courier Pickup Integration Banner */}
-            <div className="p-3.5 rounded-xl bg-teal-500/10 border border-teal-500/25 flex items-start gap-3">
-              <Icon name="local_shipping" className="text-[20px] text-teal-600 dark:text-teal-400 shrink-0 mt-0.5" />
-              <div className="flex-1">
-                <p className="font-bold text-[13px] text-teal-900 dark:text-teal-200">
-                  Automated Doorstep Courier Pickup Integration
-                </p>
-                <p className="text-[12px] text-on-surface-variant leading-relaxed mt-0.5">
-                  Once your request is approved, our courier partner (Delhivery / BlueDart Express) automatically visits your address (<strong>{order.shippingAddress?.addressLine1}, {order.shippingAddress?.city}</strong>) within <strong>24–48 hours</strong> to receive the product.
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between pt-2 border-t border-surface-container-high">
-              <Link to={`/account/orders/${order.orderId}`} className="text-[12.5px] font-bold text-secondary hover:underline flex items-center gap-1">
-                View Full Order Details <Icon name="chevron_right" className="text-[16px]" />
+          </div>
+          {request && (
+            <div className="flex flex-wrap gap-2">
+              {request.needsRefundDetails && (
+                <Link to={`/returns-exchange/refund/${encodeURIComponent(request.requestId)}`} className="btn-primary h-9 px-3.5 text-[12.5px] gap-1.5">
+                  <Icon name="account_balance_wallet" className="text-[17px]" /> Choose how to get your money back
+                </Link>
+              )}
+              {request.type === 'return' && !request.needsRefundDetails && ['Approved', 'Pickup Scheduled', 'In Inspection'].includes(request.status) && request.refundStatus === 'None' && (
+                <Link to={`/returns-exchange/refund/${encodeURIComponent(request.requestId)}`} className="btn-tonal h-9 px-3 text-[12px] gap-1.5">
+                  <Icon name="edit" className="text-[16px]" /> Refund to: {request.refundMethod}
+                </Link>
+              )}
+              <Link to={`/returns-exchange/help/${encodeURIComponent(request.requestId)}`} className="btn-tonal h-9 px-3 text-[12px] gap-1.5">
+                <Icon name="timeline" className="text-[16px]" /> Details
               </Link>
-              <button
-                type="button"
-                onClick={() => setHelpTarget({ order, request })}
-                className="btn bg-secondary/15 hover:bg-secondary/25 text-secondary font-bold text-[12px] h-8 px-3 rounded-xl flex items-center gap-1.5 shadow-xs transition-all active:scale-95 cursor-pointer"
-              >
-                <Icon name="support_agent" className="text-[16px]" /> Help with this request
-              </button>
+              {request.canCancel && (
+                <button type="button" disabled={cancelling} onClick={() => onCancel(request)} className="btn-ghost h-9 px-3 text-[12px] gap-1.5 text-error hover:bg-error/10">
+                  <Icon name="close" className="text-[16px]" /> Cancel request
+                </button>
+              )}
             </div>
+          )}
+        </div>
+      ) : (
+        <div className="flex flex-col gap-2.5 pt-1">
+          {/* Return Window countdown banner */}
+          <div className="flex items-center justify-between px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 text-[12px]">
+            <span className="flex items-center gap-1.5 font-bold">
+              <Icon name="timer" className="text-[16px] animate-pulse" />
+              Return time available: {daysLeft} day{daysLeft === 1 ? '' : 's'}{hoursLeft > 0 && daysLeft <= 2 ? ` (${hoursLeft}h)` : ''} left
+            </span>
+            <span className="text-[11px] font-semibold opacity-85">7-day policy</span>
           </div>
-        ))}
-      </div>
 
-      {helpTarget && (
-        <Modal
-          open={Boolean(helpTarget)}
-          onClose={() => setHelpTarget(null)}
-          title="Help with Return & Exchange Request"
-          size="md"
-        >
-          <div className="flex flex-col gap-4">
-            <div className="p-3.5 rounded-xl bg-surface-container-low border border-outline-variant/50">
-              <span className="text-[11px] uppercase font-bold text-outline">Request Reference</span>
-              <p className="text-[15px] font-mono font-bold text-secondary mt-0.5">
-                {helpTarget.request.requestId} · Order #{helpTarget.order.orderId}
-              </p>
-              <p className="text-[12px] text-on-surface-variant mt-1">
-                Type: <strong className="capitalize">{helpTarget.request.type}</strong> · Reason: {helpTarget.request.reason}
-              </p>
-            </div>
-
-            {/* Doorstep Pickup courier explanation */}
-            <div className="p-3.5 rounded-xl bg-teal-500/10 border border-teal-500/25 flex items-start gap-3">
-              <Icon name="local_shipping" className="text-[22px] text-teal-600 dark:text-teal-400 shrink-0 mt-0.5" />
-              <div>
-                <p className="font-bold text-[13px] text-teal-900 dark:text-teal-200">
-                  How Doorstep Courier Pickup Works
-                </p>
-                <ul className="text-[12px] text-on-surface-variant list-disc list-inside mt-1 space-y-1">
-                  <li><strong>Doorstep Collection:</strong> Our logistics partner automatically arrives at your doorstep within 24–48 hours.</li>
-                  <li><strong>Pickup Address:</strong> {helpTarget.order.shippingAddress?.addressLine1}, {helpTarget.order.shippingAddress?.city} {helpTarget.order.shippingAddress?.postalCode}.</li>
-                  <li><strong>Immediate Replacement:</strong> If this is an exchange, your replacement item is dispatched right away upon courier verification.</li>
-                </ul>
-              </div>
-            </div>
-
-            {/* Action buttons */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-              <button
-                type="button"
-                onClick={() => {
-                  const msg = `Hi WILDTANE Support, I need help with my ${helpTarget.request.type === 'exchange' ? 'Exchange' : 'Return'} Request (Ref: ${helpTarget.request.requestId}) for Order #${helpTarget.order.orderId}.\nStatus: ${helpTarget.request.status || 'Requested'}`;
-                  window.open(`https://wa.me/918920550465?text=${encodeURIComponent(msg)}`, '_blank', 'noopener');
-                }}
-                className="btn bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[13px] h-11 rounded-xl flex items-center justify-center gap-2 shadow-xs transition-all active:scale-95 cursor-pointer"
-              >
-                <Icon name="chat" className="text-[18px]" /> Instant WhatsApp Support
-              </button>
-
-              <a
-                href={`tel:${phone}`}
-                className="btn bg-surface-container-high hover:bg-surface-container-highest text-on-surface font-bold text-[13px] h-11 rounded-xl flex items-center justify-center gap-2 border border-outline-variant/60 shadow-xs transition-all"
-              >
-                <Icon name="call" className="text-[18px] text-secondary" /> Call Support (+91 89205 50465)
-              </a>
-            </div>
-
-            <div className="text-center pt-1 border-t border-surface-container-high">
-              <a
-                href={`mailto:info@wildtane.com?subject=${encodeURIComponent(`Support for ${helpTarget.request.type} Request ${helpTarget.request.requestId} - Order ${helpTarget.order.orderId}`)}`}
-                className="text-[12px] font-semibold text-secondary hover:underline inline-flex items-center gap-1"
-              >
-                <Icon name="mail" className="text-[14px]" /> Email Support (info@wildtane.com)
-              </a>
-            </div>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <button
+              type="button"
+              onClick={() => onStart(order, 'return', it)}
+              className="btn-primary h-10 shrink-0 sm:flex-1 gap-1.5 text-[13px] font-bold shadow-xs hover:shadow-md transition-all"
+            >
+              <Icon name="assignment_return" className="text-[18px]" /> Return for refund
+            </button>
+            <button
+              type="button"
+              onClick={() => onStart(order, 'exchange', it)}
+              className="btn-tonal h-10 shrink-0 sm:flex-1 gap-1.5 text-[13px] font-bold"
+            >
+              <Icon name="published_with_changes" className="text-[18px]" /> Exchange item
+            </button>
           </div>
-        </Modal>
+        </div>
       )}
     </div>
   );
 }
 
-export default function ReturnsExchange({ defaultTab = 'return' }) {
+function OrderCard({ order, onStart, onCancel, cancelling }) {
+  const money = useMoney();
+  const ret = order.returnDetails || {};
+  const elig = ret.itemsEligibility || [];
+  const isDelivered = ret.isDelivered || order.orderStatus === 'Delivered';
+  const isCancelled = order.orderStatus === 'Cancelled';
+  const isInTransit = !isDelivered && !isCancelled;
+  const canReturn = ret.canReturnOrExchange;
+
+  return (
+    <article className="card p-4 sm:p-5 flex flex-col gap-4 border border-surface-container-high bg-surface-container-low/40">
+      <header className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-[15px] font-bold font-mono">{order.orderId}</span>
+          <StatusBadge status={order.orderStatus} />
+          {canReturn && (
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" /> Return Available ({ret.daysLeft}d left)
+            </span>
+          )}
+        </div>
+        <div className="flex flex-wrap items-center gap-2 text-[12px]">
+          {isDelivered && order.deliveredAt ? (
+            <span className="text-on-surface-variant">Delivered {formatDate(order.deliveredAt)}</span>
+          ) : (
+            <span className="text-on-surface-variant">Ordered {formatDate(order.createdAt)}</span>
+          )}
+          {ret.isExpired ? (
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full font-semibold bg-surface-container-high text-on-surface-variant">
+              <Icon name="lock" className="text-[14px]" /> 7-day window closed
+            </span>
+          ) : ret.daysLeft > 0 ? (
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full font-bold bg-emerald-500/15 text-emerald-700 dark:text-emerald-300">
+              <Icon name="timer" className="text-[14px]" /> {ret.daysLeft} day{ret.daysLeft === 1 ? '' : 's'} left
+            </span>
+          ) : isInTransit ? (
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full font-semibold bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/30">
+              <Icon name="local_shipping" className="text-[14px]" /> Returns open upon delivery
+            </span>
+          ) : null}
+        </div>
+      </header>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+        {order.items.map((it, idx) => (
+          <ItemRow key={`${it.productId}-${it.variantId || idx}`} order={order} it={it} elig={elig[idx]} onStart={onStart} onCancel={onCancel} cancelling={cancelling} />
+        ))}
+      </div>
+      <footer className="flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-surface-container-high text-[12px] text-on-surface-variant">
+        <div className="flex items-center gap-3">
+          <span>{order.items.length} item{order.items.length === 1 ? '' : 's'} · Total: <strong className="text-on-surface">{money(order.grandTotal)}</strong></span>
+          {order.shippingAddress?.city && (
+            <span className="hidden sm:inline">· {order.shippingAddress.city}</span>
+          )}
+        </div>
+        <div className="flex items-center gap-3">
+          {isInTransit && (
+            <Link to={`/track?orderId=${order.orderId}`} className="font-bold text-secondary hover:underline inline-flex items-center gap-1">
+              <Icon name="local_shipping" className="text-[15px]" /> Track shipment
+            </Link>
+          )}
+          <Link to={`/account/orders/${order.orderId}`} className="font-bold text-secondary hover:underline inline-flex items-center gap-0.5">
+            Order details <Icon name="chevron_right" className="text-[16px]" />
+          </Link>
+        </div>
+      </footer>
+    </article>
+  );
+}
+
+/** "My requests" tab: every return / exchange the customer has raised. */
+function RequestsList({ onGoToOrders }) {
+  const { data, isLoading, isError, error, refetch } = useQuery({ queryKey: ['returns', 'requests'], queryFn: api.myReturnRequests, select: (d) => d.requests });
+  if (isLoading) return <div className="flex flex-col gap-3">{[1, 2].map((i) => <Skeleton key={i} className="h-20 rounded-2xl" />)}</div>;
+  if (isError) return <ErrorState error={error} onRetry={refetch} />;
+  if (!data.length) {
+    return (
+      <div className="card p-8 text-center flex flex-col items-center gap-3 border border-surface-container-high">
+        <span className="w-14 h-14 rounded-2xl bg-secondary/10 text-secondary flex items-center justify-center"><Icon name="assignment_return" className="text-[28px]" /></span>
+        <h3 className="text-headline-sm font-bold">No requests yet</h3>
+        <p className="text-body-sm text-on-surface-variant max-w-md">When you return or exchange a delivered item, you can follow it here.</p>
+        <button type="button" onClick={onGoToOrders} className="btn-primary mt-1">Return or exchange an item</button>
+      </div>
+    );
+  }
+  return (
+    <div className="card divide-y divide-surface-container-high border border-surface-container-high overflow-hidden">
+      {data.map((r) => (
+        <Link key={r.requestId} to={`/returns-exchange/help/${r.requestId}`} className="flex items-center gap-3 p-4 hover:bg-surface-container-low transition-colors">
+          <span className="w-10 h-10 rounded-xl bg-secondary/10 text-secondary flex items-center justify-center shrink-0">
+            <Icon name={r.type === 'exchange' ? 'published_with_changes' : 'assignment_return'} className="text-[20px]" />
+          </span>
+          <div className="flex-1 min-w-0">
+            <p className="text-[14px] font-bold"><span className="capitalize">{r.type}</span> · <span className="font-mono">{r.requestId}</span></p>
+            <p className="text-[12px] text-on-surface-variant">Order {r.orderId} · {formatDate(r.requestedAt || r.createdAt)} · {r.items.map((i) => i.productName).join(', ')}</p>
+          </div>
+          <StatusBadge status={r.status} />
+          <Icon name="chevron_right" className="text-outline hidden sm:block" />
+        </Link>
+      ))}
+    </div>
+  );
+}
+
+function GuestLookup({ signedIn, phone }) {
+  const [orderId, setOrderId] = useState('');
+  const [email, setEmail] = useState('');
+  const [result, setResult] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const submit = async (e) => {
+    e.preventDefault();
+    if (!orderId.trim()) return toast.error('Please enter an Order ID');
+    if (!signedIn && !email.trim()) return toast.error('Please enter the email used for this order');
+    setLoading(true);
+    setResult(null);
+    try {
+      setResult(await api.orderReturnEligibility(orderId.trim(), signedIn ? undefined : email.trim()));
+    } catch (err) {
+      toast.error(err.message || 'Order not found. Please check your Order ID.');
+    } finally {
+      setLoading(false);
+    }
+  };
+  const st = result && lookupStatus(result.eligibility);
+  return (
+    <div className="card p-5 sm:p-6 flex flex-col gap-4 border border-surface-container-high">
+      <div>
+        <h3 className="text-headline-sm font-bold">Check an order</h3>
+        <p className="text-body-sm text-on-surface-variant">Enter your Order ID{signedIn ? '' : ' and the email you ordered with'} to see if it can be returned or exchanged.</p>
+      </div>
+      <form onSubmit={submit} className={cn('flex flex-col gap-3', signedIn && 'sm:flex-row')}>
+        <Input placeholder="e.g. WT26-000042" value={orderId} onChange={(e) => setOrderId(e.target.value)} className="flex-1" aria-label="Order ID" required />
+        {!signedIn && <Input type="email" placeholder="Email used for the order" value={email} onChange={(e) => setEmail(e.target.value)} className="flex-1" aria-label="Email used for the order" required />}
+        <Button type="submit" loading={loading} icon="search">Check</Button>
+      </form>
+      {st && (
+        <div className="p-4 rounded-xl bg-surface-container-low border border-surface-container-high flex flex-col gap-1.5">
+          <div className="flex items-center justify-between gap-2">
+            <span className="font-bold font-mono text-[14px]">{result.orderId}</span>
+            <span className={cn('text-[11px] font-bold px-2.5 py-0.5 rounded-full', result.eligibility?.canReturnOrExchange ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300' : 'bg-surface-container-high text-on-surface-variant')}>{st.badge}</span>
+          </div>
+          <p className="text-[13px] text-on-surface-variant">{st.text}</p>
+          <a href={`tel:${phone}`} className="text-[12px] text-secondary font-bold hover:underline self-start">Need help? Call {phone}</a>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default function ReturnsExchange({ defaultTab = 'orders' }) {
   const user = useUser();
   const money = useMoney();
   const { data: config } = useConfig();
@@ -214,1438 +339,493 @@ export default function ReturnsExchange({ defaultTab = 'return' }) {
   const phone = config?.supportPhone || PHONE;
   const email = config?.supportEmail || EMAIL;
 
-  // Accept common spellings (?tab=returns, ?tab=refund) and fall back to Exchange, so a stray link never shows a blank page.
   const rawTab = searchParams.get('tab');
-  const urlTab = rawTab ? (TAB_ALIASES[rawTab.toLowerCase()] || 'return') : null;
-  const [activeTab, setActiveTab] = useState(urlTab || TAB_ALIASES[defaultTab] || 'return');
-
+  const urlTab = rawTab ? TAB_ALIASES[rawTab.toLowerCase()] || 'orders' : null;
+  const [activeTab, setActiveTab] = useState(urlTab || TAB_ALIASES[defaultTab] || 'orders');
   useEffect(() => {
-    if (urlTab && urlTab !== activeTab) {
-      setActiveTab(urlTab);
-    }
+    if (urlTab && urlTab !== activeTab) setActiveTab(urlTab);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [urlTab]);
-
   const setTab = (t) => {
     setActiveTab(t);
-    const newParams = new URLSearchParams(searchParams);
-    newParams.set('tab', t);
-    setSearchParams(newParams, { replace: true });
+    const next = new URLSearchParams(searchParams);
+    next.set('tab', t);
+    setSearchParams(next, { replace: true });
   };
 
-  // Live customer coins wallet
-  const myCoinsQuery = useMyCoins();
-  const walletCoins = myCoinsQuery.data?.balance || 0;
+  // All orders for customer order list history with return eligibility details.
+  const ordersQuery = useQuery({ queryKey: ['returns', 'my-orders'], queryFn: api.myReturnOrders, enabled: !!user, staleTime: 30 * 1000 });
+  const orders = ordersQuery.data?.orders || [];
+  const openCount = useMemo(
+    () => orders.reduce((n, o) => n + (o.returnDetails?.itemsEligibility || []).filter((e) => ['Requested', 'Approved', 'Pickup Scheduled', 'In Inspection'].includes(e.request?.status)).length, 0),
+    [orders]
+  );
+  const eligibleCount = useMemo(
+    () => orders.filter((o) => o.returnDetails?.canReturnOrExchange).length,
+    [orders]
+  );
+  const inTransitCount = useMemo(
+    () => orders.filter((o) => !o.returnDetails?.isDelivered && o.orderStatus !== 'Cancelled').length,
+    [orders]
+  );
+  const closedCount = useMemo(
+    () => orders.filter((o) => o.returnDetails?.isExpired || o.orderStatus === 'Returned').length,
+    [orders]
+  );
 
-  // Catalogue products for exchange selection
+  const [orderFilter, setOrderFilter] = useState('all'); // 'all' | 'eligible' | 'in_transit' | 'closed'
+  const filteredOrders = useMemo(() => {
+    if (orderFilter === 'eligible') return orders.filter((o) => o.returnDetails?.canReturnOrExchange);
+    if (orderFilter === 'in_transit') return orders.filter((o) => !o.returnDetails?.isDelivered && o.orderStatus !== 'Cancelled');
+    if (orderFilter === 'closed') return orders.filter((o) => o.returnDetails?.isExpired || o.orderStatus === 'Returned');
+    return orders;
+  }, [orders, orderFilter]);
+
+  const needRefundInfo = useMemo(() => orders.flatMap((o) => (o.returnDetails?.itemsEligibility || []).filter((e) => e.request?.needsRefundDetails).map((e) => e.request)), [orders]);
+
+  // ── Request form ──
+  const [selectedOrder, setSelectedOrder] = useState(null);
+  const [requestType, setRequestType] = useState('return');
+  const [selectedItems, setSelectedItems] = useState({});
+  const [reason, setReason] = useState(RETURN_REASONS[0]);
+  const [detailedReason, setDetailedReason] = useState('');
+  const [exchangeMode, setExchangeMode] = useState('variant');
+  const [exchangeVariant, setExchangeVariant] = useState('');
+  const [exchangeReplacementId, setExchangeReplacementId] = useState('');
+  const [conditionConfirmed, setConditionConfirmed] = useState(false);
+
   const { data: catalogueProducts = [] } = useQuery({
     queryKey: ['exchange-catalogue-products'],
     queryFn: () => api.products({ limit: 40 }),
-    // Flatten what the widgets show: image URL, category name and the price the customer actually pays.
-    select: (d) =>
-      (d.items || d.products || []).map((p) => ({
-        ...p,
-        image: productImage(p),
-        categoryName: p.category?.name || 'Luxury',
-        price: p.finalPrice ?? p.salePrice ?? p.price,
-      })),
+    select: (d) => (d.items || d.products || []).map((p) => ({ ...p, image: productImage(p), price: p.finalPrice ?? p.salePrice ?? p.price })),
+    enabled: !!selectedOrder && requestType === 'exchange' && exchangeMode === 'product',
     staleTime: 60 * 1000,
   });
 
-  // Selected order for the return/exchange modal
-  const [selectedOrder, setSelectedOrder] = useState(null);
-  const [requestType, setRequestType] = useState('exchange'); // 'return' | 'exchange'
-  const [selectedItems, setSelectedItems] = useState({}); // { [productId-variantId]: quantity }
-  const [reason, setReason] = useState(EXCHANGE_REASONS[0]);
-  const [detailedReason, setDetailedReason] = useState('');
+  const keyOf = (it) => `${it.productId}-${it.variantId || 'default'}`;
+  const eligibleAt = (order, idx) => order.returnDetails?.itemsEligibility?.[idx]?.canReturnOrExchange;
 
-  // Exchange specific states (Big App Experience)
-  const [exchangeMode, setExchangeMode] = useState('variant'); // 'variant' (same product swap) | 'product' (catalogue upgrade/different item) | 'replacement' (defective piece)
-  const [exchangeVariant, setExchangeVariant] = useState('');
-  const [exchangeReplacementId, setExchangeReplacementId] = useState('');
-  const [exchangeNote, setExchangeNote] = useState('');
-  const [useCoinsOnDifference, setUseCoinsOnDifference] = useState(true);
-
-  // Return specific states
-  const [refundMethod, setRefundMethod] = useState('Original Payment Method');
-  const [upiId, setUpiId] = useState('');
-  const [conditionConfirmed, setConditionConfirmed] = useState(true);
-
-  // Guest order lookup state
-  const [guestOrderId, setGuestOrderId] = useState('');
-  const [guestEmail, setGuestEmail] = useState('');
-  const [guestResult, setGuestResult] = useState(null);
-  const [guestLoading, setGuestLoading] = useState(false);
-
-  // Fetch logged in user's orders with return status & hidden countdown calculation
-  const {
-    data: ordersData,
-    isLoading: ordersLoading,
-    isError: ordersError,
-    error: ordersErr,
-    refetch: refetchOrders,
-  } = useQuery({
-    queryKey: ['returns', 'my-orders'],
-    queryFn: api.myReturnOrders,
-    enabled: !!user,
-    staleTime: 30 * 1000,
-  });
-
-  const orders = ordersData?.orders || [];
-
-  // Filter delivered vs others
-  const deliveredOrders = useMemo(() => orders.filter((o) => o.orderStatus === 'Delivered'), [orders]);
-  const otherOrders = useMemo(() => orders.filter((o) => o.orderStatus !== 'Delivered'), [orders]);
-
-  // Active return/exchange requests
-  const activeRequests = useMemo(() => {
-    return orders
-      .filter((o) => o.returnDetails?.hasActiveRequest)
-      .map((o) => ({ order: o, request: o.returnDetails.activeRequest }));
-  }, [orders]);
-
-  const openModal = (order, type = 'exchange', preselectedReplacement = null) => {
-    if (order.orderStatus === 'Cancelled') {
-      toast.error('Order is cancelled. Returns or exchanges are not permitted.');
-      return;
-    }
-    if (order.returnDetails?.isExpired) {
-      toast.error('Once 7 days are complete for a specific item, no return or exchange will happen.');
-      return;
-    }
+  const openModal = (order, type = 'return', onlyItem = null) => {
     setSelectedOrder(order);
     setRequestType(type);
     setReason(type === 'exchange' ? EXCHANGE_REASONS[0] : RETURN_REASONS[0]);
     setDetailedReason('');
-    setExchangeMode(preselectedReplacement ? 'product' : 'variant');
+    setExchangeMode('variant');
     setExchangeVariant('');
-    setExchangeReplacementId(preselectedReplacement?._id || '');
-    setExchangeNote('');
-    setUseCoinsOnDifference(true);
-    setRefundMethod('Original Payment Method');
-    setUpiId('');
-    setConditionConfirmed(true);
-
-    // Default select eligible items only (excluding items where 7 days completed or already requested)
-    const initialItems = {};
-    const itemsElig = order.returnDetails?.itemsEligibility || [];
-    order.items.forEach((it) => {
-      const match = itemsElig.find(
-        (ie) => String(ie.productId) === String(it.productId) && (!it.variantId || String(ie.variantId) === String(it.variantId))
-      );
-      const isElig = match ? match.canReturn : !order.returnDetails?.isExpired;
-      if (isElig) {
-        const key = `${it.productId}-${it.variantId || 'default'}`;
-        initialItems[key] = it.quantity;
-      }
+    setExchangeReplacementId('');
+    setConditionConfirmed(false);
+    const initial = {};
+    order.items.forEach((it, idx) => {
+      if (eligibleAt(order, idx) && (!onlyItem || keyOf(onlyItem) === keyOf(it))) initial[keyOf(it)] = it.quantity;
     });
-    setSelectedItems(initialItems);
+    setSelectedItems(initial);
   };
 
-  // Auto-open modal if navigated with query params ?order=...&type=...
+  // Links like /returns-exchange?order=WT26-000042&type=exchange open the form straight away.
   useEffect(() => {
-    const orderIdParam = searchParams.get('order');
-    const typeParam = searchParams.get('type') || 'exchange';
-    if (orderIdParam && orders.length > 0 && !selectedOrder) {
-      const found = orders.find((o) => o.orderId === orderIdParam || o._id === orderIdParam);
-      if (found) {
-        openModal(found, typeParam);
-      }
-    }
-  }, [searchParams, orders, selectedOrder]);
+    const id = searchParams.get('order');
+    if (!id || !orders.length || selectedOrder) return;
+    const found = orders.find((o) => o.orderId === id || o._id === id);
+    if (found && found.returnDetails?.canReturnOrExchange) openModal(found, searchParams.get('type') === 'exchange' ? 'exchange' : 'return');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, orders]);
 
-  // Mutation to submit Return / Exchange
+  const refresh = () => {
+    qc.invalidateQueries({ queryKey: ['returns'] });
+    qc.invalidateQueries({ queryKey: ['orders'] });
+  };
+
   const submitMutation = useMutation({
     mutationFn: (payload) => api.submitReturnExchange(payload),
     onSuccess: () => {
-      toast.success(`${requestType === 'exchange' ? 'Exchange' : 'Return'} request submitted successfully!`);
+      toast.success(`${requestType === 'exchange' ? 'Exchange' : 'Return'} request sent. We’ll let you know once it’s approved.`);
       setSelectedOrder(null);
-      qc.invalidateQueries({ queryKey: ['returns', 'my-orders'] });
-      qc.invalidateQueries({ queryKey: ['my-coins'] });
-      qc.invalidateQueries({ queryKey: ['orders'] });
+      refresh();
     },
-    onError: (err) => {
-      toast.error(err.message || 'Failed to submit request.');
-    },
+    onError: (err) => toast.error(err.message || 'Failed to submit request.'),
   });
 
-  // 1. Calculate selected original items total and quantities
-  const { selectedItemsCount, selectedOriginalTotal } = useMemo(() => {
-    if (!selectedOrder) return { selectedItemsCount: 0, selectedOriginalTotal: 0 };
+  const cancelMutation = useMutation({
+    mutationFn: (requestId) => api.cancelReturnRequest(requestId),
+    onSuccess: () => {
+      toast.success('Request cancelled');
+      refresh();
+    },
+    onError: (err) => toast.error(err.message),
+  });
+  const onCancel = (request) => {
+    if (window.confirm(`Cancel ${request.type} request ${request.requestId}? You can raise a new one while the 7-day window is open.`)) cancelMutation.mutate(request.requestId);
+  };
+
+  const { selectedCount, selectedTotal } = useMemo(() => {
     let count = 0;
     let total = 0;
-    selectedOrder.items.forEach((it) => {
-      const key = `${it.productId}-${it.variantId || 'default'}`;
-      const qty = selectedItems[key] || 0;
-      if (qty > 0) {
-        count += qty;
-        total += (it.unitPrice || 0) * qty;
-      }
+    (selectedOrder?.items || []).forEach((it) => {
+      const q = selectedItems[keyOf(it)] || 0;
+      count += q;
+      total += (it.unitPrice || 0) * q;
     });
-    return { selectedItemsCount: count, selectedOriginalTotal: total };
+    return { selectedCount: count, selectedTotal: total };
   }, [selectedOrder, selectedItems]);
 
-  // 2. Selected replacement product (if exchangeMode === 'product')
-  const selectedReplacementProduct = useMemo(() => {
-    if (exchangeMode !== 'product' || !exchangeReplacementId) return null;
-    return catalogueProducts.find((p) => p._id === exchangeReplacementId || p.slug === exchangeReplacementId);
-  }, [exchangeMode, exchangeReplacementId, catalogueProducts]);
-
-  // 3. Complete Exchange Coin & Difference Calculation (All coin calculations in mind)
-  const exchangeCalc = useMemo(() => {
-    if (requestType !== 'exchange' || !selectedOrder) return null;
-
-    let replacementTotal = selectedOriginalTotal;
-    if (exchangeMode === 'product' && selectedReplacementProduct) {
-      const repUnitPrice = selectedReplacementProduct.salePrice || selectedReplacementProduct.price || 0;
-      replacementTotal = repUnitPrice * Math.max(1, selectedItemsCount);
-    }
-
-    const grossDifference = replacementTotal - selectedOriginalTotal;
-    const isUpgrade = grossDifference > 0;
-    const isDowngrade = grossDifference < 0;
-    const isSameValue = grossDifference === 0;
-
-    const maxCoinsApplicable = isUpgrade ? Math.min(walletCoins, grossDifference) : 0;
-    const coinsApplied = (isUpgrade && useCoinsOnDifference) ? maxCoinsApplicable : 0;
-    const netPayable = isUpgrade ? Math.max(0, grossDifference - coinsApplied) : 0;
-
-    const excessRefund = isDowngrade ? Math.abs(grossDifference) : 0;
-    const excessCoinsBonus = Math.round(excessRefund * 1.05); // +5% bonus store credit reward
-
-    return {
-      originalValue: selectedOriginalTotal,
-      replacementValue: replacementTotal,
-      grossDifference,
-      isUpgrade,
-      isDowngrade,
-      isSameValue,
-      coinsApplied,
-      maxCoinsApplicable,
-      netPayable,
-      excessRefund,
-      excessCoinsBonus,
-      loyaltyCoinsRule: 'Coins will disburse 1 week (7 days) after delivery of the replacement product',
-    };
-  }, [requestType, selectedOrder, selectedOriginalTotal, selectedItemsCount, exchangeMode, selectedReplacementProduct, walletCoins, useCoinsOnDifference]);
+  const replacement = useMemo(
+    () => (exchangeMode === 'product' && exchangeReplacementId ? catalogueProducts.find((p) => p._id === exchangeReplacementId) : null),
+    [exchangeMode, exchangeReplacementId, catalogueProducts]
+  );
+  const difference = replacement ? replacement.price * Math.max(1, selectedCount) - selectedTotal : 0;
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!conditionConfirmed) {
-      toast.error('Please confirm the product is unused with original tags intact.');
-      return;
-    }
-
-    const itemsPayload = [];
-    selectedOrder.items.forEach((it) => {
-      const key = `${it.productId}-${it.variantId || 'default'}`;
-      const qty = selectedItems[key] || 0;
-      if (qty > 0) {
-        itemsPayload.push({
-          productId: it.productId,
-          productName: it.productName,
-          variantId: it.variantId,
-          variantName: it.variantName,
-          SKU: it.SKU,
-          image: it.image,
-          quantity: qty,
-          unitPrice: it.unitPrice,
-          totalPrice: (it.unitPrice || 0) * qty,
-        });
-      }
-    });
-
-    if (!itemsPayload.length) {
-      toast.error('Please select at least one item to return or exchange.');
-      return;
-    }
-
-    if (requestType === 'exchange') {
-      if (exchangeMode === 'product' && !exchangeReplacementId) {
-        toast.error('Please select a replacement product from the catalogue.');
-        return;
-      }
-    }
-
-    if (requestType === 'return' && refundMethod === 'UPI' && !upiId.trim()) {
-      toast.error('Please enter your UPI ID for refund processing.');
-      return;
-    }
-
-    const exchangePreference = requestType === 'exchange' ? {
-      exchangeType: exchangeMode,
-      desiredSizeOrColor: exchangeMode === 'variant' ? exchangeVariant.trim() || 'Same as original' : '',
-      desiredItemName: exchangeMode === 'product' && selectedReplacementProduct ? selectedReplacementProduct.name : (selectedOrder.items[0]?.productName || ''),
-      replacementProductId: exchangeMode === 'product' ? exchangeReplacementId : undefined,
-      notes: exchangeNote.trim(),
-      coinCalculation: exchangeCalc,
-    } : undefined;
-
+    const items = selectedOrder.items
+      .filter((it) => (selectedItems[keyOf(it)] || 0) > 0)
+      .map((it) => ({ productId: it.productId, productName: it.productName, variantId: it.variantId, variantName: it.variantName, SKU: it.SKU, image: it.image, quantity: selectedItems[keyOf(it)], unitPrice: it.unitPrice, totalPrice: (it.unitPrice || 0) * selectedItems[keyOf(it)] }));
+    if (!items.length) return toast.error('Please select at least one item.');
+    if (requestType === 'exchange' && exchangeMode === 'product' && !exchangeReplacementId) return toast.error('Please choose the product you want instead.');
+    if (!conditionConfirmed) return toast.error('Please confirm the item is unused with its tags and packaging.');
     submitMutation.mutate({
       orderId: selectedOrder.orderId,
       type: requestType,
       reason,
       detailedReason,
-      items: itemsPayload,
-      exchangePreference,
-      refundMethod: requestType === 'return' ? refundMethod : undefined,
-      refundDetails: requestType === 'return' && refundMethod === 'UPI' ? { upiId } : undefined,
+      items,
+      exchangePreference:
+        requestType === 'exchange'
+          ? {
+              exchangeType: exchangeMode,
+              desiredSizeOrColor: exchangeMode === 'variant' ? exchangeVariant.trim() || 'Same as original' : '',
+              desiredItemName: exchangeMode === 'product' && replacement ? replacement.name : items[0]?.productName || '',
+              replacementProductId: exchangeMode === 'product' ? exchangeReplacementId : undefined,
+              notes: detailedReason.trim(),
+              coinCalculation: replacement ? { originalValue: selectedTotal, replacementValue: replacement.price * Math.max(1, selectedCount), difference } : null,
+            }
+          : undefined,
       conditionConfirmed,
     });
   };
 
-  const handleGuestLookup = async (e) => {
-    e.preventDefault();
-    if (!guestOrderId.trim()) {
-      toast.error('Please enter an Order ID');
-      return;
-    }
-    if (!user && !guestEmail.trim()) {
-      toast.error('Please enter the email used for this order');
-      return;
-    }
-    setGuestLoading(true);
-    setGuestResult(null);
-    try {
-      const res = await api.orderReturnEligibility(guestOrderId.trim(), user ? undefined : guestEmail.trim());
-      setGuestResult(res);
-    } catch (err) {
-      toast.error(err.message || 'Order not found. Please check your Order ID.');
-    } finally {
-      setGuestLoading(false);
-    }
-  };
-
-  const renderOrdersBlock = (mode = 'exchange') => {
-    if (!user) {
-      return (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
-          <div className="card p-6 flex flex-col gap-4 bg-surface-container-lowest border border-surface-container-high shadow-xs">
-            <span className="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
-              <Icon name="lock" className="text-[24px]" />
-            </span>
-            <div>
-              <h3 className="text-headline-sm font-bold">Sign in to manage your orders</h3>
-              <p className="text-body-sm text-on-surface-variant mt-1">
-                Access your delivered orders with live 7-day countdown badges, coin calculation offsets, and 1-tap doorstep exchange or return requests.
-              </p>
-            </div>
-            <div className="flex items-center gap-3 mt-2">
-              <Link to="/login?redirect=/exchange" className="btn-primary flex-1 text-center">
-                Sign in
-              </Link>
-              <Link to="/register?redirect=/exchange" className="btn-tonal flex-1 text-center">
-                Create account
-              </Link>
-            </div>
-          </div>
-
-          <div className="card p-6 flex flex-col gap-4 bg-surface-container-lowest border border-surface-container-high shadow-xs">
-            <div>
-              <span className="eyebrow">Guest Lookup</span>
-              <h3 className="text-headline-sm font-bold mt-0.5">Check Order 7-Day Window</h3>
-              <p className="text-body-sm text-on-surface-variant">
-                Enter your Order ID (e.g. WT26-000042) and the email you ordered with to see return & exchange eligibility and time left.
-              </p>
-            </div>
-
-            <form onSubmit={handleGuestLookup} className="flex flex-col gap-3">
-              <Field label="Order ID">
-                <Input
-                  placeholder="e.g. WT26-000042"
-                  value={guestOrderId}
-                  onChange={(e) => setGuestOrderId(e.target.value)}
-                  required
-                />
-              </Field>
-              <Field label="Email used for the order">
-                <Input type="email" placeholder="you@example.com" value={guestEmail} onChange={(e) => setGuestEmail(e.target.value)} required />
-              </Field>
-              <Button type="submit" loading={guestLoading} icon="search">
-                Check Eligibility
-              </Button>
-            </form>
-
-            {guestResult && (
-              <div className="p-4 rounded-xl bg-surface-container-high border border-surface-container-highest flex flex-col gap-2 mt-2">
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-[14px]">{guestResult.orderId}</span>
-                  <span
-                    className={cn(
-                      'text-[11px] font-bold px-2.5 py-0.5 rounded-full',
-                      guestResult.eligibility?.canReturnOrExchange
-                        ? 'bg-success/15 text-success'
-                        : 'bg-outline/20 text-on-surface-variant'
-                    )}
-                  >
-                    {lookupStatus(guestResult.eligibility).badge}
-                  </span>
-                </div>
-                {guestResult.eligibility?.canReturnOrExchange ? (
-                  <p className="text-[13px] text-success font-semibold flex items-center gap-1.5">
-                    <Icon name="timer" className="text-[16px]" />
-                    {lookupStatus(guestResult.eligibility).text}
-                  </p>
-                ) : (
-                  <p className="text-[12px] text-on-surface-variant">{lookupStatus(guestResult.eligibility).text}</p>
-                )}
-                <div className="pt-2 border-t border-outline/20 flex justify-between items-center text-[12px]">
-                  <span className="text-on-surface-variant">Need assistance?</span>
-                  <a href={`tel:${phone}`} className="text-secondary font-bold hover:underline">
-                    Call {phone}
-                  </a>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      );
-    }
-
-    if (ordersLoading) {
-      return (
-        <div className="flex flex-col gap-4">
-          {[1, 2, 3].map((i) => (
-            <Skeleton key={i} className="h-44 rounded-2xl" />
-          ))}
-        </div>
-      );
-    }
-
-    if (ordersError) {
-      return <ErrorState error={ordersErr} onRetry={refetchOrders} />;
-    }
-
-    if (orders.length === 0) {
-      return (
-        <div className="card p-8 text-center flex flex-col items-center gap-3 bg-surface-container-lowest border border-surface-container-high">
-          <span className="w-14 h-14 rounded-2xl bg-surface-container-high text-outline flex items-center justify-center">
-            <Icon name="receipt_long" className="text-[28px]" />
-          </span>
-          <h3 className="text-headline-sm font-bold">No orders found</h3>
-          <p className="text-body-sm text-on-surface-variant max-w-md">
-            Once you purchase a bag or gear from WILDTANE, your delivered items and 7-day return timelines will appear here.
-          </p>
-          <Link to="/shop" className="btn-primary mt-2">
-            Browse Shop
-          </Link>
-        </div>
-      );
-    }
-
-    return (
-      <div className="flex flex-col gap-6">
-        {/* Delivered Orders List (Eligible / Expired) */}
-        {deliveredOrders.length > 0 && (
-          <div className="flex flex-col gap-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-label-lg uppercase tracking-wider text-outline flex items-center gap-2">
-                <Icon name="check_circle" className="text-success text-[18px]" /> Delivered Orders ({deliveredOrders.length})
-              </h3>
-              <button
-                type="button"
-                onClick={() => refetchOrders()}
-                className="btn-tonal text-[12px] h-8 px-2.5 flex items-center gap-1"
-              >
-                <Icon name="refresh" className="text-[15px]" /> Refresh
-              </button>
-            </div>
-
-            {deliveredOrders.map((order) => {
-              const ret = order.returnDetails || {};
-              const hasActiveReq = ret.hasActiveRequest;
-              const activeReq = ret.activeRequest;
-              const canAct = ret.canReturnOrExchange;
-              const isExpired = ret.isExpired;
-
-              return (
-                <div
-                  key={order._id}
-                  className="card p-4 sm:p-5 flex flex-col gap-4 hover:border-secondary/30 transition-colors shadow-sm bg-surface-container-lowest border border-surface-container-high"
-                >
-                  {/* Top Header: Order ID, Delivery Date, Countdown Badge */}
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-surface-container-high pb-3">
-                    <div className="flex items-center gap-3 flex-wrap">
-                      <span className="text-title-md font-bold font-mono text-on-surface">{order.orderId}</span>
-                      <StatusBadge status={order.orderStatus} />
-                      <span className="text-body-sm text-on-surface-variant">
-                        Delivered: {order.deliveredAt ? formatDate(order.deliveredAt) : 'Recently'}
-                      </span>
-                    </div>
-
-                    {/* ── TIME LEFT BADGE / STATUS CHIP ── */}
-                    <div className="flex items-center gap-2 flex-wrap">
-                      {hasActiveReq ? (
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[12px] font-bold bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30">
-                          <Icon name="sync" className="text-[15px] animate-spin" />
-                          {activeReq?.type === 'exchange' ? 'Exchange' : 'Return'} {activeReq?.status || 'In Progress'}
-                        </span>
-                      ) : canAct ? (
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[12px] font-bold bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 shadow-sm animate-pulse">
-                          <Icon name="timer" className="text-[16px]" />
-                          ⏱ {ret.daysLeft} {ret.daysLeft === 1 ? 'day' : 'days'} left to return or exchange
-                        </span>
-                      ) : isExpired ? (
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[12px] font-semibold bg-surface-container-highest text-on-surface-variant border border-outline/20">
-                          <Icon name="lock" className="text-[14px]" /> 7-day window completed · Final Sale
-                        </span>
-                      ) : null}
-
-                      {/* Coin Disbursement Status Badge */}
-                      {order.orderStatus === 'Cancelled' ? (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-rose-500/15 text-rose-700 dark:text-rose-400 border border-rose-500/30">
-                          <CoinIcon className="w-3.5 h-3.5" />
-                          Cancelled · 0 Coins Credited
-                        </span>
-                      ) : order.coinsEarned > 0 ? (
-                        <span
-                          className={cn(
-                            'inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold',
-                            order.coinsDisbursed
-                              ? 'bg-amber-400/20 text-[#a16207] dark:text-[#fde047]'
-                              : 'bg-surface-container-high text-on-surface-variant'
-                          )}
-                        >
-                          <CoinIcon className="w-3.5 h-3.5" />
-                          {order.coinsDisbursed
-                            ? `+${order.coinsEarned} Coins Disbursed`
-                            : `+${order.coinsEarned} Coins Pending`}
-                        </span>
-                      ) : null}
-                    </div>
-                  </div>
-
-                  {/* Order Items List with item-level 7-day completion and return eligibility */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {order.items.map((it, idx) => {
-                      const itemElig = ret.itemsEligibility?.find(
-                        (ie) => String(ie.productId) === String(it.productId) && (!it.variantId || String(ie.variantId) === String(it.variantId))
-                      );
-                      const isItemExpired = itemElig?.isExpired || isExpired;
-                      const isItemRequested = itemElig?.alreadyRequested;
-
-                      return (
-                        <div
-                          key={`${it.productId}-${it.variantId || idx}`}
-                          className="p-3 rounded-xl bg-surface-container-low flex items-center gap-3 border border-surface-container-high/60"
-                        >
-                          <Img
-                            src={it.image}
-                            alt={it.productName}
-                            className="w-16 h-16 rounded-lg object-cover shrink-0 ring-1 ring-surface-container-highest"
-                          />
-                          <div className="flex-1 min-w-0">
-                            <p className="text-[14px] font-bold truncate">{it.productName}</p>
-                            <p className="text-[12px] text-on-surface-variant">
-                              {it.variantName ? `${it.variantName} · ` : ''}Qty: {it.quantity}
-                            </p>
-                            <p className="text-[12px] font-semibold text-secondary">
-                              {money(it.totalPrice || it.unitPrice * it.quantity)}
-                            </p>
-                            {isItemExpired ? (
-                              <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-outline bg-surface-container-highest/80 px-2 py-0.5 rounded-md mt-1">
-                                <Icon name="lock" className="text-[12px]" /> 7 days complete · Final sale (No return/exchange)
-                              </span>
-                            ) : isItemRequested ? (
-                              <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-amber-700 dark:text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-md mt-1">
-                                ⏳ Return/exchange in progress
-                              </span>
-                            ) : canAct ? (
-                              <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md mt-1">
-                                ✓ 7-day window active ({ret.daysLeft || 7}d left)
-                              </span>
-                            ) : null}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-
-                  {/* Action Bar & Summary */}
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-surface-container-high">
-                    <div className="text-[12px] text-on-surface-variant">
-                      Total paid: <strong className="text-on-surface">{money(order.grandTotal)}</strong> · Shipped to{' '}
-                      {order.shippingAddress?.city}, {order.shippingAddress?.postalCode}
-                    </div>
-
-                    <div className="flex items-center gap-2 flex-wrap">
-                      {canAct && (
-                        <div className="flex flex-col gap-2 w-full sm:w-auto">
-                          {mode === 'exchange' ? (
-                            <>
-                              <Button
-                                size="sm"
-                                variant="primary"
-                                icon="published_with_changes"
-                                className="w-full sm:w-auto justify-center font-bold bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 text-white shadow-xs"
-                                onClick={() => openModal(order, 'exchange')}
-                              >
-                                Exchange (Receive Another Unit of Same Product - 7 Days)
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="tonal"
-                                icon="assignment_return"
-                                className="w-full sm:w-auto justify-center font-semibold border border-outline-variant/60"
-                                onClick={() => openModal(order, 'return')}
-                              >
-                                Return for Refund (7-Day Policy)
-                              </Button>
-                            </>
-                          ) : (
-                            <>
-                              <Button
-                                size="sm"
-                                variant="tonal"
-                                icon="assignment_return"
-                                className="w-full sm:w-auto justify-center font-semibold border border-outline-variant/60"
-                                onClick={() => openModal(order, 'return')}
-                              >
-                                Return for Refund (7-Day Policy)
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="primary"
-                                icon="published_with_changes"
-                                className="w-full sm:w-auto justify-center font-bold bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 text-white shadow-xs"
-                                onClick={() => openModal(order, 'exchange')}
-                              >
-                                Exchange (Receive Another Unit of Same Product - 7 Days)
-                              </Button>
-                            </>
-                          )}
-                        </div>
-                      )}
-
-                      {hasActiveReq && (
-                        <Link
-                          to={`/account/orders/${order.orderId}`}
-                          className="btn-tonal text-[12px] h-8 px-3 flex items-center gap-1"
-                        >
-                          Track Request Status <Icon name="chevron_right" className="text-[16px]" />
-                        </Link>
-                      )}
-
-                      {isExpired && (
-                        <span className="text-[12px] text-outline flex items-center gap-1">
-                          <Icon name="lock" className="text-outline text-[16px]" /> 7-day window complete for item(s) · No return or exchange · Coins disbursed
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-
-        {/* In Transit / Recent Orders */}
-        {otherOrders.length > 0 && (
-          <div className="flex flex-col gap-4 mt-2">
-            <h3 className="text-label-lg uppercase tracking-wider text-outline flex items-center gap-2">
-              <Icon name="local_shipping" className="text-secondary text-[18px]" /> Active Orders (In Transit) ({otherOrders.length})
-            </h3>
-
-            {otherOrders.map((order) => (
-              <div
-                key={order._id}
-                className="card p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-surface-container-low/50"
-              >
-                <div className="flex items-center gap-3">
-                  <Img
-                    src={order.items[0]?.image}
-                    alt=""
-                    className="w-12 h-12 rounded-lg object-cover shrink-0"
-                  />
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold font-mono text-[14px]">{order.orderId}</span>
-                      <StatusBadge status={order.orderStatus} />
-                    </div>
-                    <p className="text-[12px] text-on-surface-variant mt-0.5">
-                      {order.items.map((i) => i.productName).join(', ')}
-                    </p>
-                    {order.orderStatus === 'Cancelled' ? (
-                      <p className="text-[11px] font-medium text-rose-600 dark:text-rose-400 mt-0.5">
-                        🚫 Order cancelled — coins will not come and no return or exchange will happen.
-                      </p>
-                    ) : (
-                      <p className="text-[11px] text-outline">
-                        7-day return/exchange window activates on delivery day.
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                <Link to={`/account/orders/${order.orderId}`} className="btn-tonal text-[12px] h-8 px-3 shrink-0">
-                  Track Delivery
-                </Link>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    );
-  };
-
-  const renderFaqSection = () => (
-    <section className="card p-6 mt-4 flex flex-col gap-6 bg-surface-container-lowest border border-surface-container-high">
-      <div>
-        <span className="eyebrow">Comprehensive Guide</span>
-        <h2 className="text-headline-sm mt-1">Frequently Asked Questions on Returns & Exchanges</h2>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5 text-body-sm">
-        <div className="p-4 rounded-xl bg-surface-container-low flex flex-col gap-1.5">
-          <h4 className="font-bold text-[14px] flex items-center gap-2 text-on-surface">
-            <Icon name="published_with_changes" className="text-secondary" /> What do I receive in exchange?
-          </h4>
-          <p className="text-on-surface-variant text-[13px] leading-relaxed">
-            In exchange, you receive another unit of the same product if eligible under our 7-day policy. Our courier delivers an identical hand-inspected replacement unit or your preferred size/color variation with ₹0 delivery charges. You can also upgrade to any bag across our catalogue using WILDTANE coins.
-          </p>
-        </div>
-
-        <div className="p-4 rounded-xl bg-surface-container-low flex flex-col gap-1.5">
-          <h4 className="font-bold text-[14px] flex items-center gap-2 text-on-surface">
-            <Icon name="event" className="text-secondary" /> How is the 7-day period calculated?
-          </h4>
-          <p className="text-on-surface-variant text-[13px] leading-relaxed">
-            The 7-day period starts from the precise moment the delivery courier marks your parcel as "Delivered". Our system calculates the exact hours and days left, displaying an active countdown badge on your order.
-          </p>
-        </div>
-
-        <div className="p-4 rounded-xl bg-surface-container-low flex flex-col gap-1.5">
-          <h4 className="font-bold text-[14px] flex items-center gap-2 text-on-surface">
-            <Icon name="savings" className="text-secondary" /> What happens to coins if an order is cancelled?
-          </h4>
-          <p className="text-on-surface-variant text-[13px] leading-relaxed">
-            <strong>If an order gets cancelled, coin rewards will not come.</strong> Pending coins for that order are cancelled and zeroed out. Any coins redeemed at checkout are promptly refunded back to your wallet balance.
-          </p>
-        </div>
-
-        <div className="p-4 rounded-xl bg-surface-container-low flex flex-col gap-1.5">
-          <h4 className="font-bold text-[14px] flex items-center gap-2 text-on-surface">
-            <Icon name="event" className="text-secondary" /> What happens once 7 days are complete for a specific item?
-          </h4>
-          <p className="text-on-surface-variant text-[13px] leading-relaxed">
-            Once 7 days are complete following delivery for a specific item, <strong>no return or exchange will happen</strong> (item is final sale). At that moment, the reserved loyalty coins for that item permanently disburse into your active wallet balance!
-          </p>
-        </div>
-
-        <div className="p-4 rounded-xl bg-surface-container-low flex flex-col gap-1.5">
-          <h4 className="font-bold text-[14px] flex items-center gap-2 text-on-surface">
-            <Icon name="local_shipping" className="text-secondary" /> How does doorstep pickup work?
-          </h4>
-          <p className="text-on-surface-variant text-[13px] leading-relaxed">
-            Once approved, a reverse pickup courier partner is assigned to collect the parcel from your delivery address within 24 to 48 hours. Please ensure tags are intact and items are packed in the original box.
-          </p>
-        </div>
-
-        <div className="p-4 rounded-xl bg-surface-container-low flex flex-col gap-1.5">
-          <h4 className="font-bold text-[14px] flex items-center gap-2 text-on-surface">
-            <Icon name="headset_mic" className="text-secondary" /> How can I speak to a care executive?
-          </h4>
-          <p className="text-on-surface-variant text-[13px] leading-relaxed">
-            You can call our dedicated customer care desk directly at <a href={`tel:${phone}`} className="font-bold text-secondary hover:underline">{phone}</a> or email <a href={`mailto:${email}`} className="font-bold text-secondary hover:underline">{email}</a>.
-          </p>
-        </div>
-      </div>
-    </section>
-  );
-
   return (
     <div className="bg-surface text-on-surface min-h-screen pb-16">
-      <Seo
-        title="Returns & Exchange Portal | WILDTANE"
-        description="Initiate hassle-free 7-day returns or exchanges. Free doorstep pickup, transparent status tracking, customer care helpline and instant coin disbursements."
-      />
+      <Seo title="Returns & Exchange | WILDTANE" description="Return or exchange a delivered WILDTANE order within 7 days. Free doorstep pickup, clear status updates and refunds to your UPI, bank account or original payment." />
 
-      {/* ── DYNAMIC HERO BANNER ────────────────────────────────── */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-surface-container-high/60 via-surface-container-low/40 to-surface pt-10 pb-8 md:pt-14 md:pb-10 border-b border-surface-container-high">
-        <div className="container-x max-w-5xl">
-          <div className="flex flex-col items-center text-center gap-3">
-            <span
-              className={cn(
-                'inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-[12px] font-bold border transition-colors',
-                activeTab === 'track'
-                  ? 'bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-500/30'
-                  : 'bg-secondary/15 text-secondary border-secondary/30'
-              )}
-            >
-              <Icon
-                name={activeTab === 'track' ? 'track_changes' : 'verified'}
-                className="text-[16px]"
-              />
-              {activeTab === 'track'
-                ? 'Live Request Progress & Courier Dispatch Tracker'
-                : '7-Day 100% Full Refund Policy · Doorstep Pickup'}
+      {/* ── HEADER ── */}
+      <section className="border-b border-surface-container-high bg-gradient-to-b from-secondary/10 via-surface to-surface">
+        <div className="container-x max-w-5xl pt-8 pb-6 md:pt-12 md:pb-8 flex flex-col gap-5">
+          <div className="flex flex-col gap-2 text-center items-center">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[12px] font-bold bg-secondary/15 text-secondary">
+              <Icon name="verified" className="text-[16px]" /> 7-day returns · Free doorstep pickup
             </span>
-
-            <h1 className="text-headline-xl md:text-[42px] font-serif font-black tracking-tight leading-tight">
-              {activeTab === 'track'
-                ? 'Track Returns & Exchanges'
-                : 'Return & Exchange Portal'}
-            </h1>
-
-            <p className="text-body-md text-on-surface-variant max-w-2xl">
-              {activeTab === 'track'
-                ? 'Check real-time status of your pickup, reverse logistics verification, replacement dispatch, and coin disbursement.'
-                : 'Changed your mind or need a different size? Request an exchange or return within 7 days from delivery. In exchange you receive another unit of the same product if eligible, or a 100% full refund.'}
-            </p>
-
-            {/* TAB SELECTOR CHIPS */}
-            <div className="flex items-center justify-center gap-2 p-1.5 rounded-2xl bg-surface-container-high/90 border border-surface-container-highest shadow-inner mt-4 w-full sm:w-auto overflow-x-auto">
-              <button
-                type="button"
-                onClick={() => setTab('return')}
-                className={cn(
-                  'px-4 py-2 rounded-xl text-[13px] font-bold transition-all flex items-center gap-2 whitespace-nowrap',
-                  activeTab === 'return'
-                    ? 'bg-primary text-on-primary shadow-md'
-                    : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low'
-                )}
-              >
-                <Icon name="assignment_return" className="text-[17px]" />
-                <span>Return & Exchange</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setTab('track')}
-                className={cn(
-                  'px-4 py-2 rounded-xl text-[13px] font-bold transition-all flex items-center gap-2 whitespace-nowrap',
-                  activeTab === 'track'
-                    ? 'bg-amber-600 text-white shadow-md'
-                    : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low'
-                )}
-              >
-                <Icon name="track_changes" className="text-[17px]" />
-                <span>Track Status</span>
-                {activeRequests.length > 0 && (
-                  <span className="w-5 h-5 rounded-full bg-amber-500 text-black text-[11px] font-black flex items-center justify-center">
-                    {activeRequests.length}
-                  </span>
-                )}
-              </button>
-            </div>
+            <h1 className="text-headline-xl md:text-[40px] font-serif font-black tracking-tight leading-tight">Returns & Exchange</h1>
+            <p className="text-body-md text-on-surface-variant max-w-xl">Pick a delivered item, tell us why, and we’ll take it from there.</p>
           </div>
 
-          {/* Quick Pillars */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6">
+          {/* How it works */}
+          <ol className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
             {[
-              ['local_shipping', '7 Days from Delivery', 'Counted automatically from courier drop-off'],
-              ['published_with_changes', 'Seamless Exchange', 'Swap sizes or styles with zero hassle'],
-              ['currency_rupee', '100% Full Refund', 'Original payment method or bank/UPI transfer'],
-              ['savings', 'WILDTANE Coins Credit', 'Coins disburse into wallet 1 week after delivery'],
-            ].map(([icon, title, desc]) => (
-              <div key={title} className="card p-3.5 flex flex-col gap-1 items-center text-center bg-surface-container-low/60">
-                <span className="w-10 h-10 rounded-xl bg-secondary/10 text-secondary flex items-center justify-center shrink-0 mb-1">
+              ['touch_app', 'Choose an item', 'Only your delivered items are listed'],
+              ['task_alt', 'We review it', 'You’ll see “in process” until we approve'],
+              ['payments', 'Pickup & refund', 'Choose UPI, bank or another way to be paid'],
+            ].map(([icon, title, text], i) => (
+              <li key={title} className="flex items-center gap-3 p-3 rounded-2xl bg-surface-container-lowest border border-surface-container-high">
+                <span className="w-10 h-10 rounded-xl bg-secondary text-on-secondary flex items-center justify-center shrink-0 relative">
                   <Icon name={icon} className="text-[20px]" />
+                  <span className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-surface text-on-surface text-[10.5px] font-black flex items-center justify-center ring-1 ring-surface-container-high">{i + 1}</span>
                 </span>
-                <p className="text-[13px] font-bold leading-tight">{title}</p>
-                <p className="text-[11px] text-on-surface-variant leading-snug">{desc}</p>
-              </div>
+                <span className="min-w-0">
+                  <span className="block text-[13.5px] font-bold">{title}</span>
+                  <span className="block text-[12px] text-on-surface-variant leading-snug">{text}</span>
+                </span>
+              </li>
             ))}
-          </div>
+          </ol>
+
+          {user && (
+            <div className="flex justify-center">
+              <div role="tablist" aria-label="Returns sections" className="inline-flex p-1 rounded-2xl bg-surface-container-high/80 border border-surface-container-highest">
+                {[
+                  ['orders', 'receipt_long', 'My Orders & Returns'],
+                  ['requests', 'track_changes', 'My Requests'],
+                ].map(([id, icon, label]) => (
+                  <button
+                    key={id}
+                    type="button"
+                    role="tab"
+                    aria-selected={activeTab === id}
+                    onClick={() => setTab(id)}
+                    className={cn('px-4 py-2 rounded-xl text-[13px] font-bold flex items-center gap-2 whitespace-nowrap transition-all', activeTab === id ? 'bg-primary text-on-primary shadow-sm' : 'text-on-surface-variant hover:text-on-surface')}
+                  >
+                    <Icon name={icon} className="text-[17px]" /> {label}
+                    {id === 'orders' && eligibleCount > 0 && <span className="min-w-5 h-5 px-1.5 rounded-full bg-emerald-600 text-white text-[11px] font-black flex items-center justify-center animate-pulse">{eligibleCount} eligible</span>}
+                    {id === 'requests' && openCount > 0 && <span className="min-w-5 h-5 px-1 rounded-full bg-secondary text-on-secondary text-[11px] font-black flex items-center justify-center">{openCount}</span>}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </section>
 
-      {/* ── CUSTOMER CARE HELPLINE & EMAIL BAR ───────────────────── */}
-      <section className="container-x max-w-5xl -mt-6 relative z-10">
-        <div className="card p-4 sm:p-5 shadow-card bg-surface-container-lowest border-2 border-secondary/20 flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-3.5">
-            <span className="w-12 h-12 rounded-2xl bg-secondary text-on-secondary flex items-center justify-center shrink-0 shadow-sm">
-              <Icon name="support_agent" className="text-[28px]" />
-            </span>
-            <div>
-              <p className="text-[11px] uppercase tracking-wider font-bold text-secondary">Customer Care & Grievance Helpline</p>
-              <h2 className="text-[17px] font-bold leading-tight">Need assistance with your return or exchange?</h2>
-              <p className="text-[12px] text-on-surface-variant">
-                WILDTANE Support Team is here to help · Mon – Sat: 9:30 AM – 6:30 PM IST
-              </p>
+      <main className="container-x max-w-5xl mt-6 flex flex-col gap-6">
+        {/* Approved returns waiting for refund details: the most important thing on the page. */}
+        {user && needRefundInfo.length > 0 && (
+          <div className="rounded-2xl p-4 sm:p-5 bg-secondary text-on-secondary flex flex-col sm:flex-row sm:items-center gap-3 shadow-card">
+            <Icon name="account_balance_wallet" className="text-[32px] shrink-0" />
+            <div className="flex-1">
+              <p className="text-[15px] font-bold">Your return is approved — how should we refund you?</p>
+              <p className="text-[13px] opacity-90">Add your UPI ID, bank account or choose another option so we can send your money.</p>
             </div>
-          </div>
-
-          <div className="flex items-center gap-2.5 flex-wrap justify-center w-full md:w-auto">
-            {/* Phone Call Button */}
-            <a
-              href={`tel:${phone}`}
-              className="btn btn-primary h-11 px-4 text-[13px] font-semibold flex items-center gap-2 shadow-sm"
-            >
-              <Icon name="call" className="text-[18px]" />
-              <span>Call {phone}</span>
-            </a>
-
-            {/* Email Support Button */}
-            <a
-              href={`mailto:${email}?subject=Return%20or%20Exchange%20Inquiry`}
-              className="btn btn-tonal h-11 px-4 text-[13px] font-semibold flex items-center gap-2 border border-surface-container-high"
-            >
-              <Icon name="mail" className="text-[18px]" />
-              <span>{email}</span>
-            </a>
-
-            {/* WhatsApp Link */}
-            <a
-              href={`https://wa.me/91${phone}?text=Hi%20WILDTANE%20Care%2C%20I%20have%20a%20question%20regarding%20my%20order%20return%2Fexchange.`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="btn bg-[#25D366]/15 hover:bg-[#25D366]/25 text-[#128C7E] dark:text-[#25D366] h-11 px-3.5 text-[13px] font-semibold flex items-center gap-1.5"
-            >
-              <Icon name="chat" className="text-[18px]" />
-              <span>WhatsApp</span>
-            </a>
-          </div>
-        </div>
-      </section>
-
-      {/* ── MAIN CONTENT ACCORDING TO ACTIVE TAB ───────────────── */}
-      <main className="container-x max-w-5xl mt-8">
-        {activeTab === 'return' && (
-          <div className="flex flex-col gap-8">
-            {/* Cancellation, Coins & 7-Day Window Policy Notice */}
-            <div className="relative overflow-hidden rounded-2xl p-4 sm:p-5 text-[#3a2508] bg-gradient-to-r from-[#fae7b9] via-[#f1cb7d] to-[#d4a04b] shadow-card flex flex-col sm:flex-row items-center gap-4">
-              <CoinIcon className="w-12 h-12 shrink-0 drop-shadow" />
-              <div className="flex-1 text-center sm:text-left">
-                <h3 className="text-[15px] font-bold uppercase tracking-wide">
-                  Order Cancellation, Coin Rules & 7-Day Item Window Policy
-                </h3>
-                <p className="text-[13px] mt-0.5 leading-relaxed opacity-90">
-                  <strong>If an order gets cancelled, coin rewards will not come.</strong> Once 7 days are complete following delivery for a specific item, <strong>no return or exchange will happen</strong> (marked as Final Sale), and earned coins permanently disburse into your active wallet balance!
-                </p>
-              </div>
-              <Link
-                to="/account/coins"
-                className="shrink-0 px-4 py-2 rounded-xl bg-[#261705] text-[#fae7b9] hover:bg-[#1a0f03] text-[12px] font-bold transition-colors whitespace-nowrap shadow-sm"
-              >
-                Check My Coins Wallet →
-              </Link>
-            </div>
-
-            {/* Delivered Orders Station */}
-            <div className="flex flex-col gap-4">
-              <div className="border-b border-surface-container-high pb-3">
-                <span className="eyebrow text-secondary">Step 1: Choose Your Order</span>
-                <h3 className="text-headline-sm font-serif font-bold text-on-surface">
-                  Delivered Orders for Return or Exchange (7-Day Window)
-                </h3>
-                <p className="text-body-sm text-on-surface-variant">
-                  Return any bag within 7 days of delivery for a 100% full refund to original payment or UPI. Exchange option is also available directly below.
-                </p>
-              </div>
-
-              {renderOrdersBlock('return')}
-            </div>
-
-            {/* FAQ section */}
-            {renderFaqSection()}
+            <Link to={`/returns-exchange/refund/${encodeURIComponent(needRefundInfo[0].requestId)}`} className="btn h-10 px-4 rounded-xl bg-on-secondary text-secondary font-bold shrink-0">
+              Add refund details
+            </Link>
           </div>
         )}
 
-        {activeTab === 'track' && (
-          <div className="flex flex-col gap-8">
-            <TrackRequestsWidget
-              activeRequests={activeRequests}
-              phone={phone}
-              onOpenExchange={() => setTab('return')}
-            />
-
-            {/* Guest Order Checker */}
-            <div className="card p-6 flex flex-col gap-4 bg-surface-container-lowest border border-surface-container-high">
+        {!user ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 items-start">
+            <div className="card p-6 flex flex-col gap-4 border border-surface-container-high">
+              <span className="w-12 h-12 rounded-xl bg-secondary/10 text-secondary flex items-center justify-center"><Icon name="lock" className="text-[24px]" /></span>
               <div>
-                <span className="eyebrow">Quick Status Lookup</span>
-                <h3 className="text-headline-sm font-bold mt-0.5">Lookup Any Order Return / Exchange Window</h3>
-                <p className="text-body-sm text-on-surface-variant">
-                  Enter your Order ID (e.g. WT26-000042) to check return eligibility, courier pickup status and remaining hours.
-                </p>
+                <h2 className="text-headline-sm font-bold">Sign in to return or exchange</h2>
+                <p className="text-body-sm text-on-surface-variant mt-1">You’ll see your delivered items, how many days are left, and the status of every request.</p>
               </div>
-
-              <form onSubmit={handleGuestLookup} className="flex flex-col sm:flex-row gap-3 max-w-xl">
-                <Input
-                  placeholder="e.g. WT26-000042"
-                  value={guestOrderId}
-                  onChange={(e) => setGuestOrderId(e.target.value)}
-                  className="flex-1"
-                  required
-                />
-                {!user && (
-                  <Input type="email" placeholder="Email used for the order" value={guestEmail} onChange={(e) => setGuestEmail(e.target.value)} className="flex-1" required />
-                )}
-                <Button type="submit" loading={guestLoading} icon="search">
-                  Check Status
-                </Button>
-              </form>
-
-              {guestResult && (
-                <div className="p-4 rounded-xl bg-surface-container-high border border-surface-container-highest flex flex-col gap-2 max-w-xl">
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold text-[14px]">{guestResult.orderId}</span>
-                    <span
-                      className={cn(
-                        'text-[11px] font-bold px-2.5 py-0.5 rounded-full',
-                        guestResult.eligibility?.canReturnOrExchange
-                          ? 'bg-success/15 text-success'
-                          : 'bg-outline/20 text-on-surface-variant'
-                      )}
-                    >
-                      {lookupStatus(guestResult.eligibility).badge}
-                    </span>
-                  </div>
-                  {guestResult.eligibility?.canReturnOrExchange ? (
-                    <p className="text-[13px] text-success font-semibold flex items-center gap-1.5">
-                      <Icon name="timer" className="text-[16px]" />
-                      {lookupStatus(guestResult.eligibility).text}
-                    </p>
-                  ) : (
-                    <p className="text-[12px] text-on-surface-variant">{lookupStatus(guestResult.eligibility).text}</p>
-                  )}
-                  <div className="pt-2 border-t border-outline/20 flex justify-between items-center text-[12px]">
-                    <span className="text-on-surface-variant">Assistance required?</span>
-                    <a href={`tel:${phone}`} className="text-secondary font-bold hover:underline">
-                      Call {phone}
-                    </a>
-                  </div>
-                </div>
-              )}
+              <div className="flex items-center gap-3">
+                <Link to="/login?redirect=/returns-exchange" className="btn-primary flex-1 text-center">Sign in</Link>
+                <Link to="/register?redirect=/returns-exchange" className="btn-tonal flex-1 text-center">Create account</Link>
+              </div>
+            </div>
+            <GuestLookup signedIn={false} phone={phone} />
+          </div>
+        ) : activeTab === 'requests' ? (
+          <RequestsList onGoToOrders={() => setTab('orders')} />
+        ) : ordersQuery.isLoading ? (
+          <div className="flex flex-col gap-4">{[1, 2].map((i) => <Skeleton key={i} className="h-56 rounded-2xl" />)}</div>
+        ) : ordersQuery.isError ? (
+          <ErrorState error={ordersQuery.error} onRetry={ordersQuery.refetch} />
+        ) : orders.length === 0 ? (
+          <div className="card p-8 text-center flex flex-col items-center gap-3 border border-surface-container-high">
+            <span className="w-14 h-14 rounded-2xl bg-surface-container-high text-outline flex items-center justify-center"><Icon name="inventory_2" className="text-[28px]" /></span>
+            <h2 className="text-headline-sm font-bold">No orders found</h2>
+            <p className="text-body-sm text-on-surface-variant max-w-md">You haven’t placed any orders yet. Once your orders arrive, you’ll have a 7-day window to request a return or exchange right here.</p>
+            <div className="flex flex-wrap gap-2 justify-center mt-1">
+              <Link to="/shop" className="btn-primary">Browse the catalogue</Link>
             </div>
           </div>
+        ) : (
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setOrderFilter('all')}
+                  className={cn('h-8 px-3.5 rounded-full text-[12.5px] font-bold transition-all border', orderFilter === 'all' ? 'bg-primary text-on-primary border-primary shadow-xs' : 'bg-surface-container-low border-surface-container-high text-on-surface-variant hover:text-on-surface')}
+                >
+                  All Orders ({orders.length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setOrderFilter('eligible')}
+                  className={cn('h-8 px-3.5 rounded-full text-[12.5px] font-bold transition-all border flex items-center gap-1.5', orderFilter === 'eligible' ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs' : 'bg-surface-container-low border-surface-container-high text-on-surface-variant hover:text-on-surface')}
+                >
+                  <Icon name="timer" className="text-[15px]" /> Return Available ({eligibleCount})
+                </button>
+                {inTransitCount > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setOrderFilter('in_transit')}
+                    className={cn('h-8 px-3.5 rounded-full text-[12.5px] font-bold transition-all border flex items-center gap-1.5', orderFilter === 'in_transit' ? 'bg-sky-600 text-white border-sky-600 shadow-xs' : 'bg-surface-container-low border-surface-container-high text-on-surface-variant hover:text-on-surface')}
+                  >
+                    <Icon name="local_shipping" className="text-[15px]" /> In Transit ({inTransitCount})
+                  </button>
+                )}
+                {closedCount > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setOrderFilter('closed')}
+                    className={cn('h-8 px-3.5 rounded-full text-[12.5px] font-bold transition-all border flex items-center gap-1.5', orderFilter === 'closed' ? 'bg-surface-container-highest text-on-surface border-outline-variant shadow-xs' : 'bg-surface-container-low border-surface-container-high text-on-surface-variant hover:text-on-surface')}
+                  >
+                    <Icon name="lock" className="text-[15px]" /> Window Closed ({closedCount})
+                  </button>
+                )}
+              </div>
+              <button type="button" onClick={() => ordersQuery.refetch()} className="btn-ghost btn-sm gap-1 ml-auto">
+                <Icon name="refresh" className="text-[16px]" /> Refresh
+              </button>
+            </div>
+
+            {filteredOrders.length === 0 ? (
+              <div className="card p-8 text-center flex flex-col items-center gap-3 border border-surface-container-high">
+                <span className="w-14 h-14 rounded-2xl bg-surface-container-high text-outline flex items-center justify-center"><Icon name="filter_list_off" className="text-[28px]" /></span>
+                <h3 className="text-headline-sm font-bold">No orders in this filter</h3>
+                <p className="text-body-sm text-on-surface-variant max-w-md">There are currently no orders in &ldquo;{orderFilter === 'eligible' ? 'Return Available' : orderFilter === 'in_transit' ? 'In Transit' : 'Window Closed'}&rdquo;.</p>
+                <button type="button" onClick={() => setOrderFilter('all')} className="btn-tonal mt-1">Show All Orders</button>
+              </div>
+            ) : (
+              filteredOrders.map((order) => (
+                <OrderCard key={order._id} order={order} onStart={openModal} onCancel={onCancel} cancelling={cancelMutation.isPending} />
+              ))
+            )}
+          </div>
         )}
+
+        {user && activeTab === 'requests' && <GuestLookup signedIn phone={phone} />}
+
+        {/* Policy in short */}
+        <section className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {[
+            ['event', 'How long do I have?', '7 days from the day your order is delivered. After that the item can’t be returned or exchanged.'],
+            ['inventory', 'What condition?', 'Unused, with original tags, packaging and accessories.'],
+            ['payments', 'How is the refund sent?', 'Once we approve your return you choose: original payment (for online orders), UPI, bank account or WILDTANE Wallet. Refunds go out after the item passes inspection.'],
+            ['savings', 'What about coins?', 'Coins earned on a returned item are removed, and coins you spent on it come back to you.'],
+          ].map(([icon, q, a]) => (
+            <div key={q} className="p-4 rounded-2xl bg-surface-container-low border border-surface-container-high flex gap-3">
+              <Icon name={icon} className="text-secondary text-[22px] shrink-0" />
+              <div>
+                <h3 className="text-[14px] font-bold">{q}</h3>
+                <p className="text-[13px] text-on-surface-variant leading-relaxed mt-0.5">{a}</p>
+              </div>
+            </div>
+          ))}
+        </section>
+
+        {/* Support */}
+        <section className="card p-4 sm:p-5 border border-surface-container-high flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <span className="w-11 h-11 rounded-2xl bg-secondary text-on-secondary flex items-center justify-center shrink-0"><Icon name="support_agent" className="text-[24px]" /></span>
+            <div>
+              <p className="text-[15px] font-bold leading-tight">Need help with a return?</p>
+              <p className="text-[12px] text-on-surface-variant">{config?.supportHours || 'Mon – Sat, 9:30 AM – 6:30 PM IST'}</p>
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center justify-center gap-2">
+            <a href={`tel:${phone}`} className="btn-primary h-10 px-4 text-[13px] gap-2"><Icon name="call" className="text-[18px]" /> Call {phone}</a>
+            <a href={`mailto:${email}?subject=Return%20or%20Exchange`} className="btn-tonal h-10 px-4 text-[13px] gap-2"><Icon name="mail" className="text-[18px]" /> Email</a>
+            <a href={`https://wa.me/91${String(phone).replace(/\D/g, '').slice(-10)}?text=${encodeURIComponent('Hi WILDTANE, I have a question about a return/exchange.')}`} target="_blank" rel="noopener noreferrer" className="btn-tonal h-10 px-4 text-[13px] gap-2"><Icon name="chat" className="text-[18px]" /> WhatsApp</a>
+          </div>
+        </section>
       </main>
 
-      {/* ── INTERACTIVE RETURN / EXCHANGE MODAL ────────────────── */}
-      <Modal
-        open={!!selectedOrder}
-        onClose={() => setSelectedOrder(null)}
-        title={requestType === 'exchange' ? 'Exchange Product' : 'Return Product for Refund'}
-        size="lg"
-      >
+      {/* ── REQUEST FORM ── */}
+      <Modal open={!!selectedOrder} onClose={() => setSelectedOrder(null)} title={requestType === 'exchange' ? 'Exchange an item' : 'Return an item'} size="lg">
         {selectedOrder && (
           <form onSubmit={handleSubmit} className="flex flex-col gap-5">
-            {/* Type selector toggle: Return first, Exchange directly below return */}
-            <div className="flex flex-col gap-2 p-1.5 bg-surface-container-high rounded-2xl">
-              <button
-                type="button"
-                onClick={() => {
-                  setRequestType('return');
-                  setReason(RETURN_REASONS[0]);
-                }}
-                className={cn(
-                  'w-full py-2.5 px-4 rounded-xl text-[13.5px] font-bold transition-all flex items-center justify-between',
-                  requestType === 'return'
-                    ? 'bg-primary text-on-primary shadow-sm'
-                    : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container-lowest/60'
-                )}
-              >
-                <span className="flex items-center gap-2">
-                  <Icon name="assignment_return" className="text-[19px]" /> 1. Return Product for Refund
-                </span>
-                <span className="text-[11px] font-semibold opacity-85 bg-white/20 px-2 py-0.5 rounded-full">
-                  7-Day Doorstep Policy
-                </span>
-              </button>
-
-              {/* Exchange option placed directly below return */}
-              <button
-                type="button"
-                onClick={() => {
-                  setRequestType('exchange');
-                  setReason(EXCHANGE_REASONS[0]);
-                }}
-                className={cn(
-                  'w-full py-2.5 px-4 rounded-xl text-[13.5px] font-bold transition-all flex items-center justify-between',
-                  requestType === 'exchange'
-                    ? 'bg-gradient-to-r from-teal-600 to-emerald-600 text-white shadow-sm'
-                    : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container-lowest/60'
-                )}
-              >
-                <span className="flex items-center gap-2">
-                  <Icon name="published_with_changes" className="text-[19px]" /> 2. Exchange Product (Swap Variant or Model)
-                </span>
-                <span className="text-[11px] font-semibold opacity-85 bg-white/20 px-2 py-0.5 rounded-full">
-                  7-Day Doorstep Policy
-                </span>
-              </button>
+            <div className="grid grid-cols-2 gap-2 p-1 bg-surface-container-high rounded-2xl" role="radiogroup" aria-label="Return or exchange">
+              {[
+                ['return', 'assignment_return', 'Return for refund'],
+                ['exchange', 'published_with_changes', 'Exchange'],
+              ].map(([t, icon, label]) => (
+                <button
+                  key={t}
+                  type="button"
+                  role="radio"
+                  aria-checked={requestType === t}
+                  onClick={() => {
+                    setRequestType(t);
+                    setReason(t === 'exchange' ? EXCHANGE_REASONS[0] : RETURN_REASONS[0]);
+                  }}
+                  className={cn('py-2.5 px-3 rounded-xl text-[13.5px] font-bold flex items-center justify-center gap-2 transition-all', requestType === t ? 'bg-primary text-on-primary shadow-sm' : 'text-on-surface-variant hover:text-on-surface')}
+                >
+                  <Icon name={icon} className="text-[19px]" /> {label}
+                </button>
+              ))}
             </div>
 
-            {/* Select items to return/exchange */}
             <div className="flex flex-col gap-2">
-              <label className="text-label-md font-bold">
-                Select items from Order {selectedOrder.orderId} to {requestType === 'exchange' ? 'exchange' : 'return'}:
-              </label>
-              <div className="flex flex-col gap-2 max-h-52 overflow-y-auto scrollbar-none pr-1">
-                {selectedOrder.items.map((it) => {
-                  const key = `${it.productId}-${it.variantId || 'default'}`;
-                  const itemsElig = selectedOrder.returnDetails?.itemsEligibility || [];
-                  const match = itemsElig.find(
-                    (ie) => String(ie.productId) === String(it.productId) && (!it.variantId || String(ie.variantId) === String(it.variantId))
-                  );
-                  const isItemExpired = match?.isExpired || selectedOrder.returnDetails?.isExpired;
-                  const isAlreadyRequested = match?.alreadyRequested;
-                  const isItemDisabled = isItemExpired || isAlreadyRequested || selectedOrder.orderStatus === 'Cancelled';
-                  const selectedQty = selectedItems[key] || 0;
-                  const isChecked = selectedQty > 0;
-
+              <p className="text-label-md font-bold">Items from order {selectedOrder.orderId}</p>
+              <div className="flex flex-col gap-2 max-h-56 overflow-y-auto pr-1">
+                {selectedOrder.items.map((it, idx) => {
+                  const k = keyOf(it);
+                  const can = eligibleAt(selectedOrder, idx);
+                  const checked = (selectedItems[k] || 0) > 0;
                   return (
-                    <div
-                      key={key}
-                      onClick={() => {
-                        if (isItemDisabled) return;
-                        setSelectedItems((prev) => ({
-                          ...prev,
-                          [key]: isChecked ? 0 : it.quantity,
-                        }));
-                      }}
-                      className={cn(
-                        'p-3 rounded-xl border flex items-center gap-3 transition-colors',
-                        isItemDisabled
-                          ? 'opacity-60 bg-surface-container-high/40 border-outline/20 cursor-not-allowed'
-                          : isChecked
-                          ? 'border-secondary bg-secondary/5 cursor-pointer'
-                          : 'border-surface-container-high bg-surface-container-lowest cursor-pointer'
-                      )}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={isChecked}
-                        disabled={isItemDisabled}
-                        onChange={() => {}} // Handled by container onClick
-                        className="w-4 h-4 rounded text-secondary disabled:opacity-50"
-                      />
+                    <label key={k} className={cn('p-3 rounded-xl border flex items-center gap-3 transition-colors', !can ? 'opacity-55 bg-surface-container-high/40 border-outline/20 cursor-not-allowed' : checked ? 'border-secondary bg-secondary/5 cursor-pointer' : 'border-surface-container-high cursor-pointer')}>
+                      <input type="checkbox" checked={checked} disabled={!can} onChange={() => setSelectedItems((p) => ({ ...p, [k]: checked ? 0 : it.quantity }))} className="w-4 h-4 rounded" />
                       <Img src={it.image} alt="" className="w-12 h-12 rounded-lg object-cover shrink-0" />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-[13px] font-bold truncate">{it.productName}</p>
-                        <p className="text-[11px] text-on-surface-variant">
-                          {it.variantName ? `${it.variantName} · ` : ''}SKU: {it.SKU}
-                        </p>
-                        {isItemExpired && (
-                          <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-rose-600 dark:text-rose-400 mt-0.5">
-                            🔒 7 days complete · No return or exchange
-                          </span>
-                        )}
-                        {isAlreadyRequested && (
-                          <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-amber-600 dark:text-amber-400 mt-0.5">
-                            ⏳ Return/exchange already requested
-                          </span>
-                        )}
-                      </div>
-                      <span className="text-[13px] font-semibold text-secondary shrink-0">
-                        {money(it.unitPrice)}
+                      <span className="flex-1 min-w-0">
+                        <span className="block text-[13px] font-bold">{it.productName}</span>
+                        <span className="block text-[11.5px] text-on-surface-variant">{it.variantName ? `${it.variantName} · ` : ''}Qty {it.quantity}{!can ? ' · not available' : ''}</span>
                       </span>
-                    </div>
+                      <span className="text-[13px] font-semibold shrink-0">{money(it.unitPrice)}</span>
+                    </label>
                   );
                 })}
               </div>
             </div>
 
-            {/* Reason selector */}
-            <Field label={`Reason for ${requestType === 'exchange' ? 'exchange' : 'return'}`} required>
-              <select
-                value={reason}
-                onChange={(e) => setReason(e.target.value)}
-                className="input h-11"
-                required
-              >
-                {(requestType === 'exchange' ? EXCHANGE_REASONS : RETURN_REASONS).map((r) => (
-                  <option key={r} value={r}>
-                    {r}
-                  </option>
-                ))}
+            <Field label={`Why are you ${requestType === 'exchange' ? 'exchanging' : 'returning'} it?`} required>
+              <select value={reason} onChange={(e) => setReason(e.target.value)} className="input h-11" required>
+                {(requestType === 'exchange' ? EXCHANGE_REASONS : RETURN_REASONS).map((r) => <option key={r} value={r}>{r}</option>)}
               </select>
             </Field>
 
-            {/* BIG-APP EXCHANGE FEATURE & FULL COIN CALCULATION */}
             {requestType === 'exchange' ? (
-              <div className="flex flex-col gap-4 p-4 rounded-2xl bg-surface-container-low/80 border border-teal-500/30">
-                <div>
-                  <label className="text-label-md font-bold text-on-surface flex items-center gap-1.5 mb-2">
-                    <Icon name="swap_horiz" className="text-teal-600 dark:text-teal-400 text-[18px]" /> Choose Exchange Type
-                  </label>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setExchangeMode('variant')}
-                      className={cn(
-                        'p-3 rounded-xl border text-left flex flex-col gap-1 transition-all',
-                        exchangeMode === 'variant'
-                          ? 'border-teal-500 bg-teal-500/10 text-on-surface ring-1 ring-teal-500/50'
-                          : 'border-surface-container-high bg-surface-container-lowest text-on-surface-variant hover:bg-surface-container-low'
-                      )}
-                    >
-                      <span className="font-bold text-[13px]">📦 Receive Another Unit (Same Product)</span>
-                      <span className="text-[11px] opacity-80">Size/color swap or fresh piece · Free (₹0)</span>
+              <div className="flex flex-col gap-3 p-4 rounded-2xl bg-surface-container-low border border-surface-container-high">
+                <p className="text-label-md font-bold">What would you like instead?</p>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  {[
+                    ['variant', 'Same product', 'Another piece, or a different size / colour'],
+                    ['replacement', 'Fresh replacement', 'For a damaged or faulty piece'],
+                    ['product', 'Different product', 'Pick another item; we adjust the price difference'],
+                  ].map(([m, title, text]) => (
+                    <button key={m} type="button" onClick={() => setExchangeMode(m)} className={cn('p-3 rounded-xl border text-left flex flex-col gap-0.5 transition-all', exchangeMode === m ? 'border-secondary bg-secondary/10 ring-1 ring-secondary/40' : 'border-surface-container-high bg-surface-container-lowest hover:bg-surface-container-low')}>
+                      <span className="font-bold text-[13px]">{title}</span>
+                      <span className="text-[11.5px] text-on-surface-variant">{text}</span>
                     </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setExchangeMode('product')}
-                      className={cn(
-                        'p-3 rounded-xl border text-left flex flex-col gap-1 transition-all',
-                        exchangeMode === 'product'
-                          ? 'border-teal-500 bg-teal-500/10 text-on-surface ring-1 ring-teal-500/50'
-                          : 'border-surface-container-high bg-surface-container-lowest text-on-surface-variant hover:bg-surface-container-low'
-                      )}
-                    >
-                      <span className="font-bold text-[13px]">🔄 Different Product Model</span>
-                      <span className="text-[11px] opacity-80">Pick from Catalogue · Difference adjusted with Coins</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setExchangeMode('replacement')}
-                      className={cn(
-                        'p-3 rounded-xl border text-left flex flex-col gap-1 transition-all',
-                        exchangeMode === 'replacement'
-                          ? 'border-teal-500 bg-teal-500/10 text-on-surface ring-1 ring-teal-500/50'
-                          : 'border-surface-container-high bg-surface-container-lowest text-on-surface-variant hover:bg-surface-container-low'
-                      )}
-                    >
-                      <span className="font-bold text-[13px]">🛡️ Damaged Piece Replacement</span>
-                      <span className="text-[11px] opacity-80">Fresh New Pristine Unit · ₹0 Difference</span>
-                    </button>
-                  </div>
-
-                  {/* Policy banner inside exchange modal */}
-                  <div className="p-3 rounded-xl bg-teal-500/10 border border-teal-500/25 flex items-start gap-2.5 text-[12px] text-teal-900 dark:text-teal-200 mt-2">
-                    <Icon name="verified" className="text-[17px] text-teal-600 dark:text-teal-400 shrink-0 mt-0.5" />
-                    <span><strong>Exchange Policy Guarantee:</strong> In exchange, you receive another unit of the same product if eligible. Doorstep courier delivers your new piece and collects the original parcel in a single visit.</span>
-                  </div>
+                  ))}
                 </div>
-
-                {/* Sub-inputs depending on exchange mode */}
                 {exchangeMode === 'variant' && (
-                  <Field label="Different size or colour (optional)" hint="Leave blank to receive another unit of the same product, same size and colour.">
-                    <Input
-                      placeholder="e.g. Navy Blue instead of Black"
-                      value={exchangeVariant}
-                      onChange={(e) => setExchangeVariant(e.target.value)}
-                    />
+                  <Field label="Different size or colour (optional)" hint="Leave blank for another piece of the same size and colour.">
+                    <Input placeholder="e.g. Navy instead of Black" value={exchangeVariant} onChange={(e) => setExchangeVariant(e.target.value)} />
                   </Field>
                 )}
-
                 {exchangeMode === 'product' && (
-                  <div className="flex flex-col gap-3">
-                    <Field label="Select Replacement Product from WILDTANE Catalogue" required>
-                      <select
-                        value={exchangeReplacementId}
-                        onChange={(e) => setExchangeReplacementId(e.target.value)}
-                        className="input h-11"
-                        required
-                      >
-                        <option value="">-- Choose a product from catalogue --</option>
-                        {catalogueProducts.map((p) => {
-                          const pPrice = p.salePrice || p.price || 0;
-                          return (
-                            <option key={p._id} value={p._id}>
-                              {p.name} — {money(pPrice)} {p.category?.name ? `(${p.category.name})` : ''}
-                            </option>
-                          );
-                        })}
+                  <>
+                    <Field label="Product you want instead" required>
+                      <select value={exchangeReplacementId} onChange={(e) => setExchangeReplacementId(e.target.value)} className="input h-11" required>
+                        <option value="">Choose a product…</option>
+                        {catalogueProducts.map((p) => <option key={p._id} value={p._id}>{p.name} — {money(p.price)}</option>)}
                       </select>
                     </Field>
-
-                    {selectedReplacementProduct && (
-                      <div className="p-3 rounded-xl bg-surface-container-lowest border border-outline-variant/60 flex items-center gap-3">
-                        <Img
-                          src={selectedReplacementProduct.images?.[0]?.url || selectedReplacementProduct.image}
-                          alt=""
-                          className="w-14 h-14 rounded-lg object-cover shrink-0"
-                        />
+                    {replacement && (
+                      <div className="p-3 rounded-xl bg-surface-container-lowest border border-outline-variant/50 flex items-center gap-3 text-[13px]">
+                        <Img src={replacement.image} alt="" className="w-12 h-12 rounded-lg object-cover shrink-0" />
                         <div className="flex-1 min-w-0">
-                          <p className="text-[13px] font-bold text-on-surface truncate">{selectedReplacementProduct.name}</p>
-                          <p className="text-[12px] font-semibold text-secondary">
-                            Price: {money(selectedReplacementProduct.salePrice || selectedReplacementProduct.price)}
+                          <p className="font-bold">{replacement.name}</p>
+                          <p className="text-on-surface-variant">
+                            {difference > 0 ? `You pay ${money(difference)} more` : difference < 0 ? `We refund the ${money(-difference)} difference` : 'Same price — no difference to pay'}
                           </p>
                         </div>
                       </div>
                     )}
-                  </div>
-                )}
-
-                {exchangeMode === 'replacement' && (
-                  <div className="p-3 rounded-xl bg-teal-500/10 border border-teal-500/20 text-[12px] text-teal-800 dark:text-teal-200">
-                    <p className="font-bold flex items-center gap-1.5">
-                      <Icon name="verified" className="text-[16px]" /> Free Doorstep Replacement Guaranteed
-                    </p>
-                    <p className="mt-0.5 opacity-90">
-                      Our courier will deliver a fresh, brand-new replacement unit of the exact same product and collect the defective piece simultaneously.
-                    </p>
-                  </div>
-                )}
-
-                {/* DYNAMIC COIN CALCULATION ENGINE BREAKDOWN CARD */}
-                {exchangeCalc && (
-                  <div className="p-4 rounded-xl bg-surface-container-lowest border border-amber-500/40 shadow-xs flex flex-col gap-3">
-                    <div className="flex items-center justify-between pb-2 border-b border-surface-container-high">
-                      <span className="text-[12px] font-bold uppercase tracking-wider text-amber-800 dark:text-amber-200 flex items-center gap-1.5">
-                        <CoinIcon className="w-4 h-4" /> Exchange Price &amp; Coin Calculation
-                      </span>
-                      <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-900 dark:text-amber-200">
-                        Wallet Balance: {walletCoins} Coins
-                      </span>
-                    </div>
-
-                    <div className="flex flex-col gap-1.5 text-[13px]">
-                      <div className="flex justify-between">
-                        <span className="text-on-surface-variant">Original Item(s) Value:</span>
-                        <span className="font-semibold">{money(exchangeCalc.originalValue)}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-on-surface-variant">Replacement Product Value:</span>
-                        <span className="font-semibold">{money(exchangeCalc.replacementValue)}</span>
-                      </div>
-
-                      {/* If Upgrade: Gross difference + Coin redemption option */}
-                      {exchangeCalc.isUpgrade && (
-                        <>
-                          <div className="flex justify-between text-amber-700 dark:text-amber-400 font-semibold pt-1 border-t border-surface-container-high">
-                            <span>Price Difference (Upgrade):</span>
-                            <span>+{money(exchangeCalc.grossDifference)}</span>
-                          </div>
-
-                          {walletCoins > 0 ? (
-                            <label className="flex items-center justify-between p-2 rounded-lg bg-amber-500/10 border border-amber-500/25 cursor-pointer mt-1 select-none">
-                              <div className="flex items-center gap-2">
-                                <input
-                                  type="checkbox"
-                                  checked={useCoinsOnDifference}
-                                  onChange={(e) => setUseCoinsOnDifference(e.target.checked)}
-                                  className="rounded text-amber-600"
-                                />
-                                <span className="text-[12px] font-bold text-on-surface">
-                                  Use available WILDTANE Coins for extra discount
-                                </span>
-                              </div>
-                              <span className="text-[12px] font-extrabold text-emerald-700 dark:text-emerald-400">
-                                −{money(exchangeCalc.coinsApplied)}
-                              </span>
-                            </label>
-                          ) : null}
-
-                          <div className="flex justify-between text-[14px] font-black pt-1 border-t border-surface-container-high">
-                            <span>Net Payable at Doorstep / Delivery:</span>
-                            <span className="text-primary font-sans">{money(exchangeCalc.netPayable)}</span>
-                          </div>
-                        </>
-                      )}
-
-                      {/* If Downgrade: Excess refund directly to Coins */}
-                      {exchangeCalc.isDowngrade && (
-                        <div className="p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/25 flex flex-col gap-1 mt-1">
-                          <div className="flex justify-between text-emerald-700 dark:text-emerald-300 font-bold">
-                            <span>Excess Amount Refundable:</span>
-                            <span>{money(exchangeCalc.excessRefund)}</span>
-                          </div>
-                          <p className="text-[11.5px] text-on-surface-variant">
-                            ✨ Excess of {money(exchangeCalc.excessRefund)} will be credited instantly as <strong>{exchangeCalc.excessCoinsBonus} WILDTANE Store Coins</strong> (+5% bonus store credit!) into your wallet upon exchange.
-                          </p>
-                        </div>
-                      )}
-
-                      {/* If Same Value */}
-                      {exchangeCalc.isSameValue && (
-                        <div className="flex justify-between font-bold text-emerald-700 dark:text-emerald-300 pt-1 border-t border-surface-container-high">
-                          <span>Price Difference:</span>
-                          <span>₹0 (100% Free Doorstep Swap)</span>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Loyalty coins disbursement rule notice */}
-                    <div className="p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/25 flex items-start gap-2 text-[11.5px] text-on-surface-variant">
-                      <CoinIcon className="w-3.5 h-3.5 shrink-0 mt-0.5" />
-                      <span>
-                        <strong>Loyalty Coins Rule:</strong> Loyalty coins earned on this order ({selectedOrder.coinsEarned || 0} coins) will be credited into your wallet <strong>1 week (7 days) after delivery</strong> of the replacement product, once the 7-day exchange window completes.
-                      </span>
-                    </div>
-                  </div>
+                  </>
                 )}
               </div>
             ) : (
-              /* Return specific: Refund Method */
-              <div className="flex flex-col gap-3">
-                <Field label="Refund Destination Preference">
-                  <select
-                    value={refundMethod}
-                    onChange={(e) => setRefundMethod(e.target.value)}
-                    className="input h-11"
-                  >
-                    <option value="Original Payment Method">Original Payment Method (Card/Netbanking/UPI)</option>
-                    <option value="UPI">UPI ID Transfer (Instant Doorstep Settlement)</option>
-                    <option value="Store Coins Wallet">Instant WILDTANE Store Coins (+5% Bonus Coins)</option>
-                    <option value="Bank Transfer">Bank Account NEFT</option>
-                  </select>
-                </Field>
-
-                {refundMethod === 'UPI' && (
-                  <Field label="Your UPI ID" required>
-                    <Input
-                      placeholder="e.g. yourname@okhdfcbank"
-                      value={upiId}
-                      onChange={(e) => setUpiId(e.target.value)}
-                      required
-                    />
-                  </Field>
-                )}
-
-                <div className="p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/25 flex items-start gap-2 text-[11.5px] text-on-surface-variant">
-                  <CoinIcon className="w-3.5 h-3.5 shrink-0 mt-0.5" />
-                  <span>
-                    <strong>Coin Adjustment on Return:</strong> Coins used originally will be restored to your wallet upon return approval. Any reserved loyalty coins earned on this purchase will be cancelled.
-                  </span>
-                </div>
+              <div className="p-3.5 rounded-xl bg-secondary/10 border border-secondary/20 flex items-start gap-2.5 text-[12.5px]">
+                <Icon name="info" className="text-secondary text-[18px] shrink-0" />
+                <span>Once we approve your return, you’ll choose how to get your money back — UPI, bank account{selectedOrder.paymentMethod !== 'cod' ? ', your original payment' : ''} or WILDTANE Wallet.</span>
               </div>
             )}
 
-            {/* Comments / Details */}
-            <Field label="Additional notes or instructions (Optional)">
-              <Textarea
-                rows={2}
-                placeholder="Mention any specific instructions for reverse courier pickup or exchange preferences..."
-                value={detailedReason}
-                onChange={(e) => setDetailedReason(e.target.value)}
-                maxLength={500}
-              />
+            <Field label="Anything else we should know? (optional)">
+              <Textarea rows={2} placeholder="e.g. best time for pickup" value={detailedReason} onChange={(e) => setDetailedReason(e.target.value)} maxLength={500} />
             </Field>
 
-            {/* Doorstep Pickup Address preview */}
             <div className="p-3 rounded-xl bg-surface-container-high/60 text-[12px] flex items-start gap-2.5">
-              <Icon name="location_on" className="text-secondary text-[18px] shrink-0 mt-0.5" />
-              <div>
-                <p className="font-bold text-on-surface">Doorstep Pickup &amp; Exchange Delivery Address:</p>
-                <p className="text-on-surface-variant">
-                  {selectedOrder.shippingAddress?.fullName} · {selectedOrder.shippingAddress?.addressLine1},{' '}
-                  {selectedOrder.shippingAddress?.city}, {selectedOrder.shippingAddress?.postalCode} · Phone:{' '}
-                  {selectedOrder.shippingAddress?.phone}
-                </p>
-              </div>
+              <Icon name="location_on" className="text-secondary text-[18px] shrink-0" />
+              <p className="text-on-surface-variant">
+                <b className="text-on-surface">Pickup from: </b>
+                {selectedOrder.shippingAddress?.fullName} · {selectedOrder.shippingAddress?.addressLine1}, {selectedOrder.shippingAddress?.city} {selectedOrder.shippingAddress?.postalCode} · {selectedOrder.shippingAddress?.phone}
+              </p>
             </div>
 
-            {/* Condition agreement checkbox */}
-            <label className="flex items-start gap-2 text-[12px] text-on-surface-variant cursor-pointer select-none">
-              <input
-                type="checkbox"
-                checked={conditionConfirmed}
-                onChange={(e) => setConditionConfirmed(e.target.checked)}
-                className="mt-0.5 rounded text-secondary"
-                required
-              />
-              <span>
-                I confirm the product is <strong>unused, undamaged, and unwashed</strong> with all original brand tags,
-                packaging and invoices intact as per WILDTANE 7-day policy guidelines.
-              </span>
+            <label className="flex items-start gap-2 text-[12.5px] text-on-surface-variant cursor-pointer select-none">
+              <input type="checkbox" checked={conditionConfirmed} onChange={(e) => setConditionConfirmed(e.target.checked)} className="mt-0.5 rounded" />
+              <span>The item is <b className="text-on-surface">unused</b> and has its original tags, packaging and accessories.</span>
             </label>
 
-            {/* Buttons */}
             <div className="flex items-center justify-end gap-3 pt-2 border-t border-surface-container-high">
-              <Button type="button" variant="tonal" onClick={() => setSelectedOrder(null)}>
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                variant="primary"
-                loading={submitMutation.isPending}
-                className={requestType === 'exchange' ? 'bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 text-white font-bold' : ''}
-              >
-                Submit {requestType === 'exchange' ? 'Exchange (7-Day Policy)' : 'Return (7-Day Policy)'} Request
+              <Button type="button" variant="tonal" onClick={() => setSelectedOrder(null)}>Close</Button>
+              <Button type="submit" loading={submitMutation.isPending} disabled={!selectedCount}>
+                Send {requestType} request{selectedCount > 1 ? ` (${selectedCount} items)` : ''}
               </Button>
             </div>
           </form>

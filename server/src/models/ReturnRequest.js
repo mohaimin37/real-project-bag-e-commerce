@@ -7,7 +7,16 @@ export const RETURN_STATUSES = [
   'In Inspection',
   'Completed',
   'Rejected',
+  'Cancelled', // withdrawn by the customer before pickup
 ];
+
+// Requests in these states hold the item: it can't be returned or exchanged again.
+// A Rejected item stays blocked ("cannot be returned"); a Cancelled request frees it.
+export const ITEM_HOLDING_STATUSES = ['Requested', 'Approved', 'Pickup Scheduled', 'In Inspection', 'Completed', 'Rejected'];
+// The customer may still withdraw the request.
+export const CUSTOMER_CANCELLABLE_STATUSES = ['Requested', 'Approved'];
+// Approved returns: the customer tells us where the money goes, until the refund starts.
+export const REFUND_DETAILS_OPEN_STATUSES = ['Approved', 'Pickup Scheduled', 'In Inspection'];
 
 export const RETURN_REASONS = [
   'Manufacturing defect or flaw',
@@ -64,6 +73,8 @@ const returnRequestSchema = new mongoose.Schema(
       ifsc: { type: String, default: '' },
       accountHolder: { type: String, default: '' },
     },
+    // Set when the customer (refund page) or the team confirms where the refund goes.
+    refundDetailsSubmittedAt: Date,
     pickupAddress: {
       fullName: String,
       phone: String,
@@ -83,6 +94,29 @@ const returnRequestSchema = new mongoose.Schema(
         at: { type: Date, default: Date.now },
       },
     ],
+    // Doorstep pickup booked with the shipping provider (only filled from a real provider response).
+    reversePickup: {
+      provider: String,
+      providerOrderId: String,
+      shipmentId: String,
+      awb: String,
+      courier: String,
+      status: String,
+      scheduledAt: Date,
+      lastSyncedAt: Date,
+      error: String,
+    },
+    // Refund for a completed return (same lifecycle as an order refund).
+    refund: {
+      status: { type: String, enum: ['None', 'Pending', 'Processed', 'Failed'], default: 'None' },
+      amount: { type: Number, default: 0 },
+      method: String,
+      providerRefundId: String,
+      reference: String, // bank / UPI transfer reference for refunds sent by hand
+      failureReason: String,
+      initiatedAt: Date,
+      processedAt: Date,
+    },
     adminNotes: { type: String, default: '' },
     requestedAt: { type: Date, default: Date.now },
     resolvedAt: Date,

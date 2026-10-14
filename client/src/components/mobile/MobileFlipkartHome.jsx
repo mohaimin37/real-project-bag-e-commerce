@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { Fragment, useEffect, useMemo, useState } from 'react';
 import { Link, NavLink } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { useQuery } from '@tanstack/react-query';
@@ -8,13 +8,16 @@ import { useCategories, useMoney } from '../../hooks/useStore';
 import { useWishlist } from '../../hooks/useWishlist';
 import { useCart } from '../../hooks/useCart';
 import { setCartOpen, setSearchOpen, setShopModalOpen } from '../../store';
-import { Icon, Img } from '../ui';
+import { Icon, Img, Skeleton } from '../ui';
 import { LogoMark } from '../Brand';
+import ContinueShopping from '../ContinueShopping';
+import { sectionOn, useHomepage } from '../../content/homepage';
+import { useRailProducts } from '../../hooks/useRailProducts';
 import { MAIN_NAV, SearchPill } from '../layout/Header';
 
 // ── 1. Flipkart-style Top Header & Search Bar ──
 const SEARCH_QUICK_WIDGETS = [
-  { label: '50% OFF', icon: 'sell', to: '/offers', highlight: true },
+  { label: 'Offers', icon: 'sell', to: '/offers', highlight: true },
   { label: 'Returns & Exchange', icon: 'assignment_return', to: '/returns-exchange', highlight: false },
   { label: 'Laptop Bags', icon: 'laptop_mac', to: '/shop?q=Laptop' },
   { label: 'Under ₹1,499', icon: 'payments', to: '/shop?maxPrice=1499' },
@@ -48,7 +51,7 @@ function MobileTopSearchHeader() {
             className="text-[11px] font-bold text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 px-2.5 py-1 rounded-full border border-rose-200/50 flex items-center gap-1 active:scale-95 shadow-2xs"
           >
             <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-ping" />
-            50% OFF
+            OFFERS
           </Link>
 
           {/* Wishlist Heart with Badge & Space */}
@@ -142,10 +145,10 @@ function MobileTopSearchHeader() {
 
 // ── 2. Flipkart-style Category Story Circles ──
 const FALLBACK_CATEGORIES = [
-  { name: 'Offers', icon: 'sell', to: '/offers', color: 'from-rose-500 via-pink-500 to-amber-500' },
+  { name: 'Offers', icon: 'sell', to: '/offers', color: 'from-rose-500 via-pink-500 to-rose-500' },
   { name: 'Universal', icon: 'public', to: '/universal', color: 'from-emerald-500 to-teal-500', img: '/uploads/seed/apex-navy.jpg' },
   { name: 'Travel', icon: 'flight_takeoff', to: '/shop/travel-utility', color: 'from-cyan-500 to-blue-500', img: '/uploads/seed/cabin-hardshell.jpg' },
-  { name: 'Accessories', icon: 'watch', to: '/shop/accessories', color: 'from-amber-500 to-orange-500', img: '/uploads/seed/wallet-onyx.jpg' },
+  { name: 'Accessories', icon: 'watch', to: '/shop/accessories', color: 'from-rose-500 to-orange-500', img: '/uploads/seed/wallet-onyx.jpg' },
   { name: 'Backpacks', icon: 'backpack', to: '/shop/backpacks', color: 'from-indigo-500 to-blue-500', img: '/uploads/seed/catalog/trekpack-sun.jpg' },
   { name: 'Handbags', icon: 'shopping_bag', to: '/shop/handbags-and-totes', color: 'from-pink-500 to-rose-500', img: '/uploads/seed/tote-teal.jpg' },
   { name: 'New Drops', icon: 'new_releases', to: '/shop?newArrival=true', color: 'from-fuchsia-500 to-rose-500' },
@@ -160,12 +163,12 @@ function MobileCategoryCircles() {
 
   const displayList = cats.length > 0
     ? [
-        { name: 'Offers', icon: 'sell', to: '/offers', color: 'from-rose-500 via-pink-500 to-amber-500' },
+        { name: 'Offers', icon: 'sell', to: '/offers', color: 'from-rose-500 via-pink-500 to-rose-500' },
         ...cats.map((c, i) => ({
           name: c.name,
           to: `/shop/${c.slug}`,
           img: c.image?.url,
-          color: ['from-indigo-500 to-blue-500', 'from-emerald-500 to-teal-500', 'from-amber-500 to-orange-500', 'from-violet-500 to-purple-500', 'from-cyan-500 to-sky-500'][i % 5],
+          color: ['from-indigo-500 to-blue-500', 'from-emerald-500 to-teal-500', 'from-rose-500 to-orange-500', 'from-violet-500 to-purple-500', 'from-cyan-500 to-sky-500'][i % 5],
         })),
         { name: 'New In', icon: 'new_releases', to: '/shop?newArrival=true', color: 'from-fuchsia-500 to-rose-500' },
       ]
@@ -200,44 +203,24 @@ function MobileCategoryCircles() {
 }
 
 // ── 3. Flipkart-style Auto-Rotating Hero Banner ──
-const HERO_SLIDES = [
-  {
-    title: 'MEGA FESTIVE DROP',
-    subtitle: 'Up to 50% Off • Handcrafted Carry',
-    badge: 'LIMITED TIME',
-    tagColor: 'bg-rose-500',
-    to: '/offers',
-    image: '/uploads/seed/terminal-traveler.jpg',
-  },
-  {
-    title: 'TECH BACKPACKS',
-    subtitle: 'TSA Ready • 100% Waterproof Ballistic',
-    badge: 'TOP RATED',
-    tagColor: 'bg-indigo-600',
-    to: '/shop/backpacks',
-    image: '/uploads/seed/catalog/trekpack-sun.jpg',
-  },
-  {
-    title: 'CABIN & TRAVEL GEAR',
-    subtitle: 'Hardshell Polycarbonate • Lifetime Warranty',
-    badge: 'TRENDING',
-    tagColor: 'bg-emerald-600',
-    to: '/shop/cabin-and-check-in-luggage',
-    image: '/uploads/seed/catalog/cabin-emerald-teal.jpg',
-  },
-];
+// Slides come from Admin → Settings → Homepage → Phone (content/homepage.js has the built-in ones).
+const SLIDE_TAG = { rose: 'bg-rose-500', indigo: 'bg-indigo-600', sky: 'bg-sky-600', emerald: 'bg-emerald-600', teal: 'bg-teal-600', violet: 'bg-violet-600', pink: 'bg-pink-600', blue: 'bg-blue-600', slate: 'bg-slate-600' };
 
-function MobileHeroBanner() {
+function MobileHeroBanner({ slides: given }) {
   const [active, setActive] = useState(0);
+  const slides = (given || []).map((s) => ({ ...s, tagColor: s.tagColor || SLIDE_TAG[s.tone] || SLIDE_TAG.rose }));
+  const count = slides.length;
 
   useEffect(() => {
+    if (count < 2) return undefined;
     const timer = setInterval(() => {
-      setActive((prev) => (prev + 1) % HERO_SLIDES.length);
+      setActive((prev) => (prev + 1) % count);
     }, 3800);
     return () => clearInterval(timer);
-  }, []);
+  }, [count]);
 
-  const slide = HERO_SLIDES[active];
+  if (!count) return null;
+  const slide = slides[active % count];
 
   return (
     <div className="p-2 w-full max-w-full">
@@ -263,19 +246,19 @@ function MobileHeroBanner() {
           <p className="text-[10.5px] font-medium text-white/90 line-clamp-1 mt-0.5">
             {slide.subtitle}
           </p>
-          <span className="mt-1.5 inline-flex items-center gap-1 text-[10px] font-bold text-amber-300">
+          <span className="mt-1.5 inline-flex items-center gap-1 text-[10px] font-bold text-rose-300">
             Shop Now <Icon name="arrow_forward" className="text-[12px]" />
           </span>
         </div>
 
         {/* Slide Indicator Dots */}
         <div className="absolute bottom-2 right-2.5 flex items-center gap-1.5 z-10">
-          {HERO_SLIDES.map((_, idx) => (
+          {slides.map((_, idx) => (
             <span
               key={idx}
               className={cn(
                 'h-1.5 rounded-full transition-all duration-300',
-                active === idx ? 'w-4 bg-white shadow' : 'w-1.5 bg-white/50'
+                active % count === idx ? 'w-4 bg-white shadow' : 'w-1.5 bg-white/50'
               )}
             />
           ))}
@@ -286,19 +269,15 @@ function MobileHeroBanner() {
 }
 
 // ── 4. Flipkart-style Quick Trust Value Strip ──
-function MobileValueStrip() {
+function MobileValueStrip({ items }) {
+  if (!items?.length) return null;
   return (
     <div className="px-2 py-0.5 w-full max-w-full">
-      <div className="grid grid-cols-4 gap-1 p-2 rounded-xl bg-surface-container-lowest border border-outline-variant/30 text-center">
-        {[
-          { icon: 'local_shipping', text: 'Free Delivery' },
-          { icon: 'payments', text: 'Cash On Delivery' },
-          { icon: 'assignment_return', text: '7-Day Return' },
-          { icon: 'verified_user', text: '100% Original' },
-        ].map((item, idx) => (
+      <div className="grid gap-1 p-2 rounded-xl bg-surface-container-lowest border border-outline-variant/30 text-center" style={{ gridTemplateColumns: `repeat(${Math.min(items.length, 5)}, minmax(0, 1fr))` }}>
+        {items.map((item, idx) => (
           <div key={idx} className="flex flex-col items-center justify-center gap-0.5">
             <Icon name={item.icon} className="text-[17px] text-secondary" />
-            <span className="text-[9px] font-semibold text-on-surface leading-tight line-clamp-1">
+            <span className="text-[9px] font-semibold text-on-surface leading-tight line-clamp-2">
               {item.text}
             </span>
           </div>
@@ -400,7 +379,7 @@ function MobileProductCard({ product }) {
           <span className="text-[8.5px] sm:text-[9px] text-outline font-medium">
             ({product.ratingCount || 34})
           </span>
-          <span className="text-[8.5px] sm:text-[9px] font-black text-amber-600 dark:text-amber-400 ml-auto">
+          <span className="text-[8.5px] sm:text-[9px] font-black text-rose-600 dark:text-rose-400 ml-auto">
             ⚡Assured
           </span>
         </div>
@@ -449,56 +428,61 @@ function MobileProductCard({ product }) {
   );
 }
 
+/** Placeholder with the footprint of a 2×2 product section (header + four cards). */
+function MobileSectionSkeleton() {
+  return (
+    <section className="px-2 py-2 w-full max-w-full" aria-hidden="true">
+      <div className="rounded-2xl bg-surface-container-lowest border border-outline-variant/30 overflow-hidden">
+        <div className="px-3 py-2.5 flex items-center gap-2 border-b border-outline-variant/30">
+          <Skeleton className="w-7 h-7 rounded-lg" />
+          <div className="flex flex-col gap-1.5">
+            <Skeleton className="h-3 w-28" />
+            <Skeleton className="h-2.5 w-20" />
+          </div>
+        </div>
+        <div className="p-2.5 grid grid-cols-2 gap-2.5">
+          {[0, 1, 2, 3].map((i) => (
+            <div key={i} className="rounded-xl border border-outline-variant/30 overflow-hidden">
+              <Skeleton className="aspect-square rounded-none" />
+              <div className="p-2 flex flex-col gap-1.5">
+                <Skeleton className="h-3 w-full" />
+                <Skeleton className="h-3 w-2/3" />
+                <Skeleton className="h-4 w-1/2" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 // ── 6. Deal of the Day (2-Column Grid + Countdown Timer) ──
-function MobileDealOfTheDay({ products }) {
-  const [timeLeft, setTimeLeft] = useState({ h: 14, m: 28, s: 45 });
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev.s > 0) return { ...prev, s: prev.s - 1 };
-        if (prev.m > 0) return { ...prev, m: 59, s: 59 };
-        if (prev.h > 0) return { h: prev.h - 1, m: 59, s: 59 };
-        return { h: 14, m: 0, s: 0 };
-      });
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
-
+function MobileDealOfTheDay({ products, content }) {
   const dealProducts = (products || []).slice(0, 4);
+  // While loading, hold the same space so the sections below don't jump down when it arrives.
+  if (products === undefined) return <MobileSectionSkeleton />;
   if (!dealProducts.length) return null;
 
   return (
     <section className="px-2 py-2 w-full max-w-full">
       <div className="rounded-2xl bg-surface-container-lowest border border-outline-variant/30 overflow-hidden shadow-xs">
-        {/* Deal Header */}
-        <div className="px-3 py-2.5 bg-gradient-to-r from-amber-500/15 via-rose-500/10 to-transparent flex items-center justify-between border-b border-outline-variant/30">
+        <div className="px-3 py-2.5 bg-gradient-to-r from-rose-500/15 via-rose-500/10 to-transparent flex items-center justify-between border-b border-outline-variant/30">
           <div className="flex items-center gap-2">
-            <span className="w-7 h-7 rounded-lg bg-amber-500 text-white flex items-center justify-center shadow-xs">
+            <span className="w-7 h-7 rounded-lg bg-rose-500 text-white flex items-center justify-center shadow-xs">
               <Icon name="bolt" className="text-[18px]" />
             </span>
             <div className="flex flex-col">
-              <span className="text-[13px] font-black tracking-tight text-on-surface uppercase">
-                Deal of the Day
-              </span>
-              <div className="flex items-center gap-1 text-[10.5px] font-semibold text-amber-700 dark:text-amber-400">
-                <Icon name="timer" className="text-[12px]" />
-                <span>
-                  {String(timeLeft.h).padStart(2, '0')}h : {String(timeLeft.m).padStart(2, '0')}m : {String(timeLeft.s).padStart(2, '0')}s
-                </span>
-              </div>
+              <span className="text-[13px] font-black tracking-tight text-on-surface uppercase">{content?.title || 'Top Picks'}</span>
+              {content?.subtitle && <span className="text-[10.5px] font-semibold text-on-surface-variant">{content.subtitle}</span>}
             </div>
           </div>
 
-          <Link
-            to="/offers"
-            className="text-[11.5px] font-bold text-secondary flex items-center gap-0.5 active:scale-95"
-          >
+          <Link to={content?.link || '/shop?featured=true'} className="text-[11.5px] font-bold text-secondary flex items-center gap-0.5 active:scale-95">
             VIEW ALL <Icon name="chevron_right" className="text-[16px]" />
           </Link>
         </div>
 
-        {/* 2 Items Per Row Grid */}
         <div className="p-2.5 grid grid-cols-2 gap-2.5">
           {dealProducts.map((p) => (
             <MobileProductCard key={p._id} product={p} />
@@ -509,22 +493,17 @@ function MobileDealOfTheDay({ products }) {
   );
 }
 
-// ── 7. Visual Curated Departments Showcase (Men, Women, Universal, Travel, Accessories) ──
-function Mobile3DepartmentRow() {
-  const departments = [
-    { name: 'Men', tag: 'Masculine Craft', image: '/uploads/seed/duffle-tan.jpg', to: '/men' },
-    { name: 'Women', tag: 'Sculptural Luxury', image: '/uploads/seed/tote-teal.jpg', to: '/women' },
-    { name: 'Universal', tag: 'For Everyone', image: '/uploads/seed/apex-navy.jpg', to: '/universal' },
-    { name: 'Travel & Utility', tag: 'Flight Ready', image: '/uploads/seed/cabin-hardshell.jpg', to: '/shop/travel-utility' },
-    { name: 'Accessories', tag: 'Everyday Carry', image: '/uploads/seed/wallet-onyx.jpg', to: '/shop/accessories' },
-  ];
+// ── 7. Departments: the same cards as the desktop homepage (Admin → Settings → Homepage) ──
+function Mobile3DepartmentRow({ content }) {
+  const departments = (content?.cards || []).map((c) => ({ name: c.label, tag: c.eyebrow, image: c.image, to: c.to }));
+  if (!departments.length) return null;
 
   return (
     <div className="px-2 py-1.5 w-full max-w-full">
       <div className="rounded-2xl bg-surface-container-lowest border border-outline-variant/30 p-2.5 shadow-xs">
         <div className="flex items-center justify-between px-1 mb-2">
           <h3 className="text-[13px] font-black text-on-surface tracking-tight uppercase">
-            Curated Departments
+            {content?.eyebrow || 'Departments'}
           </h3>
           <Link to="/shop" className="text-[11px] font-bold text-secondary flex items-center gap-0.5">
             Explore All <Icon name="chevron_right" className="text-[15px]" />
@@ -543,7 +522,7 @@ function Mobile3DepartmentRow() {
               <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent" />
               <div className="absolute bottom-2 left-2 right-2 text-white">
                 <span className="text-[11px] font-bold line-clamp-1 leading-tight">{dept.name}</span>
-                <span className="text-[9px] font-semibold text-amber-300 block leading-tight mt-0.5 truncate">{dept.tag}</span>
+                <span className="text-[9px] font-semibold text-rose-300 block leading-tight mt-0.5 truncate">{dept.tag}</span>
               </div>
             </Link>
           ))}
@@ -719,91 +698,52 @@ function MobileEntireStoreSection() {
 }
 
 // ── Master Flipkart Mobile Home View ──
+function MobileRail({ rail }) {
+  const { products } = useRailProducts(rail, 6);
+  return <Mobile3ColSection title={rail.title} subtitle={rail.subtitle} link={rail.link || '/shop'} products={products} />;
+}
+
+/** Phone homepage: sections in the order chosen in Admin → Settings → Homepage → Phone. */
 export default function MobileFlipkartHome() {
+  const hp = useHomepage();
+  const m = hp.mobile;
   const { data: collections } = useQuery({
     queryKey: ['collections'],
     queryFn: api.collections,
     staleTime: 5 * 60 * 1000,
   });
-  const { data: travelData } = useQuery({
-    queryKey: ['products', 'mobile-travel-rail'],
-    queryFn: () => api.products({ category: 'travel-utility', limit: 6 }),
-    staleTime: 5 * 60 * 1000,
-  });
-  const { data: accessoriesData } = useQuery({
-    queryKey: ['products', 'mobile-accessories-rail'],
-    queryFn: () => api.products({ category: 'accessories', limit: 6 }),
-    staleTime: 5 * 60 * 1000,
-  });
+
+  const render = (key) => {
+    switch (key) {
+      case 'search': return <MobileTopSearchHeader />;
+      case 'categories': return <MobileCategoryCircles />;
+      case 'hero': return <MobileHeroBanner slides={m.heroSlides} />;
+      case 'values': return <MobileValueStrip items={m.values} />;
+      case 'continueShopping': return <ContinueShopping compact className="py-2" />;
+      case 'deal': return <MobileDealOfTheDay products={collections ? collections.featured || [] : undefined} content={m.deal} />;
+      case 'departments': return <Mobile3DepartmentRow content={hp.desktop.departments} />;
+      case 'tabs': return <MobileInteractiveTabShowcase allProducts={collections?.featured || collections?.bestSellers} />;
+      case 'rails': return (m.rails || []).map((r, i) => <MobileRail key={`${i}-${r.source}-${r.category}`} rail={r} />);
+      case 'entireStore': return <MobileEntireStoreSection />;
+      case 'assurance':
+        return m.assurance?.title ? (
+          <div className="p-3 mx-2 my-2 rounded-2xl bg-gradient-to-r from-indigo-950/80 via-surface-container-lowest to-surface-container-low border border-outline-variant/30 flex items-center gap-3">
+            <span className="w-9 h-9 rounded-full bg-secondary/20 flex items-center justify-center shrink-0 text-secondary">
+              <Icon name="verified" className="text-[22px]" />
+            </span>
+            <div className="flex flex-col">
+              <span className="text-[12px] font-black text-on-surface">{m.assurance.title}</span>
+              {m.assurance.text && <span className="text-[9.5px] text-outline">{m.assurance.text}</span>}
+            </div>
+          </div>
+        ) : null;
+      default: return null;
+    }
+  };
 
   return (
     <div className="w-full max-w-full overflow-x-clip flex flex-col pb-36 bg-surface">
-      {/* 1. Flipkart-style Top Mobile Header & Cycling Search Pill */}
-      <MobileTopSearchHeader />
-
-      {/* 2. Horizontal Story Categories Circles */}
-      <MobileCategoryCircles />
-
-      {/* 3. Hero Promo Banner Slider */}
-      <MobileHeroBanner />
-
-      {/* 4. Flipkart Quick Trust Badges Strip */}
-      <MobileValueStrip />
-
-      {/* 5. Deal of the Day (3 Items Per Row + Live Timer) */}
-      <MobileDealOfTheDay products={collections?.featured} />
-
-      {/* 6. Curated Departments Showcase (Men, Women, Universal, Travel, Accessories) */}
-      <Mobile3DepartmentRow />
-
-      {/* 7. Interactive Filter Chip Switcher (3 Items Per Row) */}
-      <MobileInteractiveTabShowcase allProducts={collections?.featured || collections?.bestSellers} />
-
-      {/* 8. Most Loved • Bestsellers (3 Items Per Row) */}
-      <Mobile3ColSection
-        title="Most Loved • Best Sellers"
-        subtitle="Trusted by 50,000+ daily commuters"
-        link="/shop?bestseller=true"
-        products={collections?.bestSellers}
-      />
-
-      {/* 9. Travel & Utility Section (3 Items Per Row) */}
-      <Mobile3ColSection
-        title="Travel & Utility • Transit Ready"
-        subtitle="Hardshell spinners, duffles & wash kits"
-        link="/shop/travel-utility"
-        products={travelData?.items}
-      />
-
-      {/* 10. Accessories Section (3 Items Per Row) */}
-      <Mobile3ColSection
-        title="Accessories • Everyday Accents"
-        subtitle="Leather wallets, RFID cardholders & cable folios"
-        link="/shop/accessories"
-        products={accessoriesData?.items}
-      />
-
-      {/* 11. Just Landed • New Drops (3 Items Per Row) */}
-      <Mobile3ColSection
-        title="Just Landed • New In"
-        subtitle="Engineered for your journeys"
-        link="/shop?newArrival=true"
-        products={collections?.newArrivals}
-      />
-
-      {/* 12. Complete Store Catalog (3 Items Per Row) */}
-      <MobileEntireStoreSection />
-
-      {/* 11. Flipkart Assured Guarantee Banner */}
-      <div className="p-3 mx-2 my-2 rounded-2xl bg-gradient-to-r from-indigo-950/80 via-surface-container-lowest to-surface-container-low border border-outline-variant/30 flex items-center gap-3">
-        <span className="w-9 h-9 rounded-full bg-secondary/20 flex items-center justify-center shrink-0 text-secondary">
-          <Icon name="verified" className="text-[22px]" />
-        </span>
-        <div className="flex flex-col">
-          <span className="text-[12px] font-black text-on-surface">WILDTANE Assured Guarantee</span>
-          <span className="text-[9.5px] text-outline">100% Genuine Materials • 5-Year Craftsmanship Warranty</span>
-        </div>
-      </div>
+      {m.sections.filter((s) => sectionOn(m.sections, s.key)).map((s) => <Fragment key={s.key}>{render(s.key)}</Fragment>)}
     </div>
   );
 }

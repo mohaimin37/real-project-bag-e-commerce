@@ -126,6 +126,8 @@ api.use('/config', routes.configRoutes);
 api.use('/banners', routes.bannerRoutes);
 api.use('/returns', routes.returnRoutes);
 api.use('/giftcards', routes.giftcardRoutes);
+api.use('/spin', routes.spinRoutes);
+api.use('/shipping', routes.shippingRoutes);
 api.use('/admin', adminRoutes);
 app.use('/api', api);
 

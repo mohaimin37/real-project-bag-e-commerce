@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { Fragment, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
@@ -9,10 +9,32 @@ import { prefersReducedMotion } from '../theme/engine';
 import { Button, Field, Icon, Img, Input, Modal, Skeleton, StarInput, Stars, Textarea } from '../components/ui';
 import { ProductCard, ProductCardSkeleton } from '../components/product';
 import BrandValues from '../components/BrandValues';
-import { AVATAR_GRADIENTS, SEED_CUSTOMER_REVIEWS, WriteReviewModal } from '../components/CustomerReviews';
+import { AVATAR_GRADIENTS, WriteReviewModal } from '../components/CustomerReviews';
 import MobileFlipkartHome from '../components/mobile/MobileFlipkartHome';
 import Seo, { organizationLd, websiteLd } from '../components/Seo';
 import Shop from './Shop';
+import { HomeCategoryTiles } from '../components/CategoryDirectory';
+import ContinueShopping from '../components/ContinueShopping';
+import { useSpinStatus } from '../components/growth/SpinWheelModal';
+import { sectionOn, useHomepage } from '../content/homepage';
+import { useRailProducts } from '../hooks/useRailProducts';
+
+/**
+ * Colour names the admin picks (content/homepage.js → HOME_TONES) mapped to static Tailwind classes
+ * for every homepage element. Never yellow or gold.
+ */
+const T = {
+  rose: { stat: 'bg-rose-500/10 ring-rose-500/25', statText: 'text-rose-700 dark:text-rose-300', button: 'from-rose-600 to-pink-600', wash: 'from-zinc-950 via-rose-950/85 to-purple-950/60', pill: 'bg-rose-500/20 text-rose-300 ring-1 ring-rose-400/30', hover: 'hover:bg-rose-500 hover:text-white', rail: { band: 'from-rose-500/[0.07] via-pink-500/[0.05]', pill: 'from-rose-600 to-pink-500', link: 'text-rose-700 dark:text-rose-300 hover:bg-rose-500/10' }, card: 'bg-rose-500/10 ring-rose-500/30', icon: 'bg-rose-600', cta: 'text-rose-700 dark:text-rose-300', press: 'from-rose-500/20 to-pink-500/10 text-rose-600 dark:text-rose-400' },
+  indigo: { stat: 'bg-indigo-500/10 ring-indigo-500/25', statText: 'text-indigo-700 dark:text-indigo-300', button: 'from-blue-700 to-indigo-600', wash: 'from-slate-950 via-indigo-950/85 to-blue-950/60', pill: 'bg-indigo-500/20 text-indigo-300 ring-1 ring-indigo-400/30', hover: 'hover:bg-indigo-500 hover:text-white', rail: { band: 'from-indigo-500/[0.07] via-sky-500/[0.05]', pill: 'from-indigo-600 to-sky-500', link: 'text-indigo-700 dark:text-indigo-300 hover:bg-indigo-500/10' }, card: 'bg-indigo-500/10 ring-indigo-500/30', icon: 'bg-indigo-600', cta: 'text-indigo-700 dark:text-indigo-300', press: 'from-indigo-500/20 to-blue-500/10 text-indigo-600 dark:text-indigo-400' },
+  sky: { stat: 'bg-sky-500/10 ring-sky-500/25', statText: 'text-sky-700 dark:text-sky-300', button: 'from-sky-600 to-blue-600', wash: 'from-slate-950 via-sky-950/85 to-blue-950/60', pill: 'bg-sky-500/20 text-sky-300 ring-1 ring-sky-400/30', hover: 'hover:bg-sky-500 hover:text-black', rail: { band: 'from-sky-500/[0.07] via-cyan-500/[0.05]', pill: 'from-sky-600 to-cyan-500', link: 'text-sky-700 dark:text-sky-300 hover:bg-sky-500/10' }, card: 'bg-sky-500/10 ring-sky-500/30', icon: 'bg-sky-600', cta: 'text-sky-700 dark:text-sky-300', press: 'from-sky-500/20 to-blue-500/10 text-sky-600 dark:text-sky-400' },
+  emerald: { stat: 'bg-emerald-500/10 ring-emerald-500/25', statText: 'text-emerald-700 dark:text-emerald-300', button: 'from-emerald-600 to-teal-600', wash: 'from-zinc-950 via-emerald-950/85 to-teal-950/60', pill: 'bg-emerald-500/20 text-emerald-300 ring-1 ring-emerald-400/30', hover: 'hover:bg-emerald-500 hover:text-white', rail: { band: 'from-emerald-500/[0.07] via-teal-500/[0.05]', pill: 'from-emerald-600 to-teal-500', link: 'text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/10' }, card: 'bg-emerald-500/10 ring-emerald-500/30', icon: 'bg-emerald-600', cta: 'text-emerald-700 dark:text-emerald-300', press: 'from-emerald-500/20 to-teal-500/10 text-emerald-600 dark:text-emerald-400' },
+  teal: { stat: 'bg-teal-500/10 ring-teal-500/25', statText: 'text-teal-700 dark:text-teal-300', button: 'from-teal-600 to-cyan-600', wash: 'from-slate-950 via-teal-950/85 to-cyan-950/60', pill: 'bg-teal-500/20 text-teal-300 ring-1 ring-teal-400/30', hover: 'hover:bg-teal-500 hover:text-white', rail: { band: 'from-teal-500/[0.07] via-cyan-500/[0.05]', pill: 'from-teal-600 to-cyan-500', link: 'text-teal-700 dark:text-teal-300 hover:bg-teal-500/10' }, card: 'bg-teal-500/10 ring-teal-500/30', icon: 'bg-teal-600', cta: 'text-teal-700 dark:text-teal-300', press: 'from-teal-500/20 to-cyan-500/10 text-teal-600 dark:text-teal-400' },
+  violet: { stat: 'bg-violet-500/10 ring-violet-500/25', statText: 'text-violet-700 dark:text-violet-300', button: 'from-violet-600 to-purple-600', wash: 'from-zinc-950 via-violet-950/85 to-purple-950/60', pill: 'bg-violet-500/20 text-violet-300 ring-1 ring-violet-400/30', hover: 'hover:bg-violet-500 hover:text-white', rail: { band: 'from-fuchsia-500/[0.07] via-violet-500/[0.05]', pill: 'from-fuchsia-600 to-violet-500', link: 'text-fuchsia-700 dark:text-fuchsia-300 hover:bg-fuchsia-500/10' }, card: 'bg-violet-500/10 ring-violet-500/30', icon: 'bg-violet-600', cta: 'text-violet-700 dark:text-violet-300', press: 'from-violet-500/20 to-purple-500/10 text-violet-600 dark:text-violet-400' },
+  pink: { stat: 'bg-pink-500/10 ring-pink-500/25', statText: 'text-pink-700 dark:text-pink-300', button: 'from-pink-600 to-rose-600', wash: 'from-stone-950 via-pink-950/85 to-rose-950/60', pill: 'bg-pink-500/20 text-pink-300 ring-1 ring-pink-400/30', hover: 'hover:bg-pink-500 hover:text-white', rail: { band: 'from-pink-500/[0.07] via-rose-500/[0.05]', pill: 'from-pink-600 to-rose-500', link: 'text-pink-700 dark:text-pink-300 hover:bg-pink-500/10' }, card: 'bg-pink-500/10 ring-pink-500/30', icon: 'bg-pink-600', cta: 'text-pink-700 dark:text-pink-300', press: 'from-pink-500/20 to-rose-500/10 text-pink-600 dark:text-pink-400' },
+  blue: { stat: 'bg-blue-500/10 ring-blue-500/25', statText: 'text-blue-700 dark:text-blue-300', button: 'from-cyan-600 to-blue-600', wash: 'from-slate-950 via-cyan-950/85 to-blue-950/60', pill: 'bg-cyan-500/20 text-cyan-300 ring-1 ring-cyan-400/30', hover: 'hover:bg-cyan-500 hover:text-black', rail: { band: 'from-cyan-500/[0.07] via-blue-500/[0.05]', pill: 'from-cyan-600 to-blue-500', link: 'text-cyan-700 dark:text-cyan-300 hover:bg-cyan-500/10' }, card: 'bg-blue-500/10 ring-blue-500/30', icon: 'bg-blue-600', cta: 'text-blue-700 dark:text-blue-300', press: 'from-blue-500/20 to-cyan-500/10 text-blue-600 dark:text-blue-400' },
+  slate: { stat: 'bg-surface-container-high ring-outline-variant/40', statText: 'text-on-surface', button: 'from-slate-700 to-slate-600', wash: 'from-slate-950 via-slate-900/85 to-slate-800/60', pill: 'bg-white/15 text-white ring-1 ring-white/25', hover: 'hover:bg-slate-700 hover:text-white', rail: { band: 'from-slate-500/[0.07] via-slate-500/[0.03]', pill: 'from-slate-700 to-slate-500', link: 'text-on-surface hover:bg-surface-container' }, card: 'bg-surface-container-low ring-outline-variant/40', icon: 'bg-slate-600', cta: 'text-on-surface', press: 'from-slate-500/20 to-slate-500/10 text-on-surface' },
+};
+const tone = (t) => T[t] || T.slate;
 
 const RING_TONES = ['from-sky-500 to-cyan-400', 'from-emerald-500 to-teal-400', 'from-indigo-500 to-sky-400', 'from-pink-500 to-rose-400', 'from-violet-500 to-indigo-400', 'from-teal-500 to-emerald-400'];
 
@@ -31,14 +53,14 @@ function CategoryStrip() {
   const tile = 'group shrink-0 flex flex-col items-center gap-1.5 snap-start text-center w-[72px] sm:w-[80px] md:w-[86px] select-none';
   const ring = 'p-[2.5px] rounded-full bg-gradient-to-tr shadow-sm hover:shadow-md transition-all duration-300 group-hover:-translate-y-1 group-hover:scale-105 active:scale-95 ring-1 ring-black/5 dark:ring-white/10';
   const circle = 'w-[58px] h-[58px] sm:w-[66px] sm:h-[66px] md:w-[72px] md:h-[72px] rounded-full overflow-hidden ring-2 ring-surface bg-surface-container-low flex items-center justify-center';
-  const label = 'text-[11px] sm:text-[12px] md:text-[12.5px] font-bold leading-tight tracking-tight text-on-surface/90 group-hover:text-amber-600 dark:group-hover:text-amber-400 line-clamp-1 transition-colors';
+  const label = 'text-[11px] sm:text-[12px] md:text-[12.5px] font-bold leading-tight tracking-tight text-on-surface/90 group-hover:text-rose-600 dark:group-hover:text-rose-400 line-clamp-1 transition-colors';
 
   return (
     <nav aria-label="Shop by category" className="bg-surface-container-lowest/90 backdrop-blur-md border-b border-surface-container-high/80 shadow-xs relative z-20">
       <div className="container-x">
         <ul className="py-3 sm:py-4 flex items-center flex-nowrap gap-2.5 sm:gap-4 md:gap-6 overflow-x-auto scrollbar-none snap-x snap-mandatory touch-pan-x">
           {[
-            ['/offers', 'sell', 'Offers', 'from-rose-600 via-pink-600 to-amber-500'],
+            ['/offers', 'sell', 'Offers', 'from-rose-600 via-pink-600 to-rose-500'],
             ['/shop?newArrival=true&sort=newest', 'new_releases', 'New In', 'from-violet-600 via-purple-600 to-indigo-500'],
           ].map(([to, icon, text, colour]) => (
             <li key={to} className="shrink-0 snap-start">
@@ -77,72 +99,48 @@ function CategoryStrip() {
   );
 }
 
-function HomeHero() {
+function HomeHero({ hero: h }) {
   return (
-    <section className="relative overflow-hidden bg-gradient-to-br from-amber-500/15 via-rose-500/10 to-indigo-600/15 border-b border-surface-container-high py-10 md:py-16">
+    <section className="relative overflow-hidden bg-gradient-to-br from-rose-500/15 via-rose-500/10 to-indigo-600/15 border-b border-surface-container-high py-10 md:py-16">
       {/* Soft Glowing Ambient Orbs */}
-      <div aria-hidden="true" className="absolute -top-20 -left-16 w-80 h-80 rounded-full bg-amber-400/20 blur-3xl pointer-events-none" />
+      <div aria-hidden="true" className="absolute -top-20 -left-16 w-80 h-80 rounded-full bg-rose-400/20 blur-3xl pointer-events-none" />
       <div aria-hidden="true" className="absolute top-1/2 -right-16 w-80 h-80 rounded-full bg-rose-500/20 blur-3xl pointer-events-none" />
       <div aria-hidden="true" className="absolute -bottom-20 left-1/3 w-80 h-80 rounded-full bg-indigo-500/20 blur-3xl pointer-events-none" />
 
-      <div className="relative container-x grid lg:grid-cols-[1.15fr_0.85fr] gap-10 lg:gap-14 items-center">
+      <div className={cn('relative container-x grid gap-10 lg:gap-14 items-center', h.image && 'lg:grid-cols-[1.15fr_0.85fr]')}>
         {/* Content Column */}
         <div className="flex flex-col gap-5 text-center lg:text-left">
-          <div className="inline-flex items-center gap-2 self-center lg:self-start px-4 py-1.5 rounded-full bg-surface/85 backdrop-blur-md ring-1 ring-secondary/35 shadow-sm">
-            <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
-            <span className="text-[12px] font-bold uppercase tracking-wider text-secondary">
-              Architectural Carry • Handcrafted in India
-            </span>
-          </div>
+          {h.badge && (
+            <div className="inline-flex items-center gap-2 self-center lg:self-start px-4 py-1.5 rounded-full bg-surface/85 backdrop-blur-md ring-1 ring-secondary/35 shadow-sm">
+              <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
+              <span className="text-[12px] font-bold uppercase tracking-wider text-secondary">{h.badge}</span>
+            </div>
+          )}
 
           <h2 className="font-display text-[36px] sm:text-[46px] md:text-[56px] leading-[1.08] tracking-tight text-on-surface">
-            Carry Your World in{' '}
-            <span className="bg-gradient-to-r from-amber-500 via-rose-500 to-indigo-600 bg-clip-text text-transparent">
-              Color & Craft.
-            </span>
+            {h.title}{h.title && h.highlight ? ' ' : ''}
+            {h.highlight && <span className="bg-gradient-to-r from-rose-500 via-rose-500 to-indigo-600 bg-clip-text text-transparent">{h.highlight}</span>}
           </h2>
 
-          <p className="text-[14.5px] md:text-[16.5px] leading-relaxed text-on-surface-variant max-w-xl mx-auto lg:mx-0">
-            Engineered for daily hustle, airport security, and life on the go. Heavy-duty ballistic nylon, vegetable-tanned leather, and intuitive compartments.
-          </p>
+          {h.text && <p className="text-[14.5px] md:text-[16.5px] leading-relaxed text-on-surface-variant max-w-xl mx-auto lg:mx-0">{h.text}</p>}
 
-          {/* 4 Stat Badges */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
-            <div className="p-3.5 rounded-2xl bg-amber-500/10 ring-1 ring-amber-500/25 flex flex-col items-center lg:items-start gap-1">
-              <span className="text-[19px] md:text-[22px] font-extrabold text-amber-700 dark:text-amber-300">50,000+</span>
-              <span className="text-[11.5px] font-semibold text-on-surface-variant">Journeys Made</span>
+          {h.stats?.length > 0 && (
+            <div className={cn('grid grid-cols-2 gap-3 pt-2', h.stats.length >= 4 ? 'sm:grid-cols-4' : h.stats.length === 3 ? 'sm:grid-cols-3' : '')}>
+              {h.stats.map((s, i) => (
+                <div key={i} className={cn('p-3.5 rounded-2xl ring-1 flex flex-col items-center lg:items-start gap-1', tone(s.tone).stat)}>
+                  <span className={cn('text-[19px] md:text-[22px] font-extrabold', tone(s.tone).statText)}>{s.value}</span>
+                  <span className="text-[11.5px] font-semibold text-on-surface-variant">{s.label}</span>
+                </div>
+              ))}
             </div>
-            <div className="p-3.5 rounded-2xl bg-emerald-500/10 ring-1 ring-emerald-500/25 flex flex-col items-center lg:items-start gap-1">
-              <span className="text-[19px] md:text-[22px] font-extrabold text-emerald-700 dark:text-emerald-300">4.6★</span>
-              <span className="text-[11.5px] font-semibold text-on-surface-variant">30+ Reviews</span>
-            </div>
-            <div className="p-3.5 rounded-2xl bg-sky-500/10 ring-1 ring-sky-500/25 flex flex-col items-center lg:items-start gap-1">
-              <span className="text-[19px] md:text-[22px] font-extrabold text-sky-700 dark:text-sky-300">100%</span>
-              <span className="text-[11.5px] font-semibold text-on-surface-variant">Recycled Linings</span>
-            </div>
-            <div className="p-3.5 rounded-2xl bg-rose-500/10 ring-1 ring-rose-500/25 flex flex-col items-center lg:items-start gap-1">
-              <span className="text-[19px] md:text-[22px] font-extrabold text-rose-700 dark:text-rose-300">7-Day</span>
-              <span className="text-[11.5px] font-semibold text-on-surface-variant">Home Trial</span>
-            </div>
-          </div>
+          )}
 
-          {/* Quick Department Action Buttons */}
           <div className="flex flex-wrap gap-3 justify-center lg:justify-start pt-2.5">
-            <Link to="/men" className="btn bg-gradient-to-r from-blue-700 to-indigo-600 text-white font-semibold shadow-md hover:brightness-110 active:scale-95 transition-all text-[13.5px]">
-              <Icon name="man" className="text-[18px]" /> Shop Men
-            </Link>
-            <Link to="/women" className="btn bg-gradient-to-r from-rose-600 to-pink-600 text-white font-semibold shadow-md hover:brightness-110 active:scale-95 transition-all text-[13.5px]">
-              <Icon name="woman" className="text-[18px]" /> Shop Women
-            </Link>
-            <Link to="/universal" className="btn bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-semibold shadow-md hover:brightness-110 active:scale-95 transition-all text-[13.5px]">
-              <Icon name="public" className="text-[18px]" /> Universal
-            </Link>
-            <Link to="/shop/travel-utility" className="btn bg-gradient-to-r from-cyan-600 to-blue-600 text-white font-semibold shadow-md hover:brightness-110 active:scale-95 transition-all text-[13.5px]">
-              <Icon name="flight_takeoff" className="text-[18px]" /> Travel & Utility
-            </Link>
-            <Link to="/shop/accessories" className="btn bg-gradient-to-r from-amber-600 to-orange-600 text-white font-semibold shadow-md hover:brightness-110 active:scale-95 transition-all text-[13.5px]">
-              <Icon name="watch" className="text-[18px]" /> Accessories
-            </Link>
+            {(h.buttons || []).map((b, i) => (
+              <Link key={i} to={b.to || '/shop'} className={cn('btn bg-gradient-to-r text-white font-semibold shadow-md hover:brightness-110 active:scale-95 transition-all text-[13.5px]', tone(b.tone).button)}>
+                {b.icon && <Icon name={b.icon} className="text-[18px]" />} {b.label}
+              </Link>
+            ))}
             <Link to="/shop" className="btn bg-surface/90 backdrop-blur-md ring-1 ring-surface-container-high text-on-surface hover:bg-surface-container transition-all text-[13.5px]">
               Explore All <Icon name="arrow_forward" className="text-[16px]" />
             </Link>
@@ -150,111 +148,52 @@ function HomeHero() {
         </div>
 
         {/* Visual Preview Column */}
-        <div className="relative hidden lg:flex justify-end items-center">
-          <div className="relative w-full max-w-sm aspect-[4/3] rounded-3xl overflow-hidden shadow-2xl ring-4 ring-white/20 dark:ring-white/10 group">
-            <Img
-              src="/uploads/seed/terminal-traveler.jpg"
-              alt="WILDTANE commuter carrying backpack through airport terminal"
-              w={640}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-            <div className="absolute bottom-4 left-4 right-4 text-white">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-amber-300">Field Tested</span>
-              <p className="text-[13.5px] font-semibold leading-snug">Slips smoothly under seats on 140+ international airlines.</p>
+        {h.image && (
+          <div className="relative hidden lg:flex justify-end items-center">
+            <div className="relative w-full max-w-sm aspect-[4/3] rounded-3xl overflow-hidden shadow-2xl ring-4 ring-white/20 dark:ring-white/10 group">
+              <Img src={h.image} alt="" w={640} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+              {(h.imageEyebrow || h.imageCaption) && (
+                <>
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                  <div className="absolute bottom-4 left-4 right-4 text-white">
+                    {h.imageEyebrow && <span className="text-[10px] font-bold uppercase tracking-wider text-rose-300">{h.imageEyebrow}</span>}
+                    {h.imageCaption && <p className="text-[13.5px] font-semibold leading-snug">{h.imageCaption}</p>}
+                  </div>
+                </>
+              )}
             </div>
-          </div>
 
-          {/* Floating Pill */}
-          <div className="absolute -bottom-3 -left-4 px-3.5 py-2 rounded-2xl bg-surface/95 backdrop-blur-md ring-1 ring-surface-container-high shadow-lift flex items-center gap-2">
-            <span className="w-8 h-8 rounded-full bg-amber-500 text-white flex items-center justify-center font-bold text-[13px]">
-              ★
-            </span>
-            <div className="flex flex-col">
-              <span className="text-[12px] font-extrabold text-on-surface">4.6 / 5.0 Rating</span>
-              <span className="text-[10.5px] text-on-surface-variant">Verified Buyer Feedback</span>
-            </div>
+            {/* Optional rating pill — only real, checkable numbers (Admin → Settings → Homepage). */}
+            {h.ratingText && (
+              <div className="absolute -bottom-3 -left-4 px-3.5 py-2 rounded-2xl bg-surface/95 backdrop-blur-md ring-1 ring-surface-container-high shadow-lift flex items-center gap-2">
+                <span className="w-8 h-8 rounded-full bg-rose-500 text-white flex items-center justify-center font-bold text-[13px]">★</span>
+                <div className="flex flex-col">
+                  <span className="text-[12px] font-extrabold text-on-surface">{h.ratingText}</span>
+                  {h.ratingSub && <span className="text-[10.5px] text-on-surface-variant">{h.ratingSub}</span>}
+                </div>
+              </div>
+            )}
           </div>
-        </div>
+        )}
       </div>
     </section>
   );
 }
 
 /** MEN | WOMEN | UNIVERSAL | TRAVEL & UTILITY | ACCESSORIES: 5 curated department showcases. */
-function GenderSplit() {
-  const primaryCards = [
-    {
-      to: '/men',
-      label: 'Men',
-      eyebrow: 'MASCULINE CRAFT',
-      text: 'Briefcases, laptop bags, wallets & weekenders',
-      image: '/uploads/seed/duffle-tan.jpg',
-      wash: 'from-slate-950 via-sky-950/85 to-amber-950/60',
-      pill: 'bg-sky-500/20 text-sky-300 ring-1 ring-sky-400/30',
-      buttonHover: 'hover:bg-amber-500 hover:text-black',
-      tag: '1680D Ballistic Tech',
-    },
-    {
-      to: '/women',
-      label: 'Women',
-      eyebrow: 'SCULPTURAL LUXURY',
-      text: 'Handbags, work totes, crossbody & clutches',
-      image: '/uploads/seed/tote-teal.jpg',
-      wash: 'from-zinc-950 via-rose-950/85 to-purple-950/60',
-      pill: 'bg-rose-500/20 text-rose-300 ring-1 ring-rose-400/30',
-      buttonHover: 'hover:bg-rose-500 hover:text-white',
-      tag: 'Featherlight Balance',
-    },
-    {
-      to: '/universal',
-      label: 'Universal',
-      eyebrow: 'UNIVERSAL ERGONOMIC',
-      text: 'Backpacks, daily carry & travel gear for everyone',
-      image: '/uploads/seed/apex-navy.jpg',
-      wash: 'from-zinc-950 via-emerald-950/85 to-teal-950/60',
-      pill: 'bg-emerald-500/20 text-emerald-300 ring-1 ring-emerald-400/30',
-      buttonHover: 'hover:bg-emerald-500 hover:text-white',
-      tag: '180° Clamshell TSA',
-    },
-  ];
-
-  const featureCards = [
-    {
-      to: '/shop/travel-utility',
-      label: 'Travel & Utility',
-      eyebrow: 'TRANSIT ENGINEERING',
-      text: 'Cabin spinners, check-in trolleys, heavy-duty duffles & toiletry wash kits',
-      image: '/uploads/seed/cabin-hardshell.jpg',
-      wash: 'from-slate-950 via-cyan-950/85 to-blue-950/60',
-      pill: 'bg-cyan-500/20 text-cyan-300 ring-1 ring-cyan-400/30',
-      buttonHover: 'hover:bg-cyan-500 hover:text-black',
-      tag: 'Polycarbonate & Hinomoto',
-    },
-    {
-      to: '/shop/accessories',
-      label: 'Accessories',
-      eyebrow: 'MICRO-ORGANIZATION',
-      text: 'Full-grain leather wallets, RFID cardholders, passport sleeves & cable folios',
-      image: '/uploads/seed/wallet-onyx.jpg',
-      wash: 'from-stone-950 via-amber-950/85 to-orange-950/60',
-      pill: 'bg-amber-500/20 text-amber-300 ring-1 ring-amber-400/30',
-      buttonHover: 'hover:bg-amber-500 hover:text-black',
-      tag: 'RFID Armor & Patina',
-    },
-  ];
+function GenderSplit({ content }) {
+  const all = (content.cards || []).map((c) => ({ ...c, eyebrow: (c.eyebrow || '').toUpperCase(), wash: tone(c.tone).wash, pill: tone(c.tone).pill, buttonHover: tone(c.tone).hover }));
+  // The first three are tall cards, the rest wide panoramic cards.
+  const primaryCards = all.slice(0, 3);
+  const featureCards = all.slice(3);
+  if (!all.length) return null;
 
   return (
     <section className="container-x pt-6 md:pt-10" aria-label="Shop by department">
       <div className="flex flex-col items-center text-center gap-1.5 mb-5 md:mb-7">
-        <span className="text-[11px] font-bold uppercase tracking-[0.25em] text-secondary">
-          Curated Departments
-        </span>
-        <h2 className="font-display text-[26px] md:text-[34px] leading-tight">
-          Find The Carry Designed For Your Routine
-        </h2>
+        {content.eyebrow && <span className="text-[11px] font-bold uppercase tracking-[0.25em] text-secondary">{content.eyebrow}</span>}
+        {content.title && <h2 className="font-display text-[26px] md:text-[34px] leading-tight">{content.title}</h2>}
       </div>
-
       {/* Row 1: Men, Women, Universal (3 Columns) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 md:gap-4 mb-3 md:mb-4">
         {primaryCards.map((c) => (
@@ -350,7 +289,7 @@ const RAIL_TONES = {
   fuchsia: { band: 'from-fuchsia-500/[0.07] via-violet-500/[0.05]', pill: 'from-fuchsia-600 to-violet-500', link: 'text-fuchsia-700 dark:text-fuchsia-300 hover:bg-fuchsia-500/10' },
   rose: { band: 'from-rose-500/[0.07] via-pink-500/[0.05]', pill: 'from-rose-600 to-pink-500', link: 'text-rose-700 dark:text-rose-300 hover:bg-rose-500/10' },
   cyan: { band: 'from-cyan-500/[0.07] via-blue-500/[0.05]', pill: 'from-cyan-600 to-blue-500', link: 'text-cyan-700 dark:text-cyan-300 hover:bg-cyan-500/10' },
-  amber: { band: 'from-amber-500/[0.07] via-orange-500/[0.05]', pill: 'from-amber-600 to-orange-500', link: 'text-amber-700 dark:text-amber-300 hover:bg-amber-500/10' },
+  amber: { band: 'from-rose-500/[0.07] via-orange-500/[0.05]', pill: 'from-rose-600 to-orange-500', link: 'text-rose-700 dark:text-rose-300 hover:bg-rose-500/10' },
 };
 
 function SectionHead({ eyebrow, icon, title, link, linkLabel = 'View all', tone = RAIL_TONES.indigo }) {
@@ -377,9 +316,9 @@ function SectionHead({ eyebrow, icon, title, link, linkLabel = 'View all', tone 
 }
 
 /** A row of product cards on its own softly tinted band: swipe on phones, four across on desktop. */
-function ProductRail({ eyebrow, icon, title, link, products, loading, tone = 'indigo' }) {
+function ProductRail({ eyebrow, icon, title, link, products, loading, tone: railTone = 'indigo' }) {
   if (!loading && !products?.length) return null;
-  const t = RAIL_TONES[tone];
+  const t = RAIL_TONES[railTone] || tone(railTone).rail;
   return (
     <section className={cn('mt-6 md:mt-10 py-4 md:py-6 bg-gradient-to-br to-transparent', t.band)} aria-label={title}>
       <div className="container-x">
@@ -398,26 +337,15 @@ function ProductRail({ eyebrow, icon, title, link, products, loading, tone = 'in
   );
 }
 
-function Collections() {
-  const { data, isLoading } = useQuery({ queryKey: ['collections'], queryFn: api.collections, staleTime: 5 * 60 * 1000 });
-  const { data: travelData, isLoading: travelLoading } = useQuery({
-    queryKey: ['products', 'home-travel-rail'],
-    queryFn: () => api.products({ category: 'travel-utility', limit: 8 }),
-    staleTime: 5 * 60 * 1000,
-  });
-  const { data: accessoriesData, isLoading: accessoriesLoading } = useQuery({
-    queryKey: ['products', 'home-accessories-rail'],
-    queryFn: () => api.products({ category: 'accessories', limit: 8 }),
-    staleTime: 5 * 60 * 1000,
-  });
+function RailFromSettings({ rail }) {
+  const { products, loading } = useRailProducts(rail);
+  return <ProductRail eyebrow={rail.eyebrow} icon={rail.icon} tone={rail.tone} title={rail.title} link={rail.link} products={products} loading={loading} />;
+}
 
+function Collections({ rails }) {
   return (
     <>
-      <ProductRail eyebrow="Handpicked" icon="diamond" tone="indigo" title="Featured products" link="/shop?featured=true" products={data?.featured} loading={isLoading} />
-      <ProductRail eyebrow="Just landed" icon="rocket_launch" tone="fuchsia" title="New arrivals" link="/shop?newArrival=true&sort=newest" products={data?.newArrivals} loading={isLoading} />
-      <ProductRail eyebrow="Customer favourites" icon="favorite" tone="rose" title="Best sellers" link="/shop?bestseller=true&sort=bestseller" products={data?.bestSellers} loading={isLoading} />
-      <ProductRail eyebrow="Transit & Flight Ready" icon="flight_takeoff" tone="cyan" title="Travel & Utility" link="/shop/travel-utility" products={travelData?.items} loading={travelLoading} />
-      <ProductRail eyebrow="Everyday Accents" icon="watch" tone="amber" title="Accessories" link="/shop/accessories" products={accessoriesData?.items} loading={accessoriesLoading} />
+      {(rails || []).map((r, i) => <RailFromSettings key={`${i}-${r.source}-${r.category}`} rail={r} />)}
     </>
   );
 }
@@ -598,24 +526,19 @@ function OfferRotator() {
 /*SHOP_BY_CATEGORY*/
 
 /** Help & contact band. */
-function ContactBand() {
+function ContactBand({ content }) {
   const { data: config } = useConfig();
-  // Colours that suit each card: friendly blue for help, business indigo for corporate, reassuring green for returns.
-  const items = [
-    ['support_agent', 'Talk to us', 'Questions about a bag or an order?', '/contact', 'Contact us', { card: 'bg-sky-500/10 ring-sky-500/30', icon: 'bg-sky-600', cta: 'text-sky-700 dark:text-sky-300' }],
-    ['corporate_fare', 'Corporate & bulk', 'Branded bags for teams and events.', '/corporate', 'Get a quote', { card: 'bg-indigo-500/10 ring-indigo-500/30', icon: 'bg-indigo-600', cta: 'text-indigo-700 dark:text-indigo-300' }],
-    ['assignment_return', 'Easy returns', 'Read how returns and replacements work.', '/return-policy', 'Return policy', { card: 'bg-emerald-500/10 ring-emerald-500/30', icon: 'bg-emerald-600', cta: 'text-emerald-700 dark:text-emerald-300' }],
-  ];
+  const items = (content.items || []).map((it) => [it.icon || 'help', it.title, it.text, it.to || '/contact', it.cta, tone(it.tone)]);
   return (
     <section className="container-x pt-10 md:pt-16 pb-6" aria-label="Help and contact">
-      <div className="grid md:grid-cols-3 gap-2.5 md:gap-4">
-        {items.map(([icon, title, text, to, cta, tone]) => (
-          <Link key={to} to={to} className={cn('group flex items-center gap-4 p-4 md:p-5 rounded-2xl ring-1 hover:shadow-lift hover:-translate-y-0.5 transition-all duration-300', tone.card)}>
-            <span className={cn('w-11 h-11 rounded-xl text-white flex items-center justify-center shrink-0 transition-transform duration-300 group-hover:scale-110', tone.icon)}><Icon name={icon} className="text-[22px]" /></span>
+      <div className={cn('grid gap-2.5 md:gap-4', items.length >= 3 ? 'md:grid-cols-3' : items.length === 2 ? 'md:grid-cols-2' : '')}>
+        {items.map(([icon, title, text, to, cta, t], i) => (
+          <Link key={i} to={to} className={cn('group flex items-center gap-4 p-4 md:p-5 rounded-2xl ring-1 hover:shadow-lift hover:-translate-y-0.5 transition-all duration-300', t.card)}>
+            <span className={cn('w-11 h-11 rounded-xl text-white flex items-center justify-center shrink-0 transition-transform duration-300 group-hover:scale-110', t.icon)}><Icon name={icon} className="text-[22px]" /></span>
             <span className="flex-1 min-w-0">
               <span className="block text-[15px] font-semibold">{title}</span>
               <span className="block text-[12.5px] text-on-surface-variant">{text}</span>
-              <span className={cn('mt-1 inline-flex items-center gap-1 text-[12px] font-semibold', tone.cta)}>{cta} <Icon name="arrow_forward" className="text-[14px] transition-transform group-hover:translate-x-0.5" /></span>
+              {cta && <span className={cn('mt-1 inline-flex items-center gap-1 text-[12px] font-semibold', t.cta)}>{cta} <Icon name="arrow_forward" className="text-[14px] transition-transform group-hover:translate-x-0.5" /></span>}
             </span>
           </Link>
         ))}
@@ -631,24 +554,19 @@ function ContactBand() {
 }
 
 /** Short, crawlable description of the store with links to every category (helps search engines). */
-function About() {
+function About({ content }) {
   const { data: tree } = useCategories();
   return (
     <section className="container-x pb-10">
-      <div className="rounded-3xl bg-gradient-to-br from-amber-500/10 via-rose-500/5 to-indigo-500/10 ring-1 ring-secondary/20 p-6 md:p-10 grid md:grid-cols-[1.3fr_1fr] gap-6 md:gap-12 items-center shadow-sm">
+      <div className="rounded-3xl bg-gradient-to-br from-rose-500/10 via-rose-500/5 to-indigo-500/10 ring-1 ring-secondary/20 p-6 md:p-10 grid md:grid-cols-[1.3fr_1fr] gap-6 md:gap-12 items-center shadow-sm">
         <div className="flex flex-col gap-2.5">
-          <div className="inline-flex items-center gap-1.5 self-start px-2.5 py-1 rounded-full bg-secondary/15 text-secondary text-[11px] font-bold uppercase tracking-wider">
-            <Icon name="verified" className="text-[13px]" /> Architectural Carry
-          </div>
-          <h2 className="font-display text-[24px] md:text-[32px] leading-tight text-on-surface">
-            Bags, Backpacks & Travel Gear by{' '}
-            <span className="bg-gradient-to-r from-amber-500 via-rose-500 to-indigo-600 bg-clip-text text-transparent">
-              WILDTANE
-            </span>
-          </h2>
-          <p className="text-[13.5px] leading-relaxed text-on-surface-variant">
-            Shop laptop backpacks, structured leather handbags, totes, cabin luggage, duffles, and accessories for men, women, and everyone. Every order is tracked to your doorstep across India with 7-day returns, cash on delivery, and dedicated customer concierge support.
-          </p>
+          {content.badge && (
+            <div className="inline-flex items-center gap-1.5 self-start px-2.5 py-1 rounded-full bg-secondary/15 text-secondary text-[11px] font-bold uppercase tracking-wider">
+              <Icon name="verified" className="text-[13px]" /> {content.badge}
+            </div>
+          )}
+          {content.title && <h2 className="font-display text-[24px] md:text-[32px] leading-tight text-on-surface">{content.title}</h2>}
+          {content.text && <p className="text-[13.5px] leading-relaxed text-on-surface-variant">{content.text}</p>}
           <div className="flex flex-wrap gap-2 pt-1">
             <Link to="/about" className="inline-flex items-center gap-1 text-[12.5px] font-bold text-secondary hover:underline">
               Read Our Full Story <Icon name="arrow_forward" className="text-[14px]" />
@@ -678,89 +596,18 @@ function About() {
  * A high-prestige alternative to customer reviews, combining press acclaim,
  * transit engineering standards, and curated packing guides from The Journal.
  */
-function EditorialSpotlight() {
+function EditorialSpotlight({ content }) {
   const { data: blogsData, isLoading } = useQuery({
     queryKey: ['blogs', 'home-preview'],
     queryFn: () => api.blogs({ limit: 3 }),
     staleTime: 10 * 60 * 1000,
   });
 
-  const posts = blogsData?.items?.slice(0, 3) || [
-    {
-      _id: 'default-1',
-      title: 'The One-Bag Travel Method: Packing a Week Into 24 Litres',
-      category: 'Travel Guides',
-      readingMinutes: 4,
-      slug: 'the-one-bag-travel-method-packing-a-week-into-24-litres',
-      coverImage: { url: '/uploads/seed/apex-packing.jpg' },
-      excerpt: 'How our design team fits a week of business travel into The Apex Commuter with room left over.',
-    },
-    {
-      _id: 'default-2',
-      title: 'Carry-On Rules in 2026: What Fits Overhead on Major Airlines',
-      category: 'Transit Notes',
-      readingMinutes: 5,
-      slug: 'carry-on-rules-in-2026-what-fits-overhead-on-major-airlines',
-      coverImage: { url: '/uploads/seed/cabin-hardshell.jpg' },
-      excerpt: 'Dimensions and weight limits for major carriers worldwide, and how to glide through every gate.',
-    },
-    {
-      _id: 'default-3',
-      title: 'Caring for Vegetable-Tanned Leather in a Humid Climate',
-      category: 'Care & Repair',
-      readingMinutes: 3,
-      slug: 'caring-for-vegetable-tanned-leather-in-a-humid-climate',
-      coverImage: { url: '/uploads/seed/tote-teal.jpg' },
-      excerpt: 'Monsoon-proof routines that keep calfskin supple and help it develop an authentic, rich patina.',
-    },
-  ];
-
-  const press = [
-    {
-      pub: 'GQ',
-      tagline: 'Annual Carry Awards',
-      quote: 'The gold standard in architectural carry — utilitarian precision wrapped in pure minimalist luxury.',
-      badge: 'Best Travel Pack',
-      color: 'from-amber-500/20 to-orange-500/10 text-amber-600 dark:text-amber-400',
-    },
-    {
-      pub: 'WIRED',
-      tagline: 'Gear of the Year',
-      quote: 'A triumph of transit ergonomics. Survived monsoons, sprint connections, and 100+ flights without a seam failing.',
-      badge: 'Editor’s Choice',
-      color: 'from-sky-500/20 to-blue-500/10 text-sky-600 dark:text-sky-400',
-    },
-    {
-      pub: 'TRAVEL + LEISURE',
-      tagline: 'Global Transit Edit',
-      quote: 'Understated elegance with relentless utility. The clamshell layout turns airport security into a breeze.',
-      badge: 'Carry-On Top Pick',
-      color: 'from-emerald-500/20 to-teal-500/10 text-emerald-600 dark:text-emerald-400',
-    },
-  ];
-
-  const standards = [
-    {
-      icon: 'flight_takeoff',
-      title: 'Tested on 140+ Airlines',
-      desc: 'Engineered strictly to FAA, EASA, and IATA carry-on and personal item sizers worldwide.',
-    },
-    {
-      icon: 'water_drop',
-      title: 'All-Weather Protection',
-      desc: '1000D ballistic weave paired with PU-sealed stormproof zippers to safeguard tech.',
-    },
-    {
-      icon: 'health_and_safety',
-      title: 'Zero Seam Fatigue',
-      desc: 'Industrial bar-tack stitching and reinforced stress points cycle-tested to 50,000 loads.',
-    },
-    {
-      icon: 'verified',
-      title: '7-Day At-Home Trial',
-      desc: 'Pack it, test it, and experience the ergonomics with doorstep returns across India.',
-    },
-  ];
+  // Only real published stories — no placeholder articles.
+  const posts = blogsData?.items?.slice(0, 3) || [];
+  // Press quotes and standards come from Admin → Settings → Homepage. Add press only for real, published coverage.
+  const press = (content.press || []).map((p) => ({ ...p, color: tone(p.tone).press }));
+  const standards = content.standards || [];
 
   return (
     <section className="container-x pt-10 md:pt-16 pb-2" aria-labelledby="editorial-heading">
@@ -768,14 +615,10 @@ function EditorialSpotlight() {
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6 md:mb-8">
         <div className="flex flex-col gap-1.5">
           <span className="inline-flex items-center gap-1 text-[11px] font-bold uppercase tracking-widest text-secondary">
-            <Icon name="auto_awesome" fill className="text-[14px]" /> Editorial Acclaim & Transit Standards
+            <Icon name="auto_awesome" fill className="text-[14px]" /> {content.eyebrow}
           </span>
-          <h2 id="editorial-heading" className="font-display text-[26px] md:text-[34px] leading-tight">
-            Crafted for the Journey
-          </h2>
-          <p className="text-[14px] text-on-surface-variant max-w-xl">
-            From premier design awards to international terminals, explore the engineering, press recognition, and field notes shaping every piece.
-          </p>
+          <h2 id="editorial-heading" className="font-display text-[26px] md:text-[34px] leading-tight">{content.title}</h2>
+          {content.text && <p className="text-[14px] text-on-surface-variant max-w-xl">{content.text}</p>}
         </div>
         <Link
           to="/blog"
@@ -785,11 +628,12 @@ function EditorialSpotlight() {
         </Link>
       </div>
 
-      {/* Press Accolades Carousel / Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4 mb-6 md:mb-8">
-        {press.map((item) => (
+      {/* Press coverage (only when the admin has added real coverage) */}
+      {press.length > 0 && (
+      <div className={cn('grid grid-cols-1 gap-3 md:gap-4 mb-6 md:mb-8', press.length >= 3 ? 'md:grid-cols-3' : press.length === 2 ? 'md:grid-cols-2' : '')}>
+        {press.map((item, i) => (
           <div
-            key={item.pub}
+            key={i}
             className="group relative p-5 md:p-6 rounded-2xl bg-surface-container-lowest ring-1 ring-surface-container-high hover:ring-secondary/40 hover:shadow-lift transition-all duration-300 flex flex-col justify-between"
           >
             <div className="flex flex-col gap-3">
@@ -806,18 +650,20 @@ function EditorialSpotlight() {
               </p>
             </div>
             <div className="mt-4 pt-3 border-t border-surface-container-high flex items-center justify-between text-[12px] text-on-surface-variant">
-              <span>{item.tagline}</span>
+              {/^https:\/\//.test(item.url || '') ? <a href={item.url} target="_blank" rel="noopener noreferrer" className="hover:underline">{item.tagline || 'Read the article'}</a> : <span>{item.tagline}</span>}
               <Icon name="verified" className="text-[16px] text-secondary" />
             </div>
           </div>
         ))}
       </div>
+      )}
 
-      {/* Field Engineering Standards Band */}
+      {/* Standards band */}
+      {standards.length > 0 && (
       <div className="rounded-2xl bg-surface-container-low/60 border border-surface-container-high p-4 md:p-6 mb-8 md:mb-12">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-          {standards.map((std) => (
-            <div key={std.title} className="flex flex-col gap-2">
+          {standards.map((std, i) => (
+            <div key={i} className="flex flex-col gap-2">
               <span className="w-9 h-9 rounded-xl bg-surface-container-lowest ring-1 ring-surface-container-high flex items-center justify-center text-secondary shadow-sm">
                 <Icon name={std.icon} className="text-[20px]" />
               </span>
@@ -827,8 +673,10 @@ function EditorialSpotlight() {
           ))}
         </div>
       </div>
+      )}
 
-      {/* The Journal: Field Notes Cards */}
+      {/* The Journal: latest published stories (hidden when there are none) */}
+      {(isLoading || posts.length > 0) && (
       <div className="flex flex-col gap-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -895,11 +743,10 @@ function EditorialSpotlight() {
               ))}
         </div>
       </div>
+      )}
     </section>
   );
 }
-
-
 
 /**
  * Customer Reviews Carousel:
@@ -917,8 +764,9 @@ function CustomerReviewsCarousel() {
     staleTime: 60 * 1000,
   });
 
-  const reviews = commentsData?.comments?.length ? commentsData.comments : SEED_CUSTOMER_REVIEWS;
-  const avgRating = commentsData?.average ? Number(commentsData.average).toFixed(1) : '4.6';
+  // Only approved comments from real customers — never placeholder reviews or a made-up average.
+  const reviews = commentsData?.comments || [];
+  const avgRating = commentsData?.average ? Number(commentsData.average).toFixed(1) : '';
   const totalCount = commentsData?.count || reviews.length;
 
   const scroll = (direction) => {
@@ -950,7 +798,7 @@ function CustomerReviewsCarousel() {
     'from-emerald-600 to-teal-500',
     'from-rose-600 to-pink-500',
     'from-purple-600 to-fuchsia-500',
-    'from-amber-600 to-orange-500',
+    'from-rose-600 to-orange-500',
   ];
 
   return (
@@ -967,19 +815,19 @@ function CustomerReviewsCarousel() {
         <div className="flex flex-col gap-1.5">
           <div className="flex flex-wrap items-center gap-2">
             <span className="inline-flex items-center gap-1 text-[11px] font-bold uppercase tracking-widest text-secondary">
-              <Icon name="verified" fill className="text-[14px]" /> Verified Customer Reviews
+              <Icon name="forum" fill className="text-[14px]" /> Customer Comments
             </span>
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-300 text-[12px] font-bold">
-              <Icon name="star" fill className="text-[14px] text-amber-500" />
-              <span>{avgRating} / 5.0 Avg</span>
-              <span className="text-on-surface-variant font-normal">({totalCount} reviews)</span>
-            </span>
+            {avgRating && reviews.length > 0 && (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-rose-500/10 text-rose-700 dark:text-rose-300 text-[12px] font-bold">
+                <Icon name="star" fill className="text-[14px] text-rose-500" />
+                <span>{avgRating} / 5.0 Avg</span>
+                <span className="text-on-surface-variant font-normal">({totalCount} comments)</span>
+              </span>
+            )}
           </div>
-          <h2 className="font-display text-[26px] md:text-[34px] leading-tight">
-            Loved by Travelers & Daily Commuters
-          </h2>
+          <h2 className="font-display text-[26px] md:text-[34px] leading-tight">What Our Customers Say</h2>
           <p className="text-[14px] text-on-surface-variant max-w-xl">
-            Real feedback from verified buyers across India carrying WILDTANE across airports, boardrooms, and monsoons.
+            {reviews.length ? 'Comments from WILDTANE customers, approved by our team.' : 'No comments yet — be the first to tell others about your WILDTANE bag.'}
           </p>
         </div>
 
@@ -1081,6 +929,63 @@ function CustomerReviewsCarousel() {
   );
 }
 
+function SpinPromoBanner({ content }) {
+  // Hidden while Spin & Win is switched off (Settings → Spin wheel).
+  const { data: spin } = useSpinStatus();
+  if (spin?.enabled === false) return null;
+  return (
+    <section className="container-x py-3 sm:py-5">
+      <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-rose-500/15 via-rose-500/10 to-indigo-500/15 border border-rose-500/30 flex items-center justify-between gap-4 flex-wrap">
+        <div className="flex items-center gap-3">
+          <span className="w-10 h-10 rounded-xl bg-rose-500 text-white flex items-center justify-center font-black shadow-sm">
+            <Icon name="casino" className="text-[22px]" />
+          </span>
+          <div>
+            <h4 className="text-label-lg font-black text-on-surface">{content.title}</h4>
+            {content.text && <p className="text-body-xs text-on-surface-variant">{content.text}</p>}
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={() => window.dispatchEvent(new CustomEvent('open-spin-modal'))}
+          className="btn-primary text-xs px-4 py-2 rounded-xl font-bold flex items-center gap-1 shadow-xs cursor-pointer"
+        >
+          <span>{content.button || 'Spin now'}</span>
+          <Icon name="arrow_forward" className="text-[14px]" />
+        </button>
+      </div>
+    </section>
+  );
+}
+
+function SustainabilityCsrSummary({ content }) {
+  return (
+    <section className="container-x py-8 md:py-12">
+      <div className="p-6 md:p-10 rounded-3xl bg-gradient-to-br from-emerald-500/10 via-surface-container-low to-surface-container border border-emerald-500/25 flex flex-col md:flex-row items-center justify-between gap-6 shadow-sm">
+        <div className="flex items-start gap-4 max-w-xl">
+          <span className="w-12 h-12 rounded-2xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 shadow-xs">
+            <Icon name="eco" className="text-[28px]" />
+          </span>
+          <div>
+            {content.badge && (
+              <span className="text-[10.5px] font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-full">{content.badge}</span>
+            )}
+            <h3 className="text-headline-sm md:text-headline-md font-black text-on-surface mt-2">{content.title}</h3>
+            {content.text && <p className="text-body-sm text-on-surface-variant mt-1.5 leading-relaxed">{content.text}</p>}
+          </div>
+        </div>
+        <Link
+          to={content.to || '/sustainability'}
+          className="btn-tonal text-xs px-5 py-3 rounded-xl font-bold whitespace-nowrap flex items-center gap-1.5 shrink-0 border border-emerald-500/30"
+        >
+          <span>{content.button || 'Read more'}</span>
+          <Icon name="arrow_forward" className="text-[15px]" />
+        </Link>
+      </div>
+    </section>
+  );
+}
+
 function useIsMobile() {
   const [isMobile, setIsMobile] = useState(() => (typeof window !== 'undefined' ? window.innerWidth < 768 : false));
   useEffect(() => {
@@ -1098,9 +1003,32 @@ function useIsMobile() {
  * Homepage: Men | Women → featured / new / best sellers → offers → all products (first page)
  * → why WILDTANE → editorial & field standards → customer reviews carousel → help & contact → store description.
  */
+/** One desktop homepage section, filled with the admin's content. */
+function desktopSection(key, d) {
+  switch (key) {
+    case 'categoryStrip': return <CategoryStrip />;
+    case 'hero': return <HomeHero hero={d.hero} />;
+    case 'continueShopping': return <ContinueShopping className="pt-6" />;
+    case 'departments': return <GenderSplit content={d.departments} />;
+    case 'rails': return <Collections rails={d.rails} />;
+    case 'offers': return <OfferRotator />;
+    case 'spinPromo': return <SpinPromoBanner content={d.spinPromo} />;
+    case 'categoryTiles': return <HomeCategoryTiles className="pt-6" />;
+    case 'allProducts': return <div className="pt-6 md:pt-10"><Shop preset="home" /></div>;
+    case 'values': return <BrandValues className="pt-4 md:pt-8" eyebrow={d.values.eyebrow} title={d.values.title} items={d.values.items} />;
+    case 'sustainability': return <SustainabilityCsrSummary content={d.sustainability} />;
+    case 'editorial': return <EditorialSpotlight content={d.editorial} />;
+    case 'reviews': return <CustomerReviewsCarousel />;
+    case 'contact': return <ContactBand content={d.contact} />;
+    case 'about': return <About content={d.about} />;
+    default: return null;
+  }
+}
+
 export default function Home() {
   const isMobile = useIsMobile();
   const { data: config } = useConfig();
+  const d = useHomepage().desktop;
 
   return (
     <>
@@ -1118,21 +1046,12 @@ export default function Home() {
           <MobileFlipkartHome />
         </div>
       ) : (
-        /* ── DESKTOP & LAPTOP VIEW: Original Rich Editorial Storefront ── */
+        /* ── DESKTOP & LAPTOP VIEW: sections in the order chosen in Admin → Settings → Homepage ── */
         <div>
-          <CategoryStrip />
-          <HomeHero />
-          <GenderSplit />
-          <Collections />
-          <OfferRotator />
-          <div className="pt-6 md:pt-10">
-            <Shop preset="home" />
-          </div>
-          <BrandValues className="pt-4 md:pt-8" />
-          <EditorialSpotlight />
-          <CustomerReviewsCarousel />
-          <ContactBand />
-          <About />
+          {d.sections.filter((s) => sectionOn(d.sections, s.key)).map((s) => {
+            const el = desktopSection(s.key, d);
+            return el ? <Fragment key={s.key}>{el}</Fragment> : null;
+          })}
         </div>
       )}
     </>

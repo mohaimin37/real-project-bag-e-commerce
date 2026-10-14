@@ -75,6 +75,14 @@ export function timeAgo(d) {
 
 export const compact = (n) => Intl.NumberFormat('en-IN', { notation: 'compact', maximumFractionDigits: 1 }).format(n || 0);
 
+/** A second, different photo of the product (for the card's hover swap), or null when there is none. */
+export function productAltImage(product, variant) {
+  const urlOf = (i) => (typeof i === 'string' ? i : i?.url);
+  const first = urlOf(variant?.images?.[0]) || urlOf(product?.images?.[0]);
+  const next = [...(variant?.images || []), ...(product?.images || [])].map(urlOf).find((u) => u && u !== first);
+  return next ? imgUrl(next) : null;
+}
+
 export function productImage(product, variant) {
   const url =
     variant?.images?.[0]?.url ||
@@ -114,6 +122,13 @@ export const STATUS_STYLE = {
   Paid: 'bg-secondary text-on-secondary',
   Failed: 'bg-error-container text-on-error-container',
   Refunded: 'bg-surface-container-highest text-on-surface',
+  // Return / exchange requests
+  Requested: 'bg-sky-500/15 text-sky-700 dark:text-sky-300',
+  Approved: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300',
+  'Pickup Scheduled': 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300',
+  'In Inspection': 'bg-indigo-500/15 text-indigo-700 dark:text-indigo-300',
+  Completed: 'bg-secondary text-on-secondary',
+  Rejected: 'bg-error-container text-on-error-container',
 };
 
-export const PAYMENT_LABELS = { cod: 'Cash on Delivery', razorpay: 'Online Payment (Razorpay)', card: 'Card', upi: 'UPI / Net Banking', wallet: 'Wallet' };
+export const PAYMENT_LABELS = { cod: 'Cash on Delivery', razorpay: 'Online Payment (Razorpay)', card: 'Card', upi: 'UPI / Net Banking', wallet: 'Wallet', giftcard: 'Gift card', wtwallet: 'WILDTANE Wallet' };

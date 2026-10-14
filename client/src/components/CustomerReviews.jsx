@@ -256,7 +256,7 @@ export const AVATAR_GRADIENTS = [
   'from-emerald-600 to-teal-500',
   'from-rose-600 to-pink-500',
   'from-purple-600 to-fuchsia-500',
-  'from-amber-600 to-orange-500',
+  'from-rose-600 to-orange-500',
   'from-teal-600 to-emerald-500',
   'from-blue-600 to-indigo-500',
 ];
@@ -286,7 +286,7 @@ export function StarInput({ value = 5, onChange, max = 5 }) {
             <Icon
               name="star"
               fill={active}
-              className={cn('text-[26px] transition-colors', active ? 'text-amber-500' : 'text-outline/30')}
+              className={cn('text-[26px] transition-colors', active ? 'text-rose-500' : 'text-outline/30')}
             />
           </button>
         );

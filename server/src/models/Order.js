@@ -12,7 +12,41 @@ export const ORDER_STATUSES = [
   'Returned',
 ];
 
-export const PAYMENT_STATUSES = ['Pending', 'Paid', 'Failed', 'Refunded'];
+export const PAYMENT_STATUSES = ['Pending', 'Paid', 'Failed', 'Refunded', 'Partially Refunded'];
+
+// Refund lifecycle shown to the customer. "Not required" = nothing was charged (COD before delivery).
+export const REFUND_STATUSES = ['None', 'Not required', 'Pending', 'Processed', 'Failed'];
+
+// One line per place money came from (gateway, gift card, wallet) and its own refund state.
+const refundPartSchema = new mongoose.Schema(
+  {
+    source: { type: String, enum: ['razorpay', 'giftcard', 'wallet', 'cod'], required: true },
+    amount: { type: Number, required: true, min: 0 },
+    status: { type: String, enum: REFUND_STATUSES, default: 'Pending' },
+    providerRefundId: String, // Razorpay rfnd_… id
+    providerStatus: String, // raw status from the provider (pending / processed / failed)
+    failureReason: String,
+    processedAt: Date,
+  },
+  { _id: false }
+);
+
+const shipmentSchema = new mongoose.Schema(
+  {
+    provider: String, // 'shiprocket'
+    providerOrderId: String,
+    shipmentId: String,
+    awb: String,
+    courier: String,
+    trackingUrl: String,
+    status: String, // provider's own status text, e.g. "PICKUP SCHEDULED"
+    lastEventAt: Date,
+    lastSyncedAt: Date,
+    error: String, // last provider error, shown to admins only
+    createdAt: Date,
+  },
+  { _id: false }
+);
 
 const orderItemSchema = new mongoose.Schema(
   {
@@ -97,16 +131,30 @@ const orderSchema = new mongoose.Schema(
     approvedAt: Date,
     approvedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     invoiceSentAt: Date,
+    // Cancellation: Requested while the server checks the rules, Confirmed once the order is cancelled.
+    cancellation: {
+      status: { type: String, enum: ['None', 'Requested', 'Confirmed', 'Rejected'], default: 'None' },
+      reason: String,
+      requestedAt: Date,
+      confirmedAt: Date,
+      by: { type: String, enum: ['customer', 'admin', 'system'] },
+    },
+    // Overall refund state (worst of the parts) plus one entry per payment source.
     refundDetails: {
       status: { type: String, default: 'None' },
       amount: { type: Number, default: 0 },
-      eta: { type: String, default: '5–7 working days' },
+      eta: { type: String, default: '' },
       initiatedAt: Date,
+      processedAt: Date,
+      parts: { type: [refundPartSchema], default: [] },
+      lockedAt: Date, // set while a refund is being sent, so two requests can't refund the same order
     },
     giftCard: {
       code: String,
       amount: { type: Number, default: 0 },
     },
+    walletAmount: { type: Number, default: 0, min: 0 }, // paid from the WILDTANE Wallet
+    shipment: { type: shipmentSchema, default: undefined },
   },
   { timestamps: true }
 );
@@ -114,5 +162,12 @@ const orderSchema = new mongoose.Schema(
 orderSchema.index({ createdAt: -1 });
 orderSchema.index({ user: 1, createdAt: -1 }); // "My orders", newest first
 orderSchema.index({ orderStatus: 1, createdAt: -1 }); // admin order list filtered by status
+// A gateway payment can pay for one order only (stops replaying a captured payment).
+orderSchema.index(
+  { 'paymentDetails.razorpayPaymentId': 1 },
+  { unique: true, partialFilterExpression: { 'paymentDetails.razorpayPaymentId': { $type: 'string' } } }
+);
+orderSchema.index({ 'shipment.awb': 1 }, { sparse: true });
+orderSchema.index({ 'refundDetails.parts.providerRefundId': 1 }, { sparse: true });
 
 export default mongoose.model('Order', orderSchema);

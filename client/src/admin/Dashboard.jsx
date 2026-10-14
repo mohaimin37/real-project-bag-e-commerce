@@ -37,7 +37,7 @@ export default function Dashboard() {
 
   if (isError) return <ErrorState error={error} onRetry={refetch} />;
 
-  const totalStatus = data?.statusBreakdown.reduce((s, x) => s + x.count, 0) || 0;
+  const totalStatus = (data?.statusBreakdown || []).reduce((s, x) => s + x.count, 0);
   const maxTop = Math.max(1, ...(data?.topProducts || []).map((p) => p.revenue));
 
   return (

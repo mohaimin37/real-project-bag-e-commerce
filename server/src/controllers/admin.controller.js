@@ -1,5 +1,8 @@
+import crypto from 'crypto';
 import mongoose from 'mongoose';
 import Order from '../models/Order.js';
+import WalletTransaction from '../models/WalletTransaction.js';
+import { moveWallet } from '../services/wallet.service.js';
 import Product from '../models/Product.js';
 import User from '../models/User.js';
 import Review from '../models/Review.js';
@@ -122,6 +125,10 @@ export const dashboard = asyncHandler(async (req, res) => {
     alerts: {
       pendingOrders: pending,
       pendingReturns: pendingReturns || 0,
+      // Return refunds to send by hand + cancelled orders whose refund is held or failed.
+      refundsToSend:
+        (await ReturnRequest.countDocuments({ 'refund.status': { $in: ['Pending', 'Failed'] }, 'refund.providerRefundId': { $in: [null, ''] } })) +
+        (await Order.countDocuments({ orderStatus: 'Cancelled', 'refundDetails.status': { $in: ['Awaiting approval', 'Failed'] } })),
       lowStock: lowStockCount || 0,
       newCorporate: enquiries[0],
       newContact: enquiries[1],
@@ -386,6 +393,29 @@ export const adjustCustomerCoins = asyncHandler(async (req, res) => {
   if (coins < 0 && user.coins < -coins) throw ApiError.badRequest(`They only have ${user.coins} coins`, [{ field: 'coins', message: `Max ${user.coins}` }]);
   const tx = await moveCoins(user._id, coins, { type: 'adjusted', note, by: req.user._id });
   res.json({ success: true, balance: tx.balanceAfter, transaction: tx });
+});
+
+/** Admin wallet credit/debit. Every change is a ledger row naming the admin (audit trail). */
+export const adjustCustomerWallet = asyncHandler(async (req, res) => {
+  if (!mongoose.isValidObjectId(req.params.id)) throw ApiError.badRequest('Invalid id');
+  const user = await User.findById(req.params.id).select('wallet');
+  if (!user) throw ApiError.notFound('Customer not found');
+  const { amount, type, note, expiresAt } = req.body;
+  if (amount < 0 && (user.wallet || 0) < -amount) throw ApiError.badRequest(`Their wallet only has ₹${user.wallet || 0}`, [{ field: 'amount', message: `Max ₹${user.wallet || 0}` }]);
+  const tx = await moveWallet(user._id, amount, {
+    type: amount < 0 ? 'admin_debit' : type,
+    key: `admin:${req.user._id}:${user._id}:${Date.now()}:${crypto.randomUUID()}`,
+    description: note,
+    by: req.user._id,
+    expiresAt: amount > 0 ? expiresAt : null,
+  });
+  res.json({ success: true, balance: tx.balanceAfter, transaction: tx });
+});
+
+export const customerWalletLedger = asyncHandler(async (req, res) => {
+  if (!mongoose.isValidObjectId(req.params.id)) throw ApiError.badRequest('Invalid id');
+  const items = await WalletTransaction.find({ user: req.params.id }).sort({ createdAt: -1 }).limit(200).populate('by', 'name').lean();
+  res.json({ success: true, items });
 });
 
 export const updateCustomer = asyncHandler(async (req, res) => {

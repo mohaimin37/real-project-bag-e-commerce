@@ -9,7 +9,7 @@ import { applyServerErrors } from '../pages/Auth';
 import { ImageUploader, PageHeader } from './kit';
 import { toLocal } from './Coupons';
 
-const PLACEMENTS = { hero: 'Homepage hero', promo: 'Promo banner (countdown)', announcement: 'Announcement' };
+const PLACEMENTS = { hero: 'Homepage hero', promo: 'Promo banner (countdown)', announcement: 'Announcement', offers: 'Offers page slider (shows 4–5 at once, auto-slides)' };
 
 function BannerForm({ initial, onDone }) {
   const qc = useQueryClient();
@@ -56,10 +56,16 @@ function BannerForm({ initial, onDone }) {
       <Field label="Eyebrow"><Input {...register('eyebrow')} placeholder="Limited Seasonal Allocation" /></Field>
       <Field label="Title" error={errors.title?.message} required><Input error={errors.title} {...register('title')} /></Field>
       <Field label="Subtitle" className="md:col-span-2"><Textarea rows={3} {...register('subtitle')} /></Field>
-      {placement === 'hero' && <Field label="Image" className="md:col-span-2"><ImageUploader value={image} onChange={setImage} multiple={false} folder="banners" /></Field>}
+      {placement === 'offers' && (
+        <p className="md:col-span-2 text-body-sm text-on-surface-variant">
+          Every active “Offers page slider” banner becomes one colourful slide at the top of <a href="/offers" target="_blank" rel="noreferrer" className="underline">/offers</a> (add 4–5). Set the dates to run a sale for a limited time — it disappears by itself afterwards.
+          Until you add any, the page shows built-in slides (Sale, Spin & Win, New arrivals, Bestsellers, Free shipping).
+        </p>
+      )}
+      {(placement === 'hero' || placement === 'offers') && <Field label="Image" className="md:col-span-2"><ImageUploader value={image} onChange={setImage} multiple={false} folder="banners" /></Field>}
       <Field label="Button label"><Input {...register('ctaLabel')} placeholder="Shop the offer" /></Field>
       <Field label="Button link" hint="e.g. /shop?onSale=true"><Input {...register('ctaLink')} /></Field>
-      {placement === 'promo' && <Field label="Coupon code" hint="Shown with a copy button"><Input className="uppercase" {...register('couponCode')} /></Field>}
+      {(placement === 'promo' || placement === 'offers') && <Field label="Coupon code" hint="Optional — shown on the banner"><Input className="uppercase" {...register('couponCode')} /></Field>}
       <Field label="Sort order"><Input type="number" {...register('sortOrder')} /></Field>
       <Field label="Starts"><Input type="datetime-local" {...register('startsAt')} /></Field>
       <Field label="Ends" hint={placement === 'promo' ? 'Drives the countdown timer' : ''}><Input type="datetime-local" {...register('endsAt')} /></Field>
@@ -78,7 +84,7 @@ export default function Banners() {
   const qc = useQueryClient();
   const confirm = useConfirm();
   const [editing, setEditing] = useState(null);
-  const { data, isLoading, isError, error, refetch } = useQuery({ queryKey: ['admin', 'banners'], queryFn: adminApi.banners, select: (d) => d.banners });
+  const { data, isLoading, isError, error, refetch } = useQuery({ queryKey: ['admin', 'banners'], queryFn: adminApi.banners, select: (d) => d?.banners || [] });
   const remove = useMutation({ mutationFn: adminApi.deleteBanner, onSuccess: () => { toast.success('Banner deleted'); qc.invalidateQueries({ queryKey: ['admin', 'banners'] }); qc.invalidateQueries({ queryKey: ['banners'] }); } });
   const now = Date.now();
   const live = (b) => b.isActive && (!b.startsAt || new Date(b.startsAt) <= now) && (!b.endsAt || new Date(b.endsAt) >= now);

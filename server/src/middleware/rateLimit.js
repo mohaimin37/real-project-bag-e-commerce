@@ -20,7 +20,7 @@ export const apiLimiter = rateLimit({
   standardHeaders: 'draft-7',
   legacyHeaders: false,
   keyGenerator: getClientIp,
-  validate: { ip: false, default: true },
+  validate: { ip: false, default: true, keyGeneratorIpFallback: false },
   skip: () => !env.isProd,
   message,
 });
@@ -31,7 +31,7 @@ export const authLimiter = rateLimit({
   standardHeaders: 'draft-7',
   legacyHeaders: false,
   keyGenerator: getClientIp,
-  validate: { ip: false, default: true },
+  validate: { ip: false, default: true, keyGeneratorIpFallback: false },
   skip: () => !env.isProd,
   message,
 });
@@ -43,7 +43,7 @@ export const adminAuthLimiter = rateLimit({
   standardHeaders: 'draft-7',
   legacyHeaders: false,
   keyGenerator: getClientIp,
-  validate: { ip: false, default: true },
+  validate: { ip: false, default: true, keyGeneratorIpFallback: false },
   message,
 });
 
@@ -54,7 +54,7 @@ export const trackLimiter = rateLimit({
   standardHeaders: 'draft-7',
   legacyHeaders: false,
   keyGenerator: getClientIp,
-  validate: { ip: false, default: true },
+  validate: { ip: false, default: true, keyGeneratorIpFallback: false },
   message,
 });
 
@@ -64,6 +64,6 @@ export const formLimiter = rateLimit({
   standardHeaders: 'draft-7',
   legacyHeaders: false,
   keyGenerator: getClientIp,
-  validate: { ip: false, default: true },
+  validate: { ip: false, default: true, keyGeneratorIpFallback: false },
   message,
 });

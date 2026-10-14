@@ -1,17 +1,13 @@
+import crypto from 'crypto';
 import User from '../models/User.js';
-import env from '../config/env.js';
+import Setting from '../models/Setting.js';
 import ApiError from '../utils/ApiError.js';
 import asyncHandler from '../utils/asyncHandler.js';
-import { hashToken, randomToken } from '../utils/helpers.js';
+import { hashToken } from '../utils/helpers.js';
 import { issueAuthCookie, clearAuthCookie } from '../middleware/auth.js';
-import { sendEmail } from '../services/email.service.js';
-import { moveCoins } from '../services/coin.service.js';
-
-const RESET_TTL_MS = 30 * 60 * 1000;
-
-// Local development without email: hand the reset link to the page so it can be tested.
-// Never in production, and never once SMTP is set up (then it only goes by email).
-const DEV_PREVIEW = () => !env.isProd && !env.smtp.enabled;
+import { sendEmail, emailServiceReady } from '../services/email.service.js';
+import { moveCoins, bonusRules } from '../services/coin.service.js';
+import { uniqueReferralCode, recordReferral } from '../services/referral.service.js';
 
 async function signIn(res, user) {
   const withVersion = await User.findById(user._id).select('+tokenVersion');
@@ -22,48 +18,37 @@ export const register = asyncHandler(async (req, res) => {
   const exists = await User.exists({ email: req.body.email });
   if (exists) throw ApiError.conflict('An account with this email already exists', [{ field: 'email', message: 'Already registered' }]);
 
-  // Generate unique uppercase referral code for the user
-  const randomSuffix = Math.random().toString(36).substring(2, 8).toUpperCase();
-  const referralCode = `WT${randomSuffix}`;
-
-  // Check if user was referred by an existing user
-  let referrer = null;
-  if (req.body.referralCode) {
-    referrer = await User.findOne({ referralCode: req.body.referralCode.trim().toUpperCase() });
-  }
-
+  const { referralCode: usedCode, ...profile } = req.body;
   const user = await User.create({
-    ...req.body,
-    referralCode,
-    referredBy: referrer?._id || null,
+    ...profile,
+    referralCode: await uniqueReferralCode(),
+    referredBy: null,
     role: 'customer',
   });
 
-  // Award Signup Bonus: 50 coins (Requirement 12)
+  // Signup bonus: paid once per account (the ledger key blocks a second payment), amount from Settings.
+  let signupBonus = 0;
   try {
-    await moveCoins(user._id, 50, {
-      type: 'bonus',
-      note: 'Welcome Signup Bonus: +50 Coins',
-    });
-    user.coins = 50;
+    const { signupBonus: amount } = bonusRules(await Setting.get());
+    const tx = amount > 0 ? await moveCoins(user._id, amount, { type: 'bonus', key: `signup:${user._id}`, note: 'Welcome bonus for creating your account' }) : null;
+    if (tx) {
+      signupBonus = amount;
+      user.coins = tx.balanceAfter;
+    }
   } catch (err) {
     console.error('[coins] Failed to credit signup bonus:', err.message);
   }
 
-  // Award Referral Bonus: 100 coins to referrer (Requirement 13)
-  if (referrer) {
-    try {
-      await moveCoins(referrer._id, 100, {
-        type: 'bonus',
-        note: `Referral Bonus: +100 Coins for referring ${user.name}`,
-      });
-    } catch (err) {
-      console.error('[coins] Failed to credit referral bonus:', err.message);
-    }
-  }
+  // Referral: recorded now; the referrer is paid when it qualifies (see referral.service.js).
+  const referral = await recordReferral(user, usedCode);
 
   const token = await signIn(res, user);
-  res.status(201).json({ success: true, user, token });
+  res.status(201).json({
+    success: true,
+    user,
+    token,
+    rewards: { signupBonus, referral: referral ? referral.status : usedCode ? 'invalid' : null },
+  });
 });
 
 const MAX_FAILED_LOGINS = 5;
@@ -128,52 +113,44 @@ export const me = asyncHandler(async (req, res) => {
   res.json({ success: true, user: req.user || null });
 });
 
+const OTP_TTL_MS = 10 * 60 * 1000;
+const OTP_RESEND_MS = 60 * 1000;
+const OTP_MAX_ATTEMPTS = 5;
+
+// The same answer whether or not the email has an account, so the form can't be used to find accounts.
+const OTP_REQUESTED = {
+  success: true,
+  message: 'If an account exists for this email, a 6-digit verification code is on its way. Check your inbox and spam folder.',
+  expiresInSeconds: OTP_TTL_MS / 1000,
+  resendAfterSeconds: OTP_RESEND_MS / 1000,
+};
+
 export const forgotPassword = asyncHandler(async (req, res) => {
   const email = (req.body.email || '').trim().toLowerCase();
-  if (!email || !email.includes('@')) {
-    throw ApiError.badRequest('Please provide a valid email address');
+
+  // Checked before looking the account up, so an outage is reported the same way for every email.
+  if (!(await emailServiceReady())) {
+    throw new ApiError(503, 'We can’t send verification emails right now. Please try again in a few minutes or contact support.');
   }
 
-  let user = await User.findOne({ email });
-  if (!user) {
-    // If no existing user, auto-create a customer account so they can receive their code and sign in!
-    const namePart = email.split('@')[0].replace(/[._-]/g, ' ');
-    const formattedName = namePart.charAt(0).toUpperCase() + namePart.slice(1);
-    user = await User.create({
-      email,
-      name: formattedName || 'Valued Customer',
-      password: randomToken(16),
-      role: 'customer',
-      isActive: true,
-    });
+  const user = await User.findOne({ email }).select('+passwordResetOtpSentAt');
+  if (!user || !user.isActive) return res.json(OTP_REQUESTED);
+
+  // Server-side resend cooldown (the page shows the same timer).
+  if (user.passwordResetOtpSentAt && Date.now() - user.passwordResetOtpSentAt.getTime() < OTP_RESEND_MS) {
+    return res.json(OTP_REQUESTED);
   }
 
-  if (!user.isActive) {
-    throw ApiError.forbidden('This account has been deactivated. Please contact customer support.');
-  }
-
-  // Generate 6-digit numeric OTP code
-  const otp = Math.floor(100000 + Math.random() * 900000).toString();
+  // Cryptographically random 6-digit code; only its hash is stored, and a new code replaces the old one.
+  const otp = String(crypto.randomInt(100000, 1000000));
   user.passwordResetOtp = hashToken(otp);
-  user.passwordResetOtpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes expiration
-
-  // Also support legacy reset link
-  const token = randomToken();
-  user.passwordResetToken = hashToken(token);
-  user.passwordResetExpires = new Date(Date.now() + RESET_TTL_MS);
+  user.passwordResetOtpExpires = new Date(Date.now() + OTP_TTL_MS);
+  user.passwordResetOtpAttempts = 0;
+  user.passwordResetOtpSentAt = new Date();
   await user.save({ validateBeforeSave: false });
 
-  // Log prominently to console for instant developer feedback
-  console.log(`\n=============================================================`);
-  console.log(`[WILDTANE OTP] Fast Verification Code for: ${user.email}`);
-  console.log(`OTP Code: ${otp}`);
-  console.log(`Expires: ${user.passwordResetOtpExpires.toLocaleTimeString()} (Valid for 10 minutes)`);
-  console.log(`=============================================================\n`);
-
-  // Send high-priority email via SMTP with await so serverless/cloud environments do not abort the socket
-  let emailDelivered = false;
   try {
-    const outcome = await sendEmail({
+    await sendEmail({
       to: user.email,
       subject: `Your WILDTANE verification code: ${otp}`,
       priority: 'high',
@@ -189,103 +166,84 @@ export const forgotPassword = asyncHandler(async (req, res) => {
           <div style="text-align: center; margin: 24px 0;">
             <div style="font-size: 34px; font-weight: 800; letter-spacing: 8px; padding: 14px 28px; background: #111; color: #fff; border-radius: 12px; display: inline-block; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">${otp}</div>
           </div>
-          <p style="font-size: 13px; color: #2e7d32; font-weight: 600; text-align: center; margin: 0 0 16px;">⏱️ Code is valid for 10 minutes. Delivered fast to your inbox.</p>
+          <p style="font-size: 13px; color: #2e7d32; font-weight: 600; text-align: center; margin: 0 0 16px;">This code is valid for 10 minutes and works once.</p>
           <p style="font-size: 12px; color: #777; text-align: center;">Never share this code with anyone. WILDTANE staff will never ask for your code.</p>
           <hr style="border: none; border-top: 1px solid #e5e5e5; margin: 20px 0;" />
           <p style="font-size: 11px; color: #999; text-align: center; margin: 0;">If you did not request this code, you can safely ignore this email.</p>
         </div>
       `,
     });
-    emailDelivered = outcome?.delivered || outcome?.logged;
   } catch (err) {
-    console.error(`[email] OTP send to ${user.email} failed: ${err.message}`);
+    // Don't pretend it was sent: clear the code so the customer can try again straight away.
+    console.error(`[email] Verification code email failed (user ${user._id}): ${err.code || ''} ${err.message}`);
+    await User.updateOne({ _id: user._id }, { $unset: { passwordResetOtp: 1, passwordResetOtpExpires: 1, passwordResetOtpSentAt: 1 } });
+    throw new ApiError(503, 'We couldn’t send the verification email just now. Please try again in a few minutes.');
   }
 
-  res.json({
-    success: true,
-    emailSent: emailDelivered,
-    message: `A 6-digit verification code has been sent to ${user.email}. Please check your inbox or spam folder.`,
-    devOtp: !env.isProd ? otp : undefined,
-    expiresInSeconds: 600,
-  });
+  res.json(OTP_REQUESTED);
 });
 
+const OTP_FIELDS = '+passwordResetOtp +passwordResetOtpExpires +passwordResetOtpAttempts +tokenVersion';
+const NO_CODE = 'This code is invalid or has expired. Please request a new code.';
+
+/**
+ * Checks a verification code. Wrong guesses are counted atomically; after 5 the code is destroyed.
+ * With `consume`, the code is cleared in the same atomic update, so it can never be used twice.
+ */
+async function checkOtp(email, otp, { consume = false } = {}) {
+  const user = await User.findOne({ email: (email || '').trim().toLowerCase() }).select(OTP_FIELDS);
+  if (!user?.passwordResetOtp || !user.passwordResetOtpExpires || user.passwordResetOtpExpires < new Date()) {
+    throw ApiError.badRequest(NO_CODE);
+  }
+  if ((user.passwordResetOtpAttempts || 0) >= OTP_MAX_ATTEMPTS) throw ApiError.badRequest(NO_CODE);
+
+  const hash = hashToken(String(otp));
+  if (user.passwordResetOtp !== hash) {
+    const after = await User.findOneAndUpdate(
+      { _id: user._id, passwordResetOtp: user.passwordResetOtp },
+      { $inc: { passwordResetOtpAttempts: 1 } },
+      { returnDocument: 'after' }
+    ).select('+passwordResetOtpAttempts');
+    const left = OTP_MAX_ATTEMPTS - (after?.passwordResetOtpAttempts || OTP_MAX_ATTEMPTS);
+    if (left <= 0) {
+      await User.updateOne({ _id: user._id }, { $unset: { passwordResetOtp: 1, passwordResetOtpExpires: 1 } });
+      throw ApiError.badRequest('Too many incorrect attempts. Please request a new code.');
+    }
+    throw ApiError.badRequest(`Incorrect code. ${left} attempt${left === 1 ? '' : 's'} left.`);
+  }
+
+  if (consume) {
+    // Only one request can win this update; a replay of the same code finds nothing to clear.
+    const won = await User.updateOne(
+      { _id: user._id, passwordResetOtp: hash },
+      { $unset: { passwordResetOtp: 1, passwordResetOtpExpires: 1, passwordResetOtpAttempts: 1, passwordResetToken: 1, passwordResetExpires: 1 } }
+    );
+    if (!won.modifiedCount) throw ApiError.badRequest(NO_CODE);
+  }
+  if (!user.isActive) throw ApiError.forbidden('This account has been deactivated. Contact support.');
+  return user;
+}
+
 export const verifyResetOtp = asyncHandler(async (req, res) => {
-  const { email, otp } = req.body;
-  const user = await User.findOne({
-    email: (email || '').trim().toLowerCase(),
-  }).select('+passwordResetOtp +passwordResetOtpExpires');
-
-  if (!user || !user.passwordResetOtp || !user.passwordResetOtpExpires) {
-    throw ApiError.badRequest('No active verification code found. Please request a new code.');
-  }
-
-  if (new Date() > user.passwordResetOtpExpires) {
-    throw ApiError.badRequest('Verification code has expired (valid for 10 minutes). Please request a new code.');
-  }
-
-  if (user.passwordResetOtp !== hashToken(otp)) {
-    throw ApiError.badRequest('Invalid 6-digit verification code. Please check your code or request a new one.');
-  }
-
-  res.json({ success: true, message: 'Code verified successfully. You can now set your new password.' });
+  await checkOtp(req.body.email, req.body.otp);
+  res.json({ success: true, message: 'Code verified. You can now set your new password.' });
 });
 
 export const loginWithOtp = asyncHandler(async (req, res) => {
-  const { email, otp } = req.body;
-  const user = await User.findOne({
-    email: (email || '').trim().toLowerCase(),
-  }).select('+passwordResetOtp +passwordResetOtpExpires +tokenVersion');
-
-  if (!user || !user.passwordResetOtp || !user.passwordResetOtpExpires) {
-    throw ApiError.badRequest('No active verification code found. Please request a new code.');
-  }
-
-  if (new Date() > user.passwordResetOtpExpires) {
-    throw ApiError.badRequest('Verification code has expired (valid for 10 minutes). Please request a new code.');
-  }
-
-  if (user.passwordResetOtp !== hashToken(otp)) {
-    throw ApiError.badRequest('Invalid 6-digit verification code. Please check your code or request a new one.');
-  }
-
+  const user = await checkOtp(req.body.email, req.body.otp, { consume: true });
   user.passwordResetOtp = undefined;
   user.passwordResetOtpExpires = undefined;
-  user.passwordResetToken = undefined;
-  user.passwordResetExpires = undefined;
-  user.failedLoginCount = 0;
-  user.lockUntil = undefined;
-  await user.save();
-
   await completeLogin(res, user);
 });
 
 export const resetPasswordWithOtp = asyncHandler(async (req, res) => {
-  const { email, otp, password } = req.body;
-  const user = await User.findOne({
-    email: (email || '').trim().toLowerCase(),
-  }).select('+passwordResetOtp +passwordResetOtpExpires +tokenVersion');
-
-  if (!user || !user.passwordResetOtp || !user.passwordResetOtpExpires) {
-    throw ApiError.badRequest('No active verification request found. Please request a code first.');
-  }
-
-  if (new Date() > user.passwordResetOtpExpires) {
-    throw ApiError.badRequest('Verification code has expired (valid for 10 minutes). Please request a new code.');
-  }
-
-  if (user.passwordResetOtp !== hashToken(otp)) {
-    throw ApiError.badRequest('Invalid verification code.');
-  }
-
+  const user = await checkOtp(req.body.email, req.body.otp, { consume: true });
   user.password = req.body.password;
   user.passwordResetOtp = undefined;
   user.passwordResetOtpExpires = undefined;
-  user.passwordResetToken = undefined;
-  user.passwordResetExpires = undefined;
   user.failedLoginCount = 0;
   user.lockUntil = undefined;
-  user.tokenVersion += 1;
+  user.tokenVersion += 1; // signs out every other device
   await user.save();
 
   const token = await signIn(res, user);

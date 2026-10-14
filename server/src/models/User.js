@@ -39,8 +39,17 @@ const userSchema = new mongoose.Schema(
     role: { type: String, enum: ['customer', 'admin'], default: 'customer', index: true },
     isActive: { type: Boolean, default: true },
     coins: { type: Number, default: 0, min: 0 }, // loyalty coin balance (history in CoinTransaction)
+    wallet: { type: Number, default: 0, min: 0 }, // store wallet cash balance
+    vipTier: { type: String, enum: ['silver', 'gold', 'platinum'], default: 'silver', index: true },
+    birthday: { type: Date, default: null },
+    lastSpinAt: { type: Date, default: null },
     referralCode: { type: String, unique: true, sparse: true, uppercase: true, trim: true },
     referredBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+    notificationPreferences: {
+      orderUpdates: { type: Boolean, default: true },
+      promotions: { type: Boolean, default: true },
+      whatsapp: { type: Boolean, default: true },
+    },
     addresses: [addressSchema],
     recentlyViewed: [
       {
@@ -55,6 +64,8 @@ const userSchema = new mongoose.Schema(
     passwordResetExpires: { type: Date, select: false },
     passwordResetOtp: { type: String, select: false },
     passwordResetOtpExpires: { type: Date, select: false },
+    passwordResetOtpAttempts: { type: Number, default: 0, select: false },
+    passwordResetOtpSentAt: { type: Date, select: false },
     // Brute-force protection: consecutive failed sign-ins and the lock they trigger.
     failedLoginCount: { type: Number, default: 0, select: false },
     lockUntil: { type: Date, select: false },
@@ -80,6 +91,8 @@ userSchema.methods.toJSON = function toJSON() {
   delete obj.passwordResetExpires;
   delete obj.passwordResetOtp;
   delete obj.passwordResetOtpExpires;
+  delete obj.passwordResetOtpAttempts;
+  delete obj.passwordResetOtpSentAt;
   delete obj.failedLoginCount;
   delete obj.lockUntil;
   return obj;

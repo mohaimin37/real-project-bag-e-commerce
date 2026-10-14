@@ -31,6 +31,8 @@ const productSchema = new mongoose.Schema(
     description: { type: String, trim: true, default: '', maxlength: 5000 },
     category: { type: mongoose.Schema.Types.ObjectId, ref: 'Category', required: true, index: true },
     subcategory: { type: mongoose.Schema.Types.ObjectId, ref: 'Category', default: null, index: true },
+    categories: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Category', index: true }],
+    productType: { type: mongoose.Schema.Types.ObjectId, ref: 'Category', default: null, index: true },
     gender: { type: String, enum: ['unisex', 'women', 'men'], default: 'unisex', index: true },
     price: { type: Number, required: true, min: 0 },
     salePrice: { type: Number, min: 0, default: null },
@@ -50,6 +52,20 @@ const productSchema = new mongoose.Schema(
     sizeGroup: { type: String, enum: ['small', 'medium', 'large'], default: 'small', index: true },
     specifications: [{ _id: false, label: String, value: String }],
     faqs: [{ _id: false, question: String, answer: String }],
+    brand: { type: String, trim: true, default: 'WILDTANE' },
+    warranty: { type: String, trim: true, default: '1 Year Comprehensive Manufacturer Warranty' },
+    careInstructions: { type: String, trim: true, default: 'Wipe clean with a damp microfiber cloth. Store in dust bag away from direct heat and damp environments.' },
+    viewsCount: { type: Number, default: 0, min: 0 },
+    // Optional shopping attributes (filters only appear once real products carry them).
+    laptopSize: { type: Number, default: null, min: 10, max: 20 }, // largest laptop that fits, in inches
+    compartments: { type: Number, default: null, min: 1 },
+    closureType: { type: String, trim: true, default: '' },
+    waterResistant: { type: Boolean, default: false },
+    occasions: [{ type: String, trim: true, lowercase: true }], // party, wedding, office, casual…
+    dimensions: { type: String, trim: true, default: '' }, // e.g. "40 × 30 × 15 cm"
+    weight: { type: String, trim: true, default: '' }, // e.g. "1.2 kg"
+    seoTitle: { type: String, trim: true, default: '' },
+    seoDescription: { type: String, trim: true, default: '' },
     // Sum of variant stock, kept in sync for fast "in stock" filtering and inventory views.
     stock: { type: Number, default: 0, min: 0, index: true },
     lowStockThreshold: { type: Number, default: 5, min: 0 },

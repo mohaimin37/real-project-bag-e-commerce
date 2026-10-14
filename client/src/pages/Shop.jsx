@@ -1,17 +1,22 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { keepPreviousData, useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { api } from '../lib/api';
 import { cn, imgUrl } from '../lib/format';
-import { TAB_TONES, categoryTone } from '../lib/categoryTone';
+import { TAB_TONES } from '../lib/categoryTone';
 import { useCategories, useConfig, useMoney } from '../hooks/useStore';
 import { useCart } from '../hooks/useCart';
 import { setCartOpen, setSearchOpen } from '../store';
 import { GRID_COLS, ProductCard, ProductCardSkeleton } from '../components/product';
-import Seo, { breadcrumbLd, itemListLd, organizationLd, websiteLd } from '../components/Seo';
-import { Drawer, EmptyState, ErrorState, Icon, Modal, Spinner, Toggle } from '../components/ui';
+import Seo, { breadcrumbLd, itemListLd } from '../components/Seo';
+import { Drawer, ErrorState, Icon, Modal, Spinner, Toggle } from '../components/ui';
 import ShopWidgetsBar from '../components/layout/ShopWidgetsBar';
+import Breadcrumbs from '../components/layout/Breadcrumbs';
+import { BAGS } from '../content/taxonomy';
+import GroupedProducts from '../components/GroupedProducts';
+import { OffersCarousel, YourOffersStrip } from '../components/offers';
+
 
 const PAGE_SIZE = 24;
 
@@ -22,10 +27,12 @@ const SORTS = [
   ['price-high', 'Price — High to Low'],
   ['highest-rated', 'Top rated'],
   ['newest', 'Newest first'],
+  ['discount', 'Highest discount'],
 ];
 
-const LIST_KEYS = ['materials', 'colors', 'features', 'size', 'purpose'];
-const FILTER_KEYS = [...LIST_KEYS, 'minPrice', 'maxPrice', 'inStock', 'rating', 'onSale', 'gender'];
+const LIST_KEYS = ['materials', 'colors', 'features', 'size', 'purpose', 'occasion', 'closure'];
+const FILTER_KEYS = [...LIST_KEYS, 'minPrice', 'maxPrice', 'inStock', 'rating', 'onSale', 'gender', 'minDiscount', 'bestseller', 'newArrival', 'laptop', 'waterResistant'];
+const DISCOUNT_STEPS = [['10', '10% off or more'], ['25', '25% off or more'], ['40', '40% off or more']];
 
 // Plain-language filter options (values match the API).
 const WHO = [['', 'All'], ['men', 'Men'], ['women', 'Women'], ['unisex', 'Universal']];
@@ -35,6 +42,9 @@ const USES = [
   ['transit', 'Daily commute'],
   ['business', 'Meetings'],
   ['creative', 'Studio & hobbies'],
+  ['college', 'College'],
+  ['gym', 'Gym'],
+  ['everyday', 'Everyday'],
 ];
 const SIZES = [
   ['small', 'Small'],
@@ -111,7 +121,7 @@ const GENDER_PAGES = {
     eyebrow: 'MASCULINE ARCHITECTURE • BUILT FOR OFFICE & TRANSIT',
     gradientTitle: 'Engineered For The Grind',
     tag: 'Full-Grain Leather & 1680D',
-    gradientBg: 'from-blue-600/15 via-indigo-600/10 to-amber-500/15',
+    gradientBg: 'from-blue-600/15 via-indigo-600/10 to-rose-500/15',
     borderGlow: 'border-blue-500/30',
     accentText: 'text-sky-600 dark:text-sky-400',
     stats: [
@@ -134,7 +144,7 @@ const GENDER_PAGES = {
     borderGlow: 'border-rose-500/30',
     accentText: 'text-rose-600 dark:text-rose-400',
     stats: [
-      { label: 'Featherlight Weight Balance', icon: 'feather' },
+      { label: 'Featherlight Weight Balance', icon: 'air' },
       { label: 'Structured Base Never Slumps', icon: 'aspect_ratio' },
       { label: 'Suspended Tech Sleeves', icon: 'laptop' },
       { label: '4.6★ Loved Across India', icon: 'star' },
@@ -189,41 +199,63 @@ const SHOP_PAGE = {
   eyebrow: 'COMPLETE CATALOGUE • ARCHITECTURAL CARRY',
   gradientTitle: 'Carry Your World In Color',
   tag: 'Handcrafted in India',
-  gradientBg: 'from-amber-500/15 via-rose-500/10 to-indigo-500/15',
-  borderGlow: 'border-amber-500/30',
-  accentText: 'text-amber-600 dark:text-amber-400',
-  stats: [
-    { label: '50,000+ Journeys Made', icon: 'flight_takeoff' },
-    { label: '4.6★ Rating Points', icon: 'star' },
-    { label: '100% Recycled Linings', icon: 'eco' },
-    { label: '7-Day Home Trial', icon: 'verified' },
-  ],
-};
-
-const OFFERS_PAGE = {
-  title: 'Special Offers',
-  seoTitle: 'Special Offers & Bag Deals — Limited Time Savings | WILDTANE',
-  description: 'Limited-time discounts on architectural bags, travel duffles, and tech backpacks with 7-day returns.',
-  tagline: 'Limited-edition discounts on premium backpacks, leather totes, and travel bundles.',
-  image: '/uploads/seed/catalog/trekpack-sun.jpg',
-  eyebrow: 'EXCLUSIVE PROMOTIONS • LIMITED QUANTITY',
-  gradientTitle: 'Premium Craft At Unmatched Value',
-  tag: 'Limited Time Savings',
-  gradientBg: 'from-rose-500/15 via-amber-500/10 to-violet-500/15',
+  gradientBg: 'from-rose-500/15 via-rose-500/10 to-indigo-500/15',
   borderGlow: 'border-rose-500/30',
   accentText: 'text-rose-600 dark:text-rose-400',
   stats: [
-    { label: 'Up to 30% Off Selected Styles', icon: 'percent' },
-    { label: 'Free Delivery Over ₹10,000', icon: 'local_shipping' },
-    { label: 'Genuine 7-Day Returns', icon: 'verified' },
-    { label: 'Earn WILDTANE Coins', icon: 'toll' },
+    { label: '7-Day Easy Returns', icon: 'verified' },
+    { label: 'Cash on Delivery', icon: 'payments' },
+    { label: 'Free Delivery over ₹10,000', icon: 'local_shipping' },
+    { label: 'Secure Checkout', icon: 'lock' },
   ],
+};
+
+// /bags: every bag across Men, Women and Unisex (recommended addition; same hero design as the other departments).
+const BAGS_PAGE = {
+  title: 'Bags',
+  seoTitle: 'Bags for Men & Women — Handbags, Backpacks, Laptop & Travel Bags | WILDTANE',
+  description: 'Shop all WILDTANE bags in one place: handbags, totes, backpacks, laptop bags, briefcases, duffels, cabin and travel bags for men, women and everyone.',
+  tagline: 'Every WILDTANE bag in one place — browse by type, by who it’s for, or by what you need it for.',
+  image: '/uploads/seed/terminal-traveler.jpg',
+  eyebrow: 'ALL BAGS • MEN • WOMEN • UNISEX',
+  gradientTitle: 'Find The Right Carry',
+  tag: 'Men · Women · Unisex',
+  gradientBg: 'from-indigo-500/15 via-sky-500/10 to-emerald-500/15',
+  borderGlow: 'border-indigo-500/30',
+  accentText: 'text-indigo-600 dark:text-indigo-400',
+  stats: [
+    { label: 'Men, Women & Unisex', icon: 'group' },
+    { label: 'Work, College & Travel', icon: 'work' },
+    { label: '7-Day Returns', icon: 'published_with_changes' },
+    { label: 'Tracked Delivery', icon: 'local_shipping' },
+  ],
+};
+
+// /new-arrivals and /bestsellers: listings driven by the product flags set in Admin → Products.
+const FLAG_PAGES = {
+  new: {
+    path: '/new-arrivals',
+    title: 'New arrivals',
+    seoTitle: 'New Arrivals — Latest Bags & Accessories | WILDTANE',
+    description: 'The newest WILDTANE bags, backpacks, wallets and travel gear.',
+    query: { newArrival: 'true' },
+    sort: 'newest',
+  },
+  bestsellers: {
+    path: '/bestsellers',
+    title: 'Bestsellers',
+    seoTitle: 'Bestsellers — Most-Loved Bags & Accessories | WILDTANE',
+    description: 'WILDTANE’s most-bought bags, backpacks, wallets and travel gear.',
+    query: { bestseller: 'true' },
+    sort: 'bestseller',
+  },
 };
 
 const DEPARTMENT_NAV = [
   { key: 'shop', label: 'All Products', to: '/shop' },
   { key: 'men', label: 'Men', to: '/men' },
   { key: 'women', label: 'Women', to: '/women' },
+  { key: 'bags', label: 'Bags', to: '/bags' },
   { key: 'universal', label: 'Universal', to: '/universal' },
   { key: 'travel', label: 'Travel & Utility', to: '/shop/travel-utility' },
   { key: 'accessories', label: 'Accessories', to: '/shop/accessories' },
@@ -317,7 +349,7 @@ function DepartmentHero({ page, current, onSelectCategory, selectedCategory }) {
 
             <h1 className="font-display text-[28px] sm:text-[36px] md:text-[44px] leading-[1.12] text-on-surface">
               {page.title}:{' '}
-              <span className="bg-gradient-to-r from-amber-500 via-rose-500 to-indigo-600 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-rose-500 via-rose-500 to-indigo-600 bg-clip-text text-transparent">
                 {page.gradientTitle}
               </span>
             </h1>
@@ -417,7 +449,7 @@ function DepartmentHero({ page, current, onSelectCategory, selectedCategory }) {
   );
 }
 
-function Filters({ facets, state, categoryTree, activeCategory, lockedGender }) {
+function Filters({ facets, state, flat, activeCategory, lockedGender, lockedFlag }) {
   const { get, getList, update, toggleIn } = state;
   const money = useMoney();
   const [min, setMin] = useState(get('minPrice'));
@@ -427,20 +459,27 @@ function Filters({ facets, state, categoryTree, activeCategory, lockedGender }) 
     setMax(get('maxPrice'));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.params]);
-  const parentId = activeCategory?.parent?._id || activeCategory?.parent;
-  const parentCat = parentId ? categoryTree?.find((c) => String(c._id) === String(parentId)) : null;
-  const subcats = (activeCategory?.children?.length
+  // Look the parent up at any depth (not just top level), so a subcategory page keeps its siblings.
+  const parentCat = activeCategory?.parentRef || null;
+  const subcats = (activeCategory?.children?.some((c) => c.productCount > 0)
     ? activeCategory.children
     : parentCat?.children?.length
       ? parentCat.children
       : null
   )?.filter((c) => c.productCount > 0);
+  const listParent = activeCategory?.children?.some((c) => c.productCount > 0) ? activeCategory : parentCat;
 
   return (
     <div className="flex flex-col">
       {subcats?.length > 0 && (
         <Section title="Category">
           <div className="flex flex-col">
+            {/* Way back up to the parent, shown while a subcategory is selected. */}
+            {!lockedGender && parentCat && listParent === parentCat && (
+              <Link to={`/shop/${parentCat.slug}`} className="flex items-center gap-1 py-1.5 text-[13px] text-on-surface-variant hover:text-secondary">
+                <Icon name="chevron_left" className="text-[16px]" /> All {parentCat.name}
+              </Link>
+            )}
             {subcats.map((c) => {
               const isSelected = String(activeCategory?._id) === String(c._id) || activeCategory?.slug === c.slug;
               const targetTo = isSelected && parentCat ? `/shop/${parentCat.slug}` : `/shop/${c.slug}`;
@@ -557,11 +596,59 @@ function Filters({ facets, state, categoryTree, activeCategory, lockedGender }) 
         </Section>
       )}
 
+      {/* Blueprint filters: Discount, Best Seller, New Arrival — shown only when products qualify. */}
+      {DISCOUNT_STEPS.some(([d]) => facets?.discounts?.[d] > 0) && (
+        <Section title="Discount">
+          <div className="flex flex-wrap gap-1.5">
+            {DISCOUNT_STEPS.filter(([d]) => facets.discounts[d] > 0 || get('minDiscount') === d).map(([d, label]) => (
+              <Chip key={d} on={get('minDiscount') === d} onClick={() => update({ minDiscount: get('minDiscount') === d ? '' : d })} count={facets.discounts[d]}>{label}</Chip>
+            ))}
+          </div>
+        </Section>
+      )}
+
+      {facets?.occasions?.length > 0 && (
+        <Section title="Occasion" defaultOpen={false}>
+          <div className="flex flex-wrap gap-1.5">
+            {facets.occasions.map((o) => (
+              <Chip key={o.value} on={getList('occasion').includes(o.value)} onClick={() => toggleIn('occasion', o.value)} count={o.count}>
+                <span className="capitalize">{o.value}</span>
+              </Chip>
+            ))}
+          </div>
+        </Section>
+      )}
+
+      {facets?.laptop?.length > 0 && (
+        <Section title="Fits laptop" defaultOpen={false}>
+          <div className="flex flex-wrap gap-1.5">
+            {facets.laptop.map((l) => (
+              <Chip key={l.value} on={get('laptop') === String(l.value)} onClick={() => update({ laptop: get('laptop') === String(l.value) ? '' : String(l.value) })} count={l.count}>{l.value}″ & up</Chip>
+            ))}
+          </div>
+        </Section>
+      )}
+
+      {facets?.closures?.length > 0 && (
+        <Section title="Closure" defaultOpen={false}>
+          <div className="flex flex-wrap gap-1.5">
+            {facets.closures.map((c) => (
+              <Chip key={c.value} on={getList('closure').includes(c.value)} onClick={() => toggleIn('closure', c.value)} count={c.count}>
+                <span className="capitalize">{c.value}</span>
+              </Chip>
+            ))}
+          </div>
+        </Section>
+      )}
+
       <Section title="Availability">
         <div className="flex flex-col gap-2.5">
           <Toggle checked={get('inStock') === 'true'} onChange={(v) => update({ inStock: v ? 'true' : '' })} label="In stock only" />
           <Toggle checked={get('rating') === '4'} onChange={(v) => update({ rating: v ? '4' : '' })} label="4★ & above" />
           {facets?.onSale > 0 && <Toggle checked={get('onSale') === 'true'} onChange={(v) => update({ onSale: v ? 'true' : '' })} label={`On sale (${facets.onSale})`} />}
+          {!lockedFlag && facets?.bestseller > 0 && <Toggle checked={get('bestseller') === 'true'} onChange={(v) => update({ bestseller: v ? 'true' : '' })} label={`Best sellers (${facets.bestseller})`} />}
+          {!lockedFlag && facets?.newArrival > 0 && <Toggle checked={get('newArrival') === 'true'} onChange={(v) => update({ newArrival: v ? 'true' : '' })} label={`New arrivals (${facets.newArrival})`} />}
+          {facets?.waterResistant > 0 && <Toggle checked={get('waterResistant') === 'true'} onChange={(v) => update({ waterResistant: v ? 'true' : '' })} label={`Water-resistant (${facets.waterResistant})`} />}
         </div>
       </Section>
     </div>
@@ -569,21 +656,51 @@ function Filters({ facets, state, categoryTree, activeCategory, lockedGender }) 
 }
 
 /** Round category shortcuts, Flipkart style. Scrolls sideways on phones. */
-function CategoryRail({ tree, activeSlug, preset, selectedCategory, onSelectCategory }) {
-  const isDepartment = ['men', 'women', 'universal', 'unisex'].includes(preset) || ['travel-utility', 'accessories'].includes(activeSlug);
-  const departmentKey = preset === 'unisex' ? 'universal' : (preset || activeSlug);
-  const departmentItems = DEPARTMENT_SHORTCUTS[departmentKey];
+function CategoryRail({ tree, activeSlug, rootSlug, preset, selectedCategory, onSelectCategory, onNavigate }) {
+  const inBranch = (slug) => activeSlug === slug || rootSlug === slug;
+  // Travel & Utility and Accessories keep their own rail on every page inside them (e.g. Cabin Luggage),
+  // so the subcategory options never disappear once one is chosen.
+  const branch = ['travel-utility', 'accessories'].includes(rootSlug) && !preset ? rootSlug : null;
+  const isDepartment = ['men', 'women', 'universal', 'unisex'].includes(preset) || Boolean(branch);
+  const departmentKey = preset === 'unisex' ? 'universal' : (preset || branch);
+  let departmentItems = DEPARTMENT_SHORTCUTS[departmentKey];
+  if (branch) {
+    // Built from the live category tree (admin-managed), reusing the existing shortcut artwork by slug.
+    const root = tree?.find((c) => c.slug === branch);
+    const art = new Map(DEPARTMENT_SHORTCUTS[branch].map((s) => [s.category, s]));
+    const kids = (root?.children || []).filter((c) => c.productCount > 0);
+    if (kids.length) {
+      departmentItems = [
+        art.get(''),
+        ...kids.map((c) => ({
+          key: c.slug,
+          label: art.get(c.slug)?.label || c.name,
+          category: c.slug,
+          icon: art.get(c.slug)?.icon || 'category',
+          img: art.get(c.slug)?.img || c.image?.url || '',
+        })),
+      ];
+    }
+  }
 
   if (isDepartment && departmentItems?.length) {
     return (
-      <div className="flex gap-3 md:gap-5 overflow-x-auto scrollbar-none -mx-3 px-3 md:mx-0 md:px-0 py-2">
+      // Wraps onto more lines instead of scrolling sideways, so every option stays on screen.
+      <div className="flex flex-wrap gap-x-2 gap-y-3 sm:gap-x-3 md:gap-x-5 py-2">
         {departmentItems.map((c) => {
-          const isSelected = (!selectedCategory && c.category === '') || selectedCategory === c.category;
+          const isSelected = branch
+            ? (c.category || branch) === activeSlug
+            : (!selectedCategory && c.category === '') || selectedCategory === c.category;
           return (
             <button
               key={c.key}
               type="button"
-              onClick={() => onSelectCategory && onSelectCategory(c.category === selectedCategory ? '' : c.category)}
+              aria-pressed={isSelected}
+              onClick={() =>
+                branch
+                  ? onNavigate(`/shop/${c.category || branch}`) // a real page per subcategory, so Back returns to the previous one
+                  : onSelectCategory && onSelectCategory(c.category === selectedCategory ? '' : c.category)
+              }
               className="group flex flex-col items-center gap-1.5 shrink-0 w-16 md:w-20 cursor-pointer active:scale-95 transition-transform"
               title={`View ${c.label}`}
             >
@@ -615,17 +732,12 @@ function CategoryRail({ tree, activeSlug, preset, selectedCategory, onSelectCate
     { key: 'all', label: 'Explore All', to: '/shop', icon: 'apps', on: (!preset || preset === 'shop') && !activeSlug && !selectedCategory },
     { key: 'men', label: 'Men', to: '/men', icon: 'man', on: preset === 'men' },
     { key: 'women', label: 'Women', to: '/women', icon: 'woman', on: preset === 'women' },
-    { key: 'universal', label: 'Universal', to: '/universal', icon: 'public', tone: TAB_TONES.universal, on: preset === 'universal' || preset === 'unisex' },
-    { key: 'travel-utility', label: 'Travel', to: '/shop/travel-utility', icon: 'flight_takeoff', tone: TAB_TONES['travel-utility'], on: activeSlug === 'travel-utility' },
-    { key: 'accessories', label: 'Accessories', to: '/shop/accessories', icon: 'watch', tone: TAB_TONES.accessories, on: activeSlug === 'accessories' },
-    ...(tree || []).filter((c) => !['travel-utility', 'accessories'].includes(c.slug)).map((c) => ({
-      key: c._id,
-      label: c.name,
-      to: `/shop/${c.slug}`,
-      tone: categoryTone(c),
-      img: c.image?.url || c.children?.find((x) => x.image?.url)?.image?.url,
-      on: activeSlug === c.slug || c.children?.some((x) => x.slug === activeSlug),
-    })),
+    // A short fixed set that always fits on one screen (phones included); every other category
+    // is one tap away inside these pages and in the menus.
+    { key: 'bags', label: 'Bags', to: '/bags', icon: 'shopping_bag', tone: TAB_TONES.bags, on: preset === 'bags' },
+    { key: 'travel-utility', label: 'Travel', to: '/shop/travel-utility', icon: 'flight_takeoff', tone: TAB_TONES['travel-utility'], on: inBranch('travel-utility') },
+    // Soft hyphen: wraps as "Acces-sories" only where a phone is too narrow for one line.
+    { key: 'accessories', label: 'Acces­sories', to: '/shop/accessories', icon: 'watch', tone: TAB_TONES.accessories, on: inBranch('accessories') },
     { key: 'offers', label: 'Offers', to: '/offers', icon: 'sell', tone: TAB_TONES.offers, on: preset === 'offers' },
   ];
   const defaultTone = {
@@ -638,7 +750,7 @@ function CategoryRail({ tree, activeSlug, preset, selectedCategory, onSelectCate
     icon: 'category',
   };
   return (
-    <div className="flex gap-3 md:gap-5 overflow-x-auto scrollbar-none -mx-3 px-3 md:mx-0 md:px-0 py-1">
+    <div className="grid grid-cols-7 gap-1 sm:gap-3 md:flex md:justify-start md:gap-5 py-1">
       {items.map((c) => {
         const tone = c.tone || (TAB_TONES && TAB_TONES[c.key]) || (TAB_TONES && TAB_TONES.bags) || (TAB_TONES && TAB_TONES.all) || defaultTone;
         return (
@@ -648,18 +760,18 @@ function CategoryRail({ tree, activeSlug, preset, selectedCategory, onSelectCate
             onClick={() => {
               if (c.key === 'all' && onSelectCategory) onSelectCategory('');
             }}
-            className="group flex flex-col items-center gap-1 shrink-0 w-14 md:w-16"
+            className="group flex flex-col items-center gap-1 min-w-0 md:shrink-0 md:w-20"
           >
             <span
               className={cn(
-                'w-12 h-12 md:w-14 md:h-14 rounded-full overflow-hidden flex items-center justify-center ring-2 transition-all',
+                'w-11 h-11 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-full overflow-hidden flex items-center justify-center ring-2 transition-all',
                 c.on ? cn(tone.ringOn, 'ring-offset-2 ring-offset-surface') : cn(tone.ring, 'group-hover:scale-105'),
                 c.img ? tone.tint : c.on ? tone.solid : cn(tone.tint, tone.text)
               )}
             >
               {c.img ? <img src={imgUrl(c.img, 112)} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover" /> : <Icon name={c.icon || 'category'} className="text-[22px]" />}
             </span>
-            <span className={cn('text-[11px] leading-tight text-center w-full truncate', c.on ? cn('font-bold', tone.text) : 'font-medium text-on-surface-variant')}>{c.label}</span>
+            <span className={cn('text-[10px] sm:text-[11px] leading-tight text-center w-full line-clamp-2 tracking-tight sm:tracking-normal', c.on ? cn('font-bold', tone.text) : 'font-medium text-on-surface-variant')}>{c.label}</span>
           </Link>
         );
       })}
@@ -667,7 +779,7 @@ function CategoryRail({ tree, activeSlug, preset, selectedCategory, onSelectCate
   );
 }
 
-function ActiveFilters({ state, onClear, flatCategories }) {
+function ActiveFilters({ state, onClear, flatCategories, lockedFlag }) {
   const { get, getList, update, toggleIn } = state;
   const chips = [];
   LIST_KEYS.forEach((k) => getList(k).forEach((v) => chips.push([`${k}:${v}`, v, () => toggleIn(k, v)])));
@@ -680,6 +792,11 @@ function ActiveFilters({ state, onClear, flatCategories }) {
   if (get('inStock')) chips.push(['stock', 'In stock', () => update({ inStock: '' })]);
   if (get('rating')) chips.push(['rating', '4★ & above', () => update({ rating: '' })]);
   if (get('onSale')) chips.push(['sale', 'On sale', () => update({ onSale: '' })]);
+  if (get('minDiscount')) chips.push(['discount', `${get('minDiscount')}% off or more`, () => update({ minDiscount: '' })]);
+  if (get('bestseller') && !lockedFlag) chips.push(['bestseller', 'Best sellers', () => update({ bestseller: '' })]);
+  if (get('newArrival') && !lockedFlag) chips.push(['new', 'New arrivals', () => update({ newArrival: '' })]);
+  if (get('laptop')) chips.push(['laptop', `Fits ${get('laptop')}″ laptop`, () => update({ laptop: '' })]);
+  if (get('waterResistant')) chips.push(['water', 'Water-resistant', () => update({ waterResistant: '' })]);
   if (get('q')) chips.push(['q', `“${get('q')}”`, () => update({ q: '' })]);
   if (!chips.length) return null;
   return (
@@ -710,12 +827,21 @@ function useNearViewport(onHit, deps) {
   return ref;
 }
 
-export default function Shop({ preset }) {
+/**
+ * Product listing used by every shop page.
+ * - preset: home | men | women | universal | unisex | offers | bags | new | bestsellers
+ * - categoryList / pageTitle / pageDescription / crumbsOverride / canonicalPath: set by nested
+ *   directory pages (/women/handbags/tote-bags …) that list one or more categories together.
+ * - directoryKey: which department this page belongs to (hides the category rail; the products
+ *   below are already divided by category headers).
+ */
+export default function Shop({ preset, categoryList, pageTitle, pageDescription, crumbsOverride, canonicalPath, directoryKey }) {
   const { category: categorySlug } = useParams();
   const state = useParamState();
   const { get, getList, update, params } = state;
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
   const { count: cartCount } = useCart();
   const [mobileFilters, setMobileFilters] = useState(false);
   const [sortOpen, setSortOpen] = useState(false);
@@ -729,24 +855,52 @@ export default function Shop({ preset }) {
   // Home has its own h1 in the intro; everywhere else the listing title is the page's h1.
   const Heading = isHome ? 'h2' : 'h1';
 
-  const flat = useMemo(() => (tree || []).flatMap((c) => [c, ...c.children]), [tree]);
+  const flat = useMemo(() => {
+    const list = [];
+    function walk(nodes, parentRef = null) {
+      if (!Array.isArray(nodes)) return;
+      for (const n of nodes) {
+        const item = { ...n, parentRef };
+        list.push(item);
+        if (n.children?.length) walk(n.children, item);
+      }
+    }
+    walk(tree);
+    return list;
+  }, [tree]);
+
   const selectedCatParam = get('category');
+  // Pages that list several categories together (Bags, a directory group) send them as one comma list.
+  const listCategory = preset === 'bags' ? BAGS.listing.join(',') : categoryList?.length ? categoryList.join(',') : '';
   const effectiveCategory = categorySlug === 'travel-and-utility'
     ? (selectedCatParam || 'travel-utility')
-    : (selectedCatParam || categorySlug);
+    : (selectedCatParam || categorySlug || (categoryList?.length === 1 ? categoryList[0] : ''));
+  const queryCategory = selectedCatParam || (categoryList?.length > 1 || preset === 'bags' ? listCategory : effectiveCategory);
+  const flagPage = FLAG_PAGES[preset];
   const activeCategory = flat.find((c) => c.slug === effectiveCategory);
-  const parent = activeCategory?.parent ? flat.find((c) => String(c._id) === String(activeCategory.parent?._id || activeCategory.parent)) : null;
+  const parent = activeCategory?.parentRef || (activeCategory?.parent ? flat.find((c) => String(c._id) === String(activeCategory.parent?._id || activeCategory.parent)) : null);
+  // Top of the active category's branch (Cabin Luggage → Travel & Utility).
+  let rootCategory = activeCategory;
+  while (rootCategory?.parentRef) rootCategory = rootCategory.parentRef;
 
+  // The Men / Women pages show everything for that shopper: their own pieces plus the
+  // universal ones that suit everyone (the same rule as the collection counts on the server).
+  const pageGender = preset === 'universal' || preset === 'unisex' ? 'unisex' : genderPage ? `${preset},unisex` : undefined;
   const query = useMemo(() => {
     const q = Object.fromEntries(params.entries());
     delete q.page;
-    if (effectiveCategory) q.category = effectiveCategory;
+    if (queryCategory) q.category = queryCategory;
     if (preset === 'offers') q.onSale = 'true';
-    if (genderPage) q.gender = preset === 'universal' ? 'unisex' : preset;
+    if (genderPage) q.gender = pageGender;
+    if (flagPage) {
+      Object.assign(q, flagPage.query);
+      q.sort = params.get('sort') || flagPage.sort;
+    }
     q.sort = q.sort || 'featured';
-    q.limit = PAGE_SIZE;
+    // Listing pages show everything, so they load in the largest pages the API allows.
+    q.limit = preset === 'home' ? PAGE_SIZE : 120;
     return q;
-  }, [params, effectiveCategory, preset, genderPage]);
+  }, [params, queryCategory, preset, genderPage, flagPage, pageGender]);
 
   const products = useInfiniteQuery({
     queryKey: ['products', 'list', query],
@@ -756,10 +910,10 @@ export default function Shop({ preset }) {
     placeholderData: keepPreviousData,
     staleTime: 60 * 1000,
   });
-  const gender = genderPage ? (preset === 'universal' ? 'unisex' : preset) : (get('gender') === 'universal' ? 'unisex' : get('gender'));
+  const gender = genderPage ? pageGender : (get('gender') === 'universal' ? 'unisex' : get('gender'));
   const facets = useQuery({
-    queryKey: ['facets', effectiveCategory, get('q'), gender],
-    queryFn: () => api.facets({ category: effectiveCategory, q: get('q'), gender }),
+    queryKey: ['facets', queryCategory, get('q'), gender],
+    queryFn: () => api.facets({ category: queryCategory, q: get('q'), gender }),
     select: (d) => d.facets,
     staleTime: 5 * 60 * 1000,
   });
@@ -771,40 +925,123 @@ export default function Shop({ preset }) {
 
   const activeCount = FILTER_KEYS.reduce((n, k) => n + (LIST_KEYS.includes(k) ? getList(k).length : get(k) ? 1 : 0), 0) + (selectedCatParam ? 1 : 0);
   const clearAll = () => update(Object.fromEntries([...FILTER_KEYS, 'q', 'category'].map((k) => [k, ''])));
-  const title =
-    preset === 'offers'
+  const title = pageTitle && !selectedCatParam
+    ? pageTitle
+    : flagPage
+      ? flagPage.title
+      : preset === 'bags' && !selectedCatParam
+        ? 'Bags'
+        : preset === 'offers'
       ? 'Offers'
       : genderPage && activeCategory
       ? `${genderPage.title}’s ${activeCategory.name}`
       : genderPage?.title ||
         activeCategory?.name ||
+        // While the category list is still loading, name the page from its address (never "All products").
+        (effectiveCategory && !flat.length ? effectiveCategory.replace(/-/g, ' ').replace(/\b\w/g, (ch) => ch.toUpperCase()) : '') ||
         (get('q') ? `Results for “${get('q')}”` : get('gender') === 'women' ? 'Women' : get('gender') === 'men' ? 'Men' : get('gender') === 'unisex' || get('gender') === 'universal' ? 'Universal' : get('featured') ? 'Featured' : get('bestseller') ? 'Best sellers' : get('newArrival') ? 'New arrivals' : 'All products');
-  const description = activeCategory?.tagline || 'Modern bags, backpacks and travel gear with tracked delivery and 7-day returns.';
+  const description = pageDescription || activeCategory?.tagline || flagPage?.description || 'Modern bags, backpacks and travel gear with tracked delivery and 7-day returns.';
   const setSort = (v) => update({ sort: v === 'featured' ? '' : v });
 
-  const crumbs = [{ label: 'Home', to: '/' }];
-  if (genderPage) {
-    crumbs.push({ label: genderPage.title, to: preset === 'universal' ? '/universal' : `/${preset}` });
-    if (activeCategory) crumbs.push({ label: activeCategory.name });
-  } else {
-    crumbs.push({ label: 'Shop', to: '/shop' });
-    if (parent) crumbs.push({ label: parent.name, to: `/shop/${parent.slug}` });
-    crumbs.push({ label: title });
-  }
-  const canonical = isHome ? '/' : categorySlug ? `/shop/${categorySlug}` : genderPage ? (preset === 'unisex' ? '/universal' : `/${preset}`) : preset === 'offers' ? '/offers' : '/shop';
+  const crumbs = useMemo(() => {
+    if (crumbsOverride && !selectedCatParam) return crumbsOverride;
+    const c = [{ label: 'Home', to: '/' }];
+    if (flagPage || preset === 'bags') {
+      c.push({ label: title });
+      return c;
+    }
+    if (genderPage) {
+      c.push({ label: genderPage.title, to: preset === 'universal' ? '/universal' : `/${preset}` });
+    } else if (preset === 'offers') {
+      c.push({ label: 'Shop', to: '/shop' });
+      c.push({ label: 'Offers' });
+      return c;
+    } else {
+      c.push({ label: 'Shop', to: '/shop' });
+    }
+    if (activeCategory) {
+      const ancestors = [];
+      let cur = activeCategory.parentRef;
+      while (cur) {
+        if (!genderPage || (cur.slug !== preset && cur.department !== preset)) {
+          ancestors.unshift(cur);
+        }
+        cur = cur.parentRef;
+      }
+      for (const anc of ancestors) {
+        c.push({ label: anc.name, to: `/shop/${anc.slug}` });
+      }
+      c.push({ label: activeCategory.name });
+    } else if (get('q')) {
+      c.push({ label: `“${get('q')}”` });
+    } else if (!genderPage && title && title !== 'All products') {
+      c.push({ label: title });
+    }
+    return c;
+  }, [genderPage, preset, activeCategory, get('q'), title, crumbsOverride, selectedCatParam, flagPage]);
+
+  const canonical = canonicalPath
+    || (isHome ? '/' : categorySlug ? `/shop/${categorySlug}` : genderPage ? (preset === 'unisex' ? '/universal' : `/${preset}`) : preset === 'offers' ? '/offers' : flagPage ? flagPage.path : preset === 'bags' ? '/bags' : '/shop');
+  // Which "Shop by category" directory belongs on this page (landing pages only, not while searching).
+  const dirKey = directoryKey
+    || (!selectedCatParam && (preset === 'women' || preset === 'men') ? preset : null)
+    || (preset === 'bags' && !selectedCatParam ? 'bags' : null)
+    || (activeCategory?.slug === 'accessories' ? 'accessories' : activeCategory?.slug === 'travel-utility' ? 'travel' : null);
+  // /shop (all products) opens straight onto the products: no banner or department buttons above them.
+  const isShopRoot = !preset && !categorySlug && !categoryList;
+  // Clothing and Perfumes open like Men/Women: category circles above products grouped by section.
+  const circleDept = ['clothing', 'fragrance'].includes(activeCategory?.slug) && !selectedCatParam;
+  const showCircles = ((preset === 'men' || preset === 'women') || circleDept) && !get('q');
   const filtered = [...FILTER_KEYS, 'q', 'sort', 'category'].some((k) => get(k));
   const listLd = items.length && !filtered ? [itemListLd(items.slice(0, 24))] : [];
 
-  const filters = <Filters facets={facets.data} state={state} categoryTree={tree} activeCategory={activeCategory} lockedGender={Boolean(genderPage)} />;
+  // Subcategory chips: a parent shows its children; a subcategory shows its siblings (itself selected).
+  // Only subcategories with products are listed, so no empty or broken panel appears.
+  const ownChildren = (activeCategory?.children || []).filter((c) => c.productCount > 0);
+  const chipParent = !genderPage ? (ownChildren.length ? activeCategory : parent) : null;
+  const chipList = chipParent ? (chipParent === activeCategory ? ownChildren : (chipParent.children || []).filter((c) => c.productCount > 0)) : [];
+
+  // ── Everything open, divided into category › subcategory sections ──
+  // Listing pages load their whole result (filters/sort/search applied) and group it by each
+  // product's own category and subcategory. The home page keeps its one-page preview.
+  const grouped = !isHome;
+  const bySlug = useMemo(() => new Map(flat.map((c) => [c.slug, c])), [flat]);
+  const treeOrder = useMemo(() => new Map(flat.map((c, i) => [c.slug, i])), [flat]);
+  useEffect(() => {
+    if (grouped && hasNextPage && !isFetchingNextPage) fetchNextPage();
+  }, [grouped, hasNextPage, isFetchingNextPage, fetchNextPage]);
+  // A later batch can add products to a section higher up, which would shove the page down while
+  // the shopper reads. Departments are small (one or two requests), so show them once complete;
+  // only very large results render batch by batch.
+  const waitForAll = grouped && Boolean(products.data) && hasNextPage && !products.isPlaceholderData && (total ?? 0) <= 360;
+
+  const filters = <Filters facets={facets.data} state={state} flat={flat} activeCategory={activeCategory} lockedGender={Boolean(genderPage)} lockedFlag={Boolean(flagPage)} />;
 
   return (
     <>
       {!isHome && (
         <Seo
-          title={genderPage && activeCategory ? `${genderPage.title}’s ${activeCategory.name} — WILDTANE` : genderPage ? genderPage.seoTitle : activeCategory ? `Buy ${activeCategory.name} Online` : title}
-          description={genderPage ? genderPage.description : `${description} Shop ${activeCategory?.name?.toLowerCase() || 'bags'} at WILDTANE.`}
+          title={
+            pageTitle && !selectedCatParam
+              ? `${pageTitle} — WILDTANE`
+              : flagPage
+                ? flagPage.seoTitle
+                : preset === 'bags' && !selectedCatParam
+                  ? BAGS_PAGE.seoTitle
+                  : genderPage && activeCategory
+                    ? `${genderPage.title}’s ${activeCategory.name} — WILDTANE`
+                    : genderPage
+                      ? genderPage.seoTitle
+                      : activeCategory
+                        ? activeCategory.metaTitle || `Buy ${activeCategory.name} Online`
+                        : title
+          }
+          description={
+            pageDescription
+              || (flagPage ? flagPage.description : preset === 'bags' ? BAGS_PAGE.description : genderPage ? genderPage.description : activeCategory?.metaDescription || `${description} Shop ${activeCategory?.name?.toLowerCase() || 'bags'} at WILDTANE.`)
+          }
           canonical={canonical}
-          image={genderPage?.image}
+          image={genderPage?.image || (preset === 'bags' ? BAGS_PAGE.image : undefined)}
           noindex={Boolean(get('q'))}
           jsonLd={[breadcrumbLd(crumbs), ...listLd]}
         />
@@ -813,33 +1050,41 @@ export default function Shop({ preset }) {
       {/* Desktop Department / Collection Hero (Men, Women, Unisex, Offers, or Master Shop) */}
       {!get('q') && (
         <div className="hidden md:block">
-          {genderPage ? (
-            <DepartmentHero
-              page={genderPage}
-              current={preset}
-              selectedCategory={selectedCatParam}
-              onSelectCategory={(c) => update({ category: c })}
-            />
-          ) : preset === 'offers' ? (
-            <DepartmentHero page={OFFERS_PAGE} current="offers" />
-          ) : !isHome && !categorySlug ? (
+          {/* Men / Women / Universal / Bags open straight onto their products (no banner of options). */}
+          {genderPage || preset === 'offers' || preset === 'bags' || isShopRoot ? null : !isHome && !categorySlug && !flagPage && !categoryList ? (
             <DepartmentHero page={SHOP_PAGE} current="shop" />
           ) : null}
         </div>
       )}
 
-      {/* Category Rail (hidden when searching so results appear at the top) */}
-      {!get('q') && (
+      {/* Offers page: sliding offer banners, then the shopper's own coupons (Spin & Win prizes…). */}
+      {preset === 'offers' && !get('q') && (
+        <>
+          {/* Full screen width, edge to edge. */}
+          <OffersCarousel />
+          <div className="container-x pt-4 flex flex-col gap-4">
+            <YourOffersStrip />
+          </div>
+        </>
+      )}
+
+      {/* Category Rail (hidden when searching, and on pages whose "Shop by category" panel already lists the same options) */}
+      {!get('q') && !dirKey && !isShopRoot && !circleDept && !(chipParent && chipList.length > 0) && (
         <div className="container-x pt-2 md:pt-4">
           <CategoryRail
             tree={tree}
             activeSlug={effectiveCategory}
+            rootSlug={rootCategory?.slug}
             preset={preset}
             selectedCategory={selectedCatParam}
             onSelectCategory={(c) => update({ category: c })}
+            onNavigate={(to) => navigate(to)}
           />
         </div>
       )}
+
+      {/* Department pages (Men, Women, Bags, Accessories, Travel) open straight onto the products,
+          divided by category headers below — no tiles or option strips in front of them. */}
 
       {/* ── MOBILE VIEW (< md): FLIPKART MOBILE SEARCH & FILTER TOP BAR ── */}
       <div className="md:hidden sticky top-0 z-40 bg-surface-container-lowest border-b border-outline-variant/30 shadow-xs">
@@ -859,8 +1104,11 @@ export default function Shop({ preset }) {
             onClick={() => {
               if (get('q')) {
                 update({ q: '' });
-              } else if (window.history.length > 2) {
+              } else if (location.key !== 'default') {
+                // There is an earlier page in this visit to go back to.
                 navigate(-1);
+              } else if (parent) {
+                navigate(`/shop/${parent.slug}`);
               } else {
                 navigate('/');
               }
@@ -974,7 +1222,7 @@ export default function Shop({ preset }) {
             className={cn(
               'px-2.5 py-1 rounded-full text-[10.5px] font-bold shrink-0 transition-all border flex items-center gap-1',
               get('rating') === '4' && get('inStock') === 'true'
-                ? 'bg-amber-500 text-white border-amber-500 shadow-xs'
+                ? 'bg-rose-500 text-white border-rose-500 shadow-xs'
                 : 'bg-surface-container-low border-outline-variant/40 text-on-surface'
             )}
           >
@@ -998,7 +1246,7 @@ export default function Shop({ preset }) {
               get('rating') === '4' ? 'bg-secondary text-on-secondary border-secondary shadow-xs' : 'bg-surface-container-low border-outline-variant/40 text-on-surface'
             )}
           >
-            <Icon name="star" className="text-[12px] text-amber-500" /> 4★ & Above
+            <Icon name="star" className="text-[12px] text-rose-500" /> 4★ & Above
           </button>
           <button
             type="button"
@@ -1075,12 +1323,50 @@ export default function Shop({ preset }) {
         </aside>
 
         <section className="flex-1 min-w-0 flex flex-col gap-3">
+          <Breadcrumbs items={crumbs} className="mb-0" />
           <div className="flex flex-col gap-2">
             <div className={cn('flex items-baseline gap-2 flex-wrap', get('q') && 'hidden md:flex')}>
               <Heading className="font-display text-[22px] md:text-[28px] leading-tight">{title}</Heading>
               {total != null && <span className="text-[12px] text-outline">{total} item{total === 1 ? '' : 's'}</span>}
+              {products.isPlaceholderData && <span className="text-[12px] text-outline inline-flex items-center gap-1"><Spinner className="w-3 h-3" /> Updating…</span>}
             </div>
             {activeCategory?.tagline && <p className="-mt-1 text-[13px] text-on-surface-variant max-w-2xl">{activeCategory.tagline}</p>}
+            {chipParent && chipList.length > 0 && !dirKey && !circleDept && (
+              <div className="flex flex-wrap items-center gap-1.5 py-1">
+                {/* "All" chip: the parent itself, selected when no subcategory is chosen. */}
+                <Link
+                  to={`/shop/${chipParent.slug}`}
+                  aria-current={activeCategory?._id === chipParent._id ? 'page' : undefined}
+                  className={cn(
+                    'px-3 py-1.5 rounded-full text-[12px] font-semibold border transition-colors shrink-0 flex items-center gap-1',
+                    activeCategory?._id === chipParent._id
+                      ? 'bg-on-surface text-surface border-on-surface'
+                      : 'bg-surface-container-low hover:bg-surface-container border-outline-variant/30 text-on-surface'
+                  )}
+                >
+                  {activeCategory?._id !== chipParent._id && <Icon name="chevron_left" className="text-[14px] -ml-1" />}
+                  <span>All {chipParent.name}</span>
+                </Link>
+                {chipList.map((sub) => {
+                  const on = activeCategory?._id === sub._id;
+                  return (
+                    <Link
+                      key={sub._id}
+                      to={`/shop/${sub.slug}`}
+                      aria-current={on ? 'page' : undefined}
+                      className={cn(
+                        'px-3 py-1.5 rounded-full text-[12px] font-semibold border transition-colors shrink-0 flex items-center gap-1',
+                        on ? 'bg-on-surface text-surface border-on-surface' : 'bg-surface-container-low hover:bg-surface-container border-outline-variant/30 text-on-surface'
+                      )}
+                    >
+                      <span>{sub.name}</span>
+                      <span className={cn('text-[10px] opacity-80', on ? '' : 'text-outline')}>({sub.productCount})</span>
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
+
             <div className="hidden lg:flex items-center gap-1 text-[13px] overflow-x-auto scrollbar-none">
               <span className="font-semibold mr-2 whitespace-nowrap">Sort by</span>
               {SORTS.map(([v, label]) => (
@@ -1094,7 +1380,7 @@ export default function Shop({ preset }) {
                 </button>
               ))}
             </div>
-            <ActiveFilters state={state} onClear={clearAll} flatCategories={flat} />
+            <ActiveFilters state={state} onClear={clearAll} flatCategories={flat} lockedFlag={Boolean(flagPage)} />
           </div>
 
           <ShopWidgetsBar
@@ -1114,12 +1400,14 @@ export default function Shop({ preset }) {
                 <Icon name="search_off" className="text-[32px]" />
               </span>
               <h2 className="text-[17px] font-bold text-on-surface">
-                {get('q') ? `No results found for “${get('q')}”` : 'No products match your filters'}
+                {get('q') ? `No results found for “${get('q')}”` : activeCount ? 'No products match your filters' : `Nothing in ${title} yet`}
               </h2>
               <p className="text-[12.5px] text-outline max-w-sm mt-1">
                 {get('q')
                   ? 'Please check the spelling or try searching for something broader like Backpack, Tote, or Luggage.'
-                  : 'Try removing some filters to see more bags from the collection.'}
+                  : activeCount
+                    ? 'Try removing some filters to see more bags from the collection.'
+                    : 'New pieces are on their way. Explore similar styles below or browse the full collection.'}
               </p>
               
               {/* Popular Category Chips */}
@@ -1144,24 +1432,32 @@ export default function Shop({ preset }) {
                 Explore All Products
               </button>
             </div>
+          ) : grouped && products.data && !waitForAll ? (
+            <GroupedProducts
+              products={items}
+              bySlug={bySlug}
+              order={treeOrder}
+              comfort={viewDensity === 'comfort'}
+              loadingMore={hasNextPage || isFetchingNextPage}
+              circles={showCircles}
+              preset={preset}
+            />
           ) : (
             <div
               className={cn(
                 viewDensity === 'comfort'
                   ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6'
-                  : GRID_COLS,
-                'transition-opacity',
-                products.isPlaceholderData && 'opacity-60'
+                  : GRID_COLS
               )}
             >
-              {!products.data
+              {!products.data || waitForAll
                 ? Array.from({ length: 12 }, (_, i) => <ProductCardSkeleton key={i} />)
                 : items.map((p, i) => <ProductCard key={p._id} product={p} priority={i < 6} />)}
               {isFetchingNextPage && Array.from({ length: 4 }, (_, i) => <ProductCardSkeleton key={`more-${i}`} />)}
             </div>
           )}
 
-          <div ref={sentinel} className="flex justify-center py-4 min-h-[1px]">
+          {!grouped && <div ref={sentinel} className="flex justify-center py-4 min-h-[1px]">
             {!infinite && items.length > 0 ? (
               <Link to={`/shop${params.toString() ? `?${params.toString()}` : ''}`} className="btn-primary">
                 View all {total ?? ''} products <Icon name="arrow_forward" className="text-[18px]" />
@@ -1173,7 +1469,7 @@ export default function Shop({ preset }) {
             ) : items.length > 0 ? (
               <span className="text-[12px] text-outline">You've seen all {total} products</span>
             ) : null}
-          </div>
+          </div>}
         </section>
       </div>
 

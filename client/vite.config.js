@@ -1,9 +1,10 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import iconSubset from './scripts/iconSubset.mjs';
 
 // API and uploaded images are proxied so the app, cookies and images share one origin in dev.
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), iconSubset()],
   server: {
     port: 3000,
     strictPort: true,

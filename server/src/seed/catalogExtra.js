@@ -74,7 +74,7 @@ const ROWS = [
 ];
 
 // Short, honest copy per type; the product's own material, capacity and colour fill the details.
-const BLURB = {
+export const BLURB = {
   Wallets: ['A slim everyday wallet', 'Card slots, a note pocket and hand-finished edges keep it neat for years.'],
   'Tote Bags': ['An easy-carry tote', 'Long handles sit comfortably on the shoulder and there is room for a laptop, a jumper and lunch.'],
   'Laptop Bags': ['A laptop bag for daily work', 'A padded sleeve protects your laptop and front pockets keep chargers and notes in reach.'],

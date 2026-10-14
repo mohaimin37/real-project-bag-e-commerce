@@ -46,7 +46,7 @@ export function CartLine({ line, compact }) {
           <span className="text-label-lg shrink-0">{money(line.lineTotal)}</span>
         </div>
         {line.available && !line.issue && line.stock != null && line.stock <= 20 && (
-          <p className={cn("text-[11px] font-semibold flex items-center gap-1", line.stock <= 5 ? "text-rose-600 dark:text-rose-400" : line.stock <= 10 ? "text-amber-600 dark:text-amber-400" : "text-amber-700 dark:text-amber-300")}>
+          <p className={cn("text-[11px] font-semibold flex items-center gap-1", line.stock <= 5 ? "text-rose-600 dark:text-rose-400" : line.stock <= 10 ? "text-rose-600 dark:text-rose-400" : "text-rose-700 dark:text-rose-300")}>
             <Icon name="bolt" className="text-[13px]" />
             {line.stock <= 5 ? `Hurry, only ${line.stock} left in stock!` : line.stock <= 10 ? `Only ${line.stock} remaining` : `Low stock: ${line.stock} left`}
           </p>
@@ -114,8 +114,8 @@ export default function CartDrawer() {
         <div className="px-space-lg py-3 bg-surface-container-low/60 flex flex-col gap-2">
           <FreeShippingMeter summary={summary} />
           {items.some((l) => l.stock != null && l.stock > 0 && l.stock <= 10) && (
-            <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-900 dark:text-amber-200 text-[12px] flex items-center gap-2">
-              <Icon name="bolt" className="text-amber-500 text-[18px] shrink-0 animate-pulse" />
+            <div className="p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-900 dark:text-rose-200 text-[12px] flex items-center gap-2">
+              <Icon name="bolt" className="text-rose-500 text-[18px] shrink-0 animate-pulse" />
               <span>
                 <strong>Limited stock:</strong> Item in your bag has only {items.find((l) => l.stock != null && l.stock > 0 && l.stock <= 10)?.stock} units left. Order soon!
               </span>

@@ -11,9 +11,9 @@ const BUDGET_PRESETS = [
 
 const FAST_FILTER_WIDGETS = [
   { key: 'bestseller', label: 'Bestsellers', icon: 'local_fire_department', activeColor: 'bg-rose-500 text-white border-rose-500' },
-  { key: 'newArrival', label: 'New Drops', icon: 'auto_awesome', activeColor: 'bg-amber-500 text-white border-amber-500' },
-  { key: 'onSale', label: '50% Off / Sale', icon: 'sell', activeColor: 'bg-rose-600 text-white border-rose-600' },
-  { key: 'rating4', label: '4★ & Above', icon: 'star', activeColor: 'bg-yellow-500 text-white border-yellow-500' },
+  { key: 'newArrival', label: 'New Drops', icon: 'auto_awesome', activeColor: 'bg-rose-500 text-white border-rose-500' },
+  { key: 'onSale', label: 'On Sale', icon: 'sell', activeColor: 'bg-rose-600 text-white border-rose-600' },
+  { key: 'rating4', label: '4★ & Above', icon: 'star', activeColor: 'bg-pink-500 text-white border-pink-500' },
   { key: 'inStock', label: 'In Stock Only', icon: 'verified', activeColor: 'bg-emerald-600 text-white border-emerald-600' },
 ];
 
@@ -30,7 +30,9 @@ export default function ShopWidgetsBar({ state, activeCount, onClear, total, vie
   const currentMax = get('maxPrice');
 
   return (
-    <div className="bg-surface-container-lowest/80 backdrop-blur-md rounded-2xl border border-outline-variant/30 p-2.5 md:p-3.5 shadow-xs space-y-2.5">
+    // Desktop only: on phones the Sort / Filter bar and quick chips above already do this, and the
+    // products should start on the first screen.
+    <div className="hidden md:block bg-surface-container-lowest/80 backdrop-blur-md rounded-2xl border border-outline-variant/30 p-2.5 md:p-3.5 shadow-xs space-y-2.5">
       {/* ── TOP ROW: Widget Header & View Controls ── */}
       <div className="flex items-center justify-between gap-2 flex-wrap">
         <div className="flex items-center gap-2">

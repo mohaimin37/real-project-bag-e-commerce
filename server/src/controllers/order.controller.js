@@ -15,7 +15,10 @@ import {
   verifyOrderPayment,
   retryOrderPayment,
   handleRazorpayWebhook,
+  retryOrderRefund,
+  createShipmentForOrder,
 } from '../services/order.service.js';
+import { trackShipment, orderStatusFromProvider, shippingConfigured } from '../services/shipping.service.js';
 import { verifyRazorpayWebhookSignature } from '../services/payment.service.js';
 import { deliver, buildInvoiceCaption } from '../services/whatsapp.service.js';
 import { buildInvoiceCoverEmail } from '../services/invoice-email.template.js';
@@ -55,17 +58,35 @@ export const retryPayment = asyncHandler(async (req, res) => {
   res.json({ success: true, order, payment });
 });
 
+// Bad-signature calls are noted at most once a minute, so junk requests can't flood the database.
+let lastBadNoteAt = 0;
+const noteWebhook = (patch) =>
+  Setting.updateOne({ key: 'store' }, { $set: Object.fromEntries(Object.entries(patch).map(([k, v]) => [`razorpayWebhook.${k}`, v])) }).catch((e) => console.error('[webhook] status not saved:', e.message));
+
 export const razorpayWebhook = asyncHandler(async (req, res) => {
-  const signature = req.headers['x-razorpay-signature'];
-  if (env.razorpay.webhookSecret && signature) {
-    const raw = req.rawBody || JSON.stringify(req.body);
-    const valid = verifyRazorpayWebhookSignature(raw, signature);
-    if (!valid) {
-      return res.status(400).json({ success: false, message: 'Invalid webhook signature' });
-    }
+  // Every webhook must be signed with the webhook secret (server env RAZORPAY_WEBHOOK_SECRET, or the one
+  // saved in Admin → Settings → Integrations); unsigned calls could fake payments or refunds.
+  const secret = env.razorpay.webhookSecret || (await Setting.get()).razorpayWebhook?.secret || '';
+  if (!secret) {
+    return res.status(503).json({ success: false, message: 'Webhook secret is not configured' });
   }
-  const result = await handleRazorpayWebhook(req.body);
-  res.json({ success: true, result });
+  const signature = req.headers['x-razorpay-signature'];
+  if (!signature || !req.rawBody || !verifyRazorpayWebhookSignature(req.rawBody, signature, secret)) {
+    if (Date.now() - lastBadNoteAt > 60 * 1000) {
+      lastBadNoteAt = Date.now();
+      await noteWebhook({ lastReceivedAt: new Date(), lastEvent: String(req.body?.event || '').slice(0, 60), lastStatus: 'bad_signature', lastError: 'Signature did not match — the secret in Razorpay and in WILDTANE must be the same.' });
+    }
+    return res.status(400).json({ success: false, message: 'Invalid webhook signature' });
+  }
+  const event = String(req.body?.event || '').slice(0, 60);
+  try {
+    const result = await handleRazorpayWebhook(req.body);
+    await noteWebhook({ lastReceivedAt: new Date(), lastEvent: event, lastStatus: 'ok', lastError: '' });
+    res.json({ success: true, result });
+  } catch (err) {
+    await noteWebhook({ lastReceivedAt: new Date(), lastEvent: event, lastStatus: 'error', lastError: String(err.message || err).slice(0, 200) });
+    throw err;
+  }
 });
 
 export const myOrders = asyncHandler(async (req, res) => {
@@ -99,8 +120,8 @@ export const myOrder = asyncHandler(async (req, res) => {
 export const cancelMyOrder = asyncHandler(async (req, res) => {
   const order = await Order.findOne({ ...findQuery(req.params.id), user: req.user._id });
   if (!order) throw ApiError.notFound('Order not found');
-  await cancelByCustomer(order, req.user._id, String(req.body?.reason || '').slice(0, 300));
-  res.json({ success: true, order });
+  const updated = await cancelByCustomer(order, req.user._id, String(req.body?.reason || '').trim().slice(0, 300));
+  res.json({ success: true, order: updated });
 });
 
 // ── Admin ────────────────────────────────────────────────────
@@ -143,6 +164,70 @@ export const adminUpdateStatus = asyncHandler(async (req, res) => {
   await changeOrderStatus(order, req.body, req.user._id);
   res.json({ success: true, order });
 });
+
+export const adminRetryRefund = asyncHandler(async (req, res) => {
+  const order = await Order.findOne(findQuery(req.params.id));
+  if (!order) throw ApiError.notFound('Order not found');
+  const updated = await retryOrderRefund(order);
+  res.json({ success: true, order: updated });
+});
+
+export const adminCreateShipment = asyncHandler(async (req, res) => {
+  const order = await Order.findOne(findQuery(req.params.id));
+  if (!order) throw ApiError.notFound('Order not found');
+  await createShipmentForOrder(order);
+  res.json({ success: true, order });
+});
+
+/** Applies a provider tracking status to the order (only steps we can map with certainty). */
+async function applyTracking(order, { status, courier, trackingUrl, deliveredAt }) {
+  order.shipment.status = status || order.shipment.status;
+  if (courier) order.shipment.courier = courier;
+  if (trackingUrl) order.shipment.trackingUrl = trackingUrl;
+  order.shipment.lastSyncedAt = new Date();
+  order.shipment.lastEventAt = new Date();
+  order.markModified('shipment');
+  await order.save();
+  const next = orderStatusFromProvider(status);
+  const flow = ['Pending', 'Confirmed', 'Processing', 'Packed', 'Shipped', 'Out for Delivery', 'Delivered'];
+  // Only move forward, never back, and never touch cancelled/returned orders.
+  if (next && flow.indexOf(next) > flow.indexOf(order.orderStatus) && flow.includes(order.orderStatus)) {
+    await changeOrderStatus(
+      order,
+      { status: next, note: `Courier update: ${status}`, at: next === 'Delivered' && deliveredAt ? new Date(deliveredAt) : undefined, notifyCustomer: true },
+      null
+    );
+  }
+}
+
+export const adminSyncShipment = asyncHandler(async (req, res) => {
+  const order = await Order.findOne(findQuery(req.params.id));
+  if (!order) throw ApiError.notFound('Order not found');
+  if (!order.shipment?.awb) throw ApiError.badRequest('This order has no courier tracking number yet');
+  const t = await trackShipment(order.shipment.awb).catch((err) => {
+    throw ApiError.badRequest(`Tracking could not be fetched: ${err.message}`);
+  });
+  await applyTracking(order, t);
+  res.json({ success: true, order, tracking: t });
+});
+
+/**
+ * Shiprocket tracking webhook (Settings → API → Webhooks in Shiprocket), authenticated with the
+ * x-api-key header = SHIPROCKET_WEBHOOK_TOKEN. Only orders we shipped through Shiprocket are touched.
+ */
+export const shiprocketWebhook = asyncHandler(async (req, res) => {
+  if (!env.shiprocket.webhookToken || req.headers['x-api-key'] !== env.shiprocket.webhookToken) {
+    return res.status(401).json({ success: false, message: 'Unauthorised' });
+  }
+  const { awb, current_status: status, courier_name: courier } = req.body || {};
+  if (!awb) return res.json({ success: true, ignored: 'no awb' });
+  const order = await Order.findOne({ 'shipment.awb': String(awb) });
+  if (!order) return res.json({ success: true, ignored: 'unknown awb' });
+  await applyTracking(order, { status, courier });
+  res.json({ success: true });
+});
+
+export const shippingStatus = (req, res) => res.json({ success: true, configured: shippingConfigured() });
 
 export const adminUpdatePayment = asyncHandler(async (req, res) => {
   const order = await Order.findOneAndUpdate(findQuery(req.params.id), { paymentStatus: req.body.paymentStatus }, { returnDocument: 'after' });

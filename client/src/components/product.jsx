@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '../lib/api';
-import { cn, discountPercent, productImage } from '../lib/format';
+import { cn, discountPercent, productAltImage, productImage } from '../lib/format';
 import { productTone } from '../lib/categoryTone';
 import { useCart } from '../hooks/useCart';
 import { useWishlist } from '../hooks/useWishlist';
@@ -13,8 +13,40 @@ import { Button, Icon, Img, Modal, QuantityStepper, Skeleton, Stars } from './ui
 
 export const firstAvailable = (p) => p.variants?.find((v) => v.stock > 0) || p.variants?.[0];
 
+/** True when a product's options are sizes of one colour (clothing): S / M / L / XL. */
+export const isSized = (variants) => variants?.length > 1 && variants.every((v) => v.size);
+
 export function Swatches({ variants, selected, onSelect, size = 'sm', withNames = false }) {
   const dim = size === 'sm' ? 'w-5 h-5' : 'w-10 h-10';
+  if (isSized(variants)) {
+    // Clothing: size chips instead of colour dots.
+    return (
+      <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Size">
+        {variants.map((v) => {
+          const on = selected?._id === v._id;
+          const out = v.stock <= 0;
+          return (
+            <button
+              key={v._id}
+              type="button"
+              role="radio"
+              aria-checked={on}
+              aria-label={`Size ${v.size}${out ? ' (sold out)' : ''}`}
+              disabled={out}
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); onSelect(v); }}
+              className={cn(
+                'min-w-11 h-10 px-3 rounded-xl border text-label-md font-semibold transition-colors',
+                on ? 'border-on-surface bg-on-surface text-surface-container-lowest' : 'border-surface-container-high hover:border-outline',
+                out && 'opacity-40 line-through cursor-not-allowed'
+              )}
+            >
+              {v.size}
+            </button>
+          );
+        })}
+      </div>
+    );
+  }
   if (withNames) {
     // Big, labelled colour buttons: easy to tap and no need to guess colour names.
     return (
@@ -138,6 +170,10 @@ export const ProductCard = memo(function ProductCard({ product, priority }) {
   const variant = firstAvailable(product);
   // Warm the product page data on hover/focus so navigation feels instant (not on touch: that fires while scrolling).
   const prefetch = () => qc.prefetchQuery({ queryKey: ['product', product.slug], queryFn: () => api.product(product.slug), staleTime: 60 * 1000 });
+  // Desktop: pointing at a card shows the product's second photo. It is only fetched on the first
+  // hover, so listing pages don't download twice the images.
+  const altImage = productAltImage(product, variant);
+  const [showAlt, setShowAlt] = useState(false);
   const soldOut = !variant || variant.stock <= 0;
   const pct = discountPercent(product);
   const badge = product.badge || (product.isBestseller ? 'Bestseller' : product.isNewArrival ? 'New' : '');
@@ -147,7 +183,10 @@ export const ProductCard = memo(function ProductCard({ product, priority }) {
 
   return (
     <article
-      onMouseEnter={prefetch}
+      onMouseEnter={() => {
+        prefetch();
+        if (altImage) setShowAlt(true);
+      }}
       onFocus={prefetch}
       className="surface-card cv-auto group relative flex flex-col h-full bg-surface-container-lowest rounded-2xl overflow-hidden shadow-xs hover:shadow-xl transition-all duration-300"
     >
@@ -161,6 +200,15 @@ export const ProductCard = memo(function ProductCard({ product, priority }) {
             imgClassName="md:group-hover:scale-[1.05] transition-transform duration-500 ease-out"
             loading={priority ? 'eager' : 'lazy'}
           />
+          {showAlt && (
+            <Img
+              src={altImage}
+              alt=""
+              w={480}
+              className="absolute inset-0 hidden md:block opacity-0 md:group-hover:opacity-100 transition-opacity duration-500"
+              imgClassName="md:group-hover:scale-[1.05] transition-transform duration-500 ease-out"
+            />
+          )}
           <span className="absolute top-2.5 left-2.5 md:top-3 md:left-3 flex flex-col items-start gap-1.5 z-10">
             {badge && (
               <span className={cn('px-2 py-0.5 md:px-2.5 md:py-1 rounded-full bg-gradient-to-r text-white text-[10px] md:text-[11px] font-bold leading-none tracking-wide shadow-sm', BADGE_TONES[badge] || 'from-indigo-600 to-sky-500')}>
@@ -179,12 +227,12 @@ export const ProductCard = memo(function ProductCard({ product, priority }) {
             </span>
           )}
           {!soldOut && variant.stock > 5 && variant.stock <= 10 && (
-            <span className="absolute inset-x-0 bottom-0 py-1 bg-gradient-to-r from-amber-600/95 to-orange-500/95 text-white text-[10px] md:text-[11.5px] font-bold text-center tracking-wide shadow-sm flex items-center justify-center gap-1">
+            <span className="absolute inset-x-0 bottom-0 py-1 bg-gradient-to-r from-rose-600/95 to-orange-500/95 text-white text-[10px] md:text-[11.5px] font-bold text-center tracking-wide shadow-sm flex items-center justify-center gap-1">
               <span>⚡</span> Only {variant.stock} left in stock
             </span>
           )}
           {!soldOut && variant.stock > 10 && variant.stock <= 20 && (
-            <span className="absolute inset-x-0 bottom-0 py-1 bg-gradient-to-r from-slate-900/90 via-indigo-950/90 to-slate-900/90 text-amber-300 text-[9.5px] md:text-[11px] font-semibold text-center tracking-wide shadow-sm flex items-center justify-center gap-1">
+            <span className="absolute inset-x-0 bottom-0 py-1 bg-gradient-to-r from-slate-900/90 via-indigo-950/90 to-slate-900/90 text-rose-300 text-[9.5px] md:text-[11px] font-semibold text-center tracking-wide shadow-sm flex items-center justify-center gap-1">
               <span>⏱</span> Low stock: {variant.stock} left
             </span>
           )}
@@ -218,11 +266,11 @@ export const ProductCard = memo(function ProductCard({ product, priority }) {
             </>
           ) : null}
           {(product.ratingAverage >= 4 || product.isBestseller) && (
-            <span className="inline-flex items-center text-[8.5px] sm:text-[9.5px] font-black text-amber-600 dark:text-amber-400 tracking-tight ml-auto sm:ml-0">
+            <span className="inline-flex items-center text-[8.5px] sm:text-[9.5px] font-black text-rose-600 dark:text-rose-400 tracking-tight ml-auto sm:ml-0">
               ⚡Assured
             </span>
           )}
-          {colours > 1 && <span className="ml-auto hidden sm:inline text-[10.5px] md:text-[11.5px] text-outline">{colours} colours</span>}
+          {colours > 1 && <span className="ml-auto hidden sm:inline text-[10.5px] md:text-[11.5px] text-outline">{colours} {isSized(product.variants) ? 'sizes' : 'colours'}</span>}
         </div>
         <div className="mt-auto flex items-center justify-between gap-1.5 pt-0.5">
           <div className="flex items-baseline flex-wrap gap-x-1.5 gap-y-0.5 min-w-0">

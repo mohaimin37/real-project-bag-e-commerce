@@ -9,6 +9,7 @@ const TYPE = {
   refunded: ['Returned to you', 'undo', 'text-success'],
   reversed: ['Removed', 'remove_circle', 'text-error'],
   adjusted: ['Adjusted by WILDTANE', 'tune', 'text-on-surface-variant'],
+  bonus: ['Bonus', 'celebration', 'text-success'], // signup and referral rewards
 };
 
 export { useMyCoins };
@@ -61,26 +62,26 @@ export default function Coins() {
       </div>
 
       {coins.pending > 0 && (
-        <div className="card p-4 bg-amber-500/10 border border-amber-500/25 flex flex-col gap-2.5">
+        <div className="card p-4 bg-rose-500/10 border border-rose-500/25 flex flex-col gap-2.5">
           <div className="flex items-center justify-between">
-            <span className="inline-flex items-center gap-1.5 font-bold text-[14px] text-amber-800 dark:text-amber-300">
+            <span className="inline-flex items-center gap-1.5 font-bold text-[14px] text-rose-800 dark:text-rose-300">
               <Icon name="schedule" className="text-[18px]" />
               {coins.pending.toLocaleString('en-IN')} Pending Coins in 7-Day Return Window
             </span>
-            <span className="text-[12px] font-semibold text-amber-700 dark:text-amber-400">Disbursing Soon</span>
+            <span className="text-[12px] font-semibold text-rose-700 dark:text-rose-400">Disbursing Soon</span>
           </div>
           <p className="text-[12px] text-on-surface-variant">
             Coins will come into your wallet after 1 week of delivery of the product, once the 7-day return policy window concludes.
           </p>
           {coins.pendingOrders?.length > 0 && (
-            <div className="flex flex-col gap-1.5 pt-2 border-t border-amber-500/20">
+            <div className="flex flex-col gap-1.5 pt-2 border-t border-rose-500/20">
               {coins.pendingOrders.map((po) => (
                 <div key={po.orderId} className="flex items-center justify-between text-[12px]">
                   <span className="font-mono font-semibold">
                     <Link to={`/account/orders/${po.orderId}`} className="underline">{po.orderId}</Link>
                     {po.daysRemaining != null ? ` · ⏱ ${po.daysRemaining} days until disbursement` : ' · In transit'}
                   </span>
-                  <span className="font-bold text-amber-700 dark:text-amber-400">+{po.coins} coins</span>
+                  <span className="font-bold text-rose-700 dark:text-rose-400">+{po.coins} coins</span>
                 </div>
               ))}
             </div>

@@ -11,7 +11,10 @@ import { uploadFile, deleteFile } from '../services/upload.service.js';
 import { PUBLIC_PRODUCT_FIELDS } from '../services/product.service.js';
 import CoinTransaction from '../models/CoinTransaction.js';
 import Setting from '../models/Setting.js';
+import WalletTransaction from '../models/WalletTransaction.js';
 import { loyaltyRules, disburseEligibleOrderCoins, getPendingCoinsForUser } from '../services/coin.service.js';
+import { walletRules } from '../services/wallet.service.js';
+import { referralSummary } from '../services/referral.service.js';
 
 const MAX_ADDRESSES = 10;
 const MAX_RECENT = 12;
@@ -135,7 +138,7 @@ export const overview = asyncHandler(async (req, res) => {
         $group: {
           _id: null,
           orders: { $sum: 1 },
-          spent: { $sum: { $cond: [{ $in: ['$orderStatus', ['Cancelled', 'Returned']] }, 0, '$grandTotal'] } },
+          // "Total spent" was removed from the customer overview on request; order totals stay on each order.
           delivered: { $sum: { $cond: [{ $eq: ['$orderStatus', 'Delivered'] }, 1, 0] } },
           active: { $sum: { $cond: [{ $in: ['$orderStatus', ACTIVE] }, 1, 0] } },
           items: { $sum: { $sum: '$items.quantity' } },
@@ -155,7 +158,6 @@ export const overview = asyncHandler(async (req, res) => {
     success: true,
     stats: {
       orders: c.orders || 0,
-      spent: c.spent || 0,
       delivered: c.delivered || 0,
       active: c.active || 0,
       items: c.items || 0,
@@ -167,6 +169,34 @@ export const overview = asyncHandler(async (req, res) => {
     activeOrders: active,
     recentOrders: recent,
   });
+});
+
+/** WILDTANE Wallet: ₹ balance, rules and the ledger (the customer's own rows only). */
+export const myWallet = asyncHandler(async (req, res) => {
+  const [user, settings, history] = await Promise.all([
+    User.findById(req.user._id).select('wallet').lean(),
+    Setting.get(),
+    WalletTransaction.find({ user: req.user._id }).sort({ createdAt: -1 }).limit(100).select('-by -key').lean(),
+  ]);
+  const rules = walletRules(settings);
+  res.json({
+    success: true,
+    wallet: {
+      balance: Math.round((user?.wallet || 0) * 100) / 100,
+      rules,
+      history,
+      totals: {
+        refunds: history.filter((h) => ['refund', 'order_restore'].includes(h.type)).reduce((n, h) => n + h.amount, 0),
+        promotional: history.filter((h) => h.type === 'promo').reduce((n, h) => n + h.amount, 0),
+        referral: history.filter((h) => h.type === 'referral').reduce((n, h) => n + h.amount, 0),
+      },
+    },
+  });
+});
+
+/** Refer & earn: the customer's code, rules and the people they referred (first names only). */
+export const myReferrals = asyncHandler(async (req, res) => {
+  res.json({ success: true, referrals: await referralSummary(req.user._id) });
 });
 
 /** Loyalty coins: balance, the store's rules, upcoming pending coins and the latest history. */
