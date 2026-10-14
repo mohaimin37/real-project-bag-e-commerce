@@ -603,6 +603,114 @@ function ShipmentPanel({ order: o, onChanged }) {
   );
 }
 
+function CancellationDecisionBar({ order: o, onDecided }) {
+  const [adminMessage, setAdminMessage] = useState(o.cancellation?.adminMessage || '');
+  const decide = useMutation({
+    mutationFn: ({ decision, adminMessage }) => adminApi.decideCancellation(o._id, { decision, adminMessage }),
+    onSuccess: (_, vars) => {
+      toast.success(vars.decision === 'Approved' ? 'Cancellation confirmed (YES)' : 'Cancellation rejected (NO)');
+      onDecided();
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
+  if (!o.cancellation || o.cancellation.status === 'None') return null;
+
+  if (o.cancellation.status !== 'Requested') {
+    const isConfirmed = o.cancellation.status === 'Confirmed' || o.orderStatus === 'Cancelled';
+    return (
+      <div className={cn('p-4 rounded-2xl border flex flex-col gap-2.5 shadow-2xs', isConfirmed ? 'border-emerald-500/40 bg-emerald-500/5' : 'border-rose-500/40 bg-rose-500/5')}>
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <div className="flex items-center gap-2">
+            <Icon name={isConfirmed ? 'check_circle' : 'cancel'} className={cn('text-[20px]', isConfirmed ? 'text-emerald-600' : 'text-rose-600')} />
+            <h4 className="text-label-lg font-bold">
+              {isConfirmed ? 'Cancellation Confirmed by Admin (YES)' : 'Cancellation Rejected by Admin (NO)'}
+            </h4>
+          </div>
+          <span className="text-[11.5px] font-mono px-2 py-0.5 rounded bg-surface-container text-outline">
+            Customer-visible status
+          </span>
+        </div>
+        {o.cancellation.adminMessage ? (
+          <div className="p-3 rounded-xl bg-surface-container-low border border-outline-variant/40 text-[13px]">
+            <span className="font-bold text-outline text-[11px] block uppercase tracking-wider mb-1 flex items-center gap-1">
+              <Icon name="chat" className="text-[14px] text-secondary" /> Admin Message to Customer:
+            </span>
+            <p className="text-on-surface font-semibold italic">"{o.cancellation.adminMessage}"</p>
+          </div>
+        ) : (
+          <p className="text-[12px] text-outline italic">No custom message sent to customer.</p>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-4 sm:p-5 rounded-2xl border-2 border-rose-500/60 bg-rose-500/5 flex flex-col gap-3 shadow-sm">
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        <div>
+          <h4 className="text-label-lg font-bold flex items-center gap-2 text-rose-900 dark:text-rose-200">
+            <span className="w-8 h-8 rounded-xl bg-rose-500/20 text-rose-700 dark:text-rose-300 flex items-center justify-center">
+              <Icon name="gavel" className="text-[19px]" />
+            </span>
+            Admin Decision: Cancellation Requested by Customer
+          </h4>
+          <p className="text-body-sm text-on-surface-variant mt-1.5 leading-relaxed">
+            Requested on <b>{formatDateTime(o.cancellation.requestedAt || o.updatedAt)}</b>.
+            {o.cancellation.reason && <span> Reason: <i>“{o.cancellation.reason}”</i>.</span>}
+            <br />
+            The customer currently sees <b>“Cancellation is in progress”</b>. Once you confirm, the customer will see <b>“Cancellation Confirmed”</b> along with whatever message you enter below (or empty message). If rejected, the customer sees <b>“Cancellation Rejected”</b>.
+          </p>
+        </div>
+        <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-500/20 text-amber-800 dark:text-amber-200 border border-amber-500/40 animate-pulse">
+          Action Required
+        </span>
+      </div>
+
+      <div className="flex flex-col gap-1.5">
+        <label className="text-[12px] font-bold text-on-surface flex items-center justify-between">
+          <span>Message to Customer:</span>
+          <span className="text-[11px] font-normal text-outline">Displayed in customer's order and returns page</span>
+        </label>
+        <textarea
+          className="input w-full py-2 px-3 text-[13px] rounded-xl"
+          rows={2}
+          value={adminMessage}
+          onChange={(e) => setAdminMessage(e.target.value)}
+          placeholder="e.g. Order cancelled, refund initiated to your bank account / Please hand back package to courier..."
+          maxLength={500}
+        />
+      </div>
+
+      <div className="flex flex-wrap items-center gap-3 pt-1">
+        <button
+          type="button"
+          disabled={decide.isPending}
+          onClick={() => decide.mutate({ decision: 'Approved', adminMessage })}
+          className="btn-primary h-10 px-5 gap-2 font-bold shadow-sm bg-rose-700 hover:bg-rose-800 text-white"
+        >
+          <Icon name="check_circle" className="text-[18px]" />
+          Confirm Cancellation (Say YES)
+        </button>
+
+        <button
+          type="button"
+          disabled={decide.isPending}
+          onClick={() => {
+            if (window.confirm('Reject this cancellation request? The customer will see that the cancellation has been rejected.')) {
+              decide.mutate({ decision: 'Rejected', adminMessage });
+            }
+          }}
+          className="btn-tonal h-10 px-5 gap-2 text-error font-bold border border-error/30 hover:bg-error/10"
+        >
+          <Icon name="block" className="text-[18px]" />
+          Reject Cancellation (Say NO)
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function OrderDetail() {
   const { id } = useParams();
   const [params, setParams] = useSearchParams();
@@ -687,6 +795,9 @@ export default function OrderDetail() {
           </Button>
         </div>
       </div>
+
+      {/* Cancellation request & admin decision bar */}
+      <CancellationDecisionBar order={o} onDecided={refresh} />
 
       {o.orderStatus === 'Pending' ? (
         <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">

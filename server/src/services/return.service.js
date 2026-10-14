@@ -238,7 +238,7 @@ export async function getOrdersWithReturnStatus(userId) {
   const orders = await Order.find({ user: userId })
     .sort({ createdAt: -1 })
     .limit(50)
-    .select('orderId orderStatus paymentStatus paymentMethod grandTotal currency createdAt deliveredAt statusHistory updatedAt items shippingAddress coinsEarned coinsDisbursed returnExchange trackingNumber courier')
+    .select('orderId orderStatus paymentStatus paymentMethod grandTotal currency createdAt deliveredAt statusHistory updatedAt items shippingAddress coinsEarned coinsDisbursed returnExchange cancellation trackingNumber courier')
     .lean();
 
   const orderIds = orders.map((o) => o._id);
@@ -280,6 +280,7 @@ export async function getOrdersWithReturnStatus(userId) {
       coinsEarned: o.coinsEarned || 0,
       coinsDisbursed: !!o.coinsDisbursed,
       returnDetails: eligibility,
+      cancellation: o.cancellation || { status: 'None', adminMessage: '' },
       trackingNumber: o.trackingNumber || '',
       courier: o.courier || '',
     };

@@ -74,6 +74,7 @@ export default function Dashboard() {
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-space-md">
           {[
             ['pending_actions', 'Pending orders', data.alerts.pendingOrders, '/admin/orders?status=Pending', 'amber'],
+            ...(data.alerts.pendingCancellations ? [['cancel', 'Cancel requests', data.alerts.pendingCancellations, '/admin/orders?cancellationStatus=Requested', 'red']] : []),
             ['warning', 'Low stock items', data.alerts.lowStock ?? 0, '/admin/inventory?stockStatus=low', data.alerts.lowStock > 0 ? 'red' : 'teal'],
             ['assignment_return', 'Pending returns', data.alerts.pendingReturns ?? 0, '/admin/returns?status=Requested', 'amber'],
             ['domain', 'Corporate leads', data.alerts.newCorporate, '/admin/enquiries/corporate?status=new', 'teal'],

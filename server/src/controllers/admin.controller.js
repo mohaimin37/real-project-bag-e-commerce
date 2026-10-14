@@ -124,6 +124,7 @@ export const dashboard = asyncHandler(async (req, res) => {
     topProducts,
     alerts: {
       pendingOrders: pending,
+      pendingCancellations: await Order.countDocuments({ 'cancellation.status': 'Requested' }),
       pendingReturns: pendingReturns || 0,
       // Return refunds to send by hand + cancelled orders whose refund is held or failed.
       refundsToSend:

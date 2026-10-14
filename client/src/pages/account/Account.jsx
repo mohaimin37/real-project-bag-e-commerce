@@ -492,10 +492,10 @@ const REFUND_TONE = {
 
 /** Cancellation + refund state exactly as the server recorded it (never assumed from the payment method). */
 function CancellationCard({ order: o, money }) {
-  const requested = o.cancellation?.status === 'Requested' && o.orderStatus !== 'Cancelled';
+  const isRequested = o.cancellation?.status === 'Requested' && o.orderStatus !== 'Cancelled';
+  const isRejected = o.cancellation?.status === 'Rejected' && o.orderStatus !== 'Cancelled';
   const r = o.refundDetails || {};
   const parts = r.parts || [];
-  // Orders cancelled before refunds were tracked have no refund parts; their old label isn't proof of a refund.
   const known = ['Processed', 'Pending', 'Failed', 'Not required', 'Awaiting approval'];
   const status = parts.length
     ? r.status
@@ -504,39 +504,78 @@ function CancellationCard({ order: o, money }) {
       : o.paymentStatus === 'Paid' || o.paymentStatus === 'Refunded' || o.paymentMethod === 'razorpay'
         ? 'Review'
         : 'Not required';
-  const headline = requested
-    ? 'Cancellation requested'
-    : status === 'Processed'
-      ? 'Cancellation confirmed · Refund processed'
-      : status === 'Pending' || status === 'Awaiting approval'
-        ? `Cancellation confirmed · Refund ${status === 'Awaiting approval' ? 'being prepared' : 'pending'}`
-        : status === 'Failed'
-          ? 'Cancellation confirmed · Refund needs assistance'
-          : status === 'Review'
-            ? 'Cancellation confirmed · Refund handled by our team'
-            : 'Cancellation confirmed';
+
+  const headline = isRequested
+    ? 'Cancellation is in progress'
+    : isRejected
+      ? 'Cancellation Rejected'
+      : status === 'Processed'
+        ? 'Cancellation confirmed · Refund processed'
+        : status === 'Pending' || status === 'Awaiting approval'
+          ? `Cancellation confirmed · Refund ${status === 'Awaiting approval' ? 'being prepared' : 'pending'}`
+          : status === 'Failed'
+            ? 'Cancellation confirmed · Refund needs assistance'
+            : status === 'Review'
+              ? 'Cancellation confirmed · Refund handled by our team'
+              : 'Cancellation Confirmed';
+
+  const toneClass = isRequested
+    ? 'bg-amber-500/10 border-amber-500/30'
+    : isRejected
+      ? 'bg-rose-500/10 border-rose-500/30'
+      : 'bg-emerald-500/10 border-emerald-500/30';
+
+  const iconName = isRequested
+    ? 'hourglass_top'
+    : isRejected
+      ? 'cancel'
+      : 'check_circle';
+
   return (
-    <div className="mt-3 p-4 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-on-surface flex flex-col gap-2.5 shadow-xs">
+    <div className={cn('mt-3 p-4 rounded-2xl border text-on-surface flex flex-col gap-2.5 shadow-xs', toneClass)}>
       <div className="flex items-start gap-3">
-        <span className="w-9 h-9 rounded-xl bg-rose-500/20 text-rose-700 dark:text-rose-400 flex items-center justify-center shrink-0">
-          <Icon name={requested ? 'hourglass_top' : 'check_circle'} className="text-[22px]" />
+        <span className={cn(
+          'w-9 h-9 rounded-xl flex items-center justify-center shrink-0',
+          isRequested
+            ? 'bg-amber-500/20 text-amber-700 dark:text-amber-300'
+            : isRejected
+              ? 'bg-rose-500/20 text-rose-700 dark:text-rose-400'
+              : 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-400'
+        )}>
+          <Icon name={iconName} className="text-[22px]" />
         </span>
         <div className="flex-1">
-          <p className="font-bold text-[14px] text-rose-800 dark:text-rose-300">{headline}</p>
+          <p className="font-bold text-[14px]">{headline}</p>
           <p className="text-on-surface-variant text-[12.5px] leading-relaxed mt-0.5">
-            {requested
-              ? 'We have received your cancellation request and are processing it. This page updates once it is confirmed.'
-              : status === 'Not required'
-                ? 'Your order has been cancelled. No payment was collected, so no refund is needed.'
-                : status === 'Processed'
-                  ? `Your refund of ${money(r.amount)} has been processed.`
-                  : status === 'Failed'
-                    ? 'Your order is cancelled, but the refund could not be completed automatically. Our care team has been alerted — please contact us if you don’t hear back within one working day.'
-                  : status === 'Review'
-                    ? 'This order was cancelled before automatic refund tracking. Our care team handles its refund — contact us for the latest status.'
-                    : `Your refund of ${money(r.amount)} has been initiated.${r.eta ? ` Your refund will be processed within ${r.eta}.` : ''}`}
-            {!requested && o.coinsRedeemed > 0 && ' Coins used on this order have been returned to your balance.'}
+            {isRequested
+              ? 'Your cancellation request has been submitted to the admin team and is in progress. Awaiting confirmation.'
+              : isRejected
+                ? 'Our team reviewed your cancellation request and could not approve it.'
+                : status === 'Not required'
+                  ? 'Your order has been cancelled. No payment was collected, so no refund is needed.'
+                  : status === 'Processed'
+                    ? `Your refund of ${money(r.amount)} has been processed.`
+                    : status === 'Failed'
+                      ? 'Your order is cancelled, but the refund could not be completed automatically. Our care team has been alerted — please contact us if you don’t hear back within one working day.'
+                    : status === 'Review'
+                      ? 'This order was cancelled before automatic refund tracking. Our care team handles its refund — contact us for the latest status.'
+                      : `Your refund of ${money(r.amount)} has been initiated.${r.eta ? ` Your refund will be processed within ${r.eta}.` : ''}`}
+            {!isRequested && !isRejected && o.coinsRedeemed > 0 && ' Coins used on this order have been returned to your balance.'}
           </p>
+
+          {/* Admin message to customer if available */}
+          {o.cancellation?.adminMessage && (
+            <div className="mt-2.5 p-3 rounded-xl bg-surface-container-lowest/90 border border-outline-variant/50 text-[13px] shadow-2xs">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-secondary flex items-center gap-1.5 mb-0.5">
+                <Icon name="chat" className="text-[15px]" /> Message from WILDTANE Team:
+              </span>
+              <p className="text-on-surface font-semibold italic">"{o.cancellation.adminMessage}"</p>
+            </div>
+          )}
+
+          {isRequested && o.cancellation?.reason && (
+            <p className="text-[11.5px] text-outline mt-1">Reason: <b className="text-on-surface">{o.cancellation.reason}</b></p>
+          )}
         </div>
       </div>
       {parts.length > 0 && (
@@ -659,26 +698,18 @@ function OrderDetail() {
   const cancel = useMutation({
     mutationFn: () => api.cancelOrder(id, reason),
     onSuccess: (res) => {
-      const rs = res.order?.refundDetails?.status;
-      toast.success(
-        rs === 'Processed' ? 'Order cancelled and refund processed.'
-          : rs === 'Pending' ? 'Order cancelled. Your refund has been initiated.'
-          : rs === 'Failed' ? 'Order cancelled. Our team will help complete your refund.'
-          : 'Order cancelled.'
-      );
+      toast.success('Cancellation request submitted to admin team. Awaiting confirmation.');
       qc.setQueryData(['order', id], { order: res.order });
       setCancelOpen(false);
       qc.invalidateQueries({ queryKey: ['order', id] });
       qc.invalidateQueries({ queryKey: ['orders'] });
-      qc.invalidateQueries({ queryKey: ['my-coins'] }); // spent coins come back, earned ones are removed
+      qc.invalidateQueries({ queryKey: ['my-coins'] });
     },
     onError: (e) => toast.error(e.message),
   });
   if (isLoading) return <Skeleton className="h-96" />;
   if (isError) return <ErrorState error={error} onRetry={refetch} />;
   const a = o.shippingAddress;
-  // Cancellation policy: within 24 hours of ordering and before it ships (the server checks too).
-  const canCancel = ['Pending', 'Confirmed'].includes(o.orderStatus) && o.cancellation?.status !== 'Requested' && Date.now() - new Date(o.createdAt).getTime() < 24 * 60 * 60 * 1000;
   const deliveryTime = o.deliveredAt ? new Date(o.deliveredAt).getTime() : o.statusHistory?.find((s) => s.status === 'Delivered')?.at ? new Date(o.statusHistory.find((s) => s.status === 'Delivered').at).getTime() : null;
   const isDelivered = o.orderStatus === 'Delivered' && deliveryTime != null;
   const returnDeadline = deliveryTime ? deliveryTime + 7 * 24 * 60 * 60 * 1000 : null;
@@ -686,6 +717,11 @@ function OrderDetail() {
   const daysLeft = Math.max(0, Math.ceil(msLeft / (24 * 60 * 60 * 1000)));
   const isExpired = isDelivered && msLeft <= 0;
   const canReturnOrExchange = isDelivered && msLeft > 0 && !['Cancelled', 'Returned'].includes(o.orderStatus) && !o.returnExchange;
+
+  // Cancellation policy: Available from order placement up to 7 days post-delivery (item in hand), then disappears!
+  const canCancel = !['Cancelled', 'Returned'].includes(o.orderStatus)
+    && o.cancellation?.status !== 'Requested'
+    && (!isDelivered || msLeft > 0);
 
   return (
     <div className="flex flex-col gap-space-lg">

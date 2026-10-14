@@ -108,13 +108,35 @@ function itemState(elig, request, order) {
       };
     default:
       if (order?.orderStatus === 'Cancelled') {
-        return { tone: 'bad', icon: 'cancel', title: 'Order cancelled', text: 'This order was cancelled and cannot be returned or exchanged.' };
+        return {
+          tone: 'bad',
+          icon: 'cancel',
+          title: 'Order cancelled',
+          text: order?.cancellation?.adminMessage
+            ? `Notice from WILDTANE team: “${order.cancellation.adminMessage}”`
+            : 'This order was cancelled and cannot be returned or exchanged.',
+          adminMessage: order?.cancellation?.adminMessage,
+        };
+      }
+      if (order?.cancellation?.status === 'Requested') {
+        return {
+          tone: 'info',
+          icon: 'hourglass_top',
+          title: 'Cancellation is in progress',
+          text: 'Your cancellation request has been submitted to the admin team and is in progress. Awaiting confirmation.',
+        };
       }
       if (!order?.returnDetails?.isDelivered) {
-        return { tone: 'info', icon: 'local_shipping', title: 'Delivery in progress', text: 'Return & exchange option opens for 7 days once this item is delivered.' };
+        return {
+          tone: 'info',
+          icon: 'local_shipping',
+          title: 'Delivery in progress',
+          text: 'Return & exchange opens for 7 days once delivered. Item can also be cancelled before delivery or within 7 days of delivery.',
+          canCancelBeforeDelivery: true,
+        };
       }
-      if (elig?.canReturnOrExchange) return null; // show the Return / Exchange buttons
-      return { tone: 'muted', icon: 'lock', title: 'Return window closed', text: 'The 7-day return and exchange window for this item has ended.' };
+      if (elig?.canReturnOrExchange) return null; // show the Return / Exchange / Cancel buttons
+      return { tone: 'muted', icon: 'lock', title: 'Window closed', text: 'The 7-day return, exchange and cancellation window for this item has ended.' };
   }
 }
 
@@ -127,13 +149,21 @@ const TONE = {
   muted: { box: 'bg-surface-container-low border-outline-variant/30', icon: 'text-outline' },
 };
 
-/** One order item: photo, details and either its request status or the Return / Exchange buttons when time is available. */
-function ItemRow({ order, it, elig, onStart, onCancel, cancelling }) {
+/** One order item: photo, details and either its request status or the Return / Exchange / Cancel buttons when time is available. */
+function ItemRow({ order, it, elig, onStart, onCancel, cancelling, onOpenCancel }) {
   const money = useMoney();
   const request = elig?.request && elig.request.status !== 'Cancelled' ? elig.request : null;
   const state = itemState(elig, request, order);
   const daysLeft = elig?.daysLeft || order.returnDetails?.daysLeft || 0;
   const hoursLeft = elig?.hoursLeft || order.returnDetails?.hoursLeft || 0;
+
+  const deliveryTime = order.deliveredAt ? new Date(order.deliveredAt).getTime() : order.statusHistory?.find((s) => s.status === 'Delivered')?.at ? new Date(order.statusHistory.find((s) => s.status === 'Delivered').at).getTime() : null;
+  const isDelivered = (order.returnDetails?.isDelivered || order.orderStatus === 'Delivered') && deliveryTime != null;
+  const returnDeadline = deliveryTime ? deliveryTime + 7 * 24 * 60 * 60 * 1000 : null;
+  const msLeft = returnDeadline ? returnDeadline - Date.now() : 0;
+  const canCancelOrder = !['Cancelled', 'Returned'].includes(order.orderStatus)
+    && order.cancellation?.status !== 'Requested'
+    && (!isDelivered || msLeft > 0);
 
   return (
     <div className="flex flex-col gap-3 p-3.5 sm:p-4 rounded-2xl bg-surface-container-lowest border border-surface-container-high hover:border-outline-variant/60 transition-colors">
@@ -178,14 +208,25 @@ function ItemRow({ order, it, elig, onStart, onCancel, cancelling }) {
               )}
             </div>
           )}
+          {state.canCancelBeforeDelivery && canCancelOrder && (
+            <div className="pt-1">
+              <button
+                type="button"
+                onClick={() => onOpenCancel?.(order)}
+                className="btn-tonal h-8 px-3 text-[12px] gap-1.5 text-error font-bold border border-error/30 hover:bg-error/10 rounded-xl"
+              >
+                <Icon name="cancel" className="text-[15px]" /> Cancel Order
+              </button>
+            </div>
+          )}
         </div>
       ) : (
         <div className="flex flex-col gap-2.5 pt-1">
-          {/* Return Window countdown banner */}
+          {/* Return & Cancellation Window countdown banner */}
           <div className="flex items-center justify-between px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 text-[12px]">
             <span className="flex items-center gap-1.5 font-bold">
               <Icon name="timer" className="text-[16px] animate-pulse" />
-              Return time available: {daysLeft} day{daysLeft === 1 ? '' : 's'}{hoursLeft > 0 && daysLeft <= 2 ? ` (${hoursLeft}h)` : ''} left
+              Return & cancel available: {daysLeft} day{daysLeft === 1 ? '' : 's'}{hoursLeft > 0 && daysLeft <= 2 ? ` (${hoursLeft}h)` : ''} left
             </span>
             <span className="text-[11px] font-semibold opacity-85">7-day policy</span>
           </div>
@@ -205,6 +246,15 @@ function ItemRow({ order, it, elig, onStart, onCancel, cancelling }) {
             >
               <Icon name="published_with_changes" className="text-[18px]" /> Exchange item
             </button>
+            {canCancelOrder && (
+              <button
+                type="button"
+                onClick={() => onOpenCancel?.(order)}
+                className="btn-ghost h-10 shrink-0 px-3.5 gap-1.5 text-[12.5px] font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 border border-rose-500/25 rounded-xl transition-all"
+              >
+                <Icon name="cancel" className="text-[16px]" /> Cancel
+              </button>
+            )}
           </div>
         </div>
       )}
@@ -212,14 +262,31 @@ function ItemRow({ order, it, elig, onStart, onCancel, cancelling }) {
   );
 }
 
-function OrderCard({ order, onStart, onCancel, cancelling }) {
+function OrderCard({ order, onStart, onCancel, cancelling, onOpenCancel }) {
   const money = useMoney();
   const ret = order.returnDetails || {};
   const elig = ret.itemsEligibility || [];
-  const isDelivered = ret.isDelivered || order.orderStatus === 'Delivered';
+  const deliveryTime = order.deliveredAt
+    ? new Date(order.deliveredAt).getTime()
+    : order.statusHistory?.find((s) => s.status === 'Delivered')?.at
+    ? new Date(order.statusHistory.find((s) => s.status === 'Delivered').at).getTime()
+    : null;
+  const isDelivered = (ret.isDelivered || order.orderStatus === 'Delivered') && deliveryTime != null;
   const isCancelled = order.orderStatus === 'Cancelled';
   const isInTransit = !isDelivered && !isCancelled;
   const canReturn = ret.canReturnOrExchange;
+  const returnDeadline = deliveryTime ? deliveryTime + 7 * 24 * 60 * 60 * 1000 : null;
+  const msLeft = returnDeadline ? returnDeadline - Date.now() : 0;
+  const daysLeft = Math.max(0, Math.ceil(msLeft / (24 * 60 * 60 * 1000)));
+
+  // Can cancel: from order placement up to 7 days post-delivery (item in hand), then disappears!
+  const canCancelOrder = !['Cancelled', 'Returned'].includes(order.orderStatus)
+    && order.cancellation?.status !== 'Requested'
+    && (!isDelivered || msLeft > 0);
+
+  const isCancellationRequested = order.cancellation?.status === 'Requested';
+  const isCancellationConfirmed = order.cancellation?.status === 'Confirmed' || order.orderStatus === 'Cancelled';
+  const isCancellationRejected = order.cancellation?.status === 'Rejected' && order.orderStatus !== 'Cancelled';
 
   return (
     <article className="card p-4 sm:p-5 flex flex-col gap-4 border border-surface-container-high bg-surface-container-low/40">
@@ -232,8 +299,22 @@ function OrderCard({ order, onStart, onCancel, cancelling }) {
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" /> Return Available ({ret.daysLeft}d left)
             </span>
           )}
+          {canCancelOrder && (
+            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/30">
+              Cancel Option Available
+            </span>
+          )}
         </div>
         <div className="flex flex-wrap items-center gap-2 text-[12px]">
+          {canCancelOrder && (
+            <button
+              type="button"
+              onClick={() => onOpenCancel?.(order)}
+              className="btn-tonal h-8 px-3 rounded-xl text-[12px] font-bold text-rose-600 dark:text-rose-400 border border-rose-500/30 hover:bg-rose-500/10 flex items-center gap-1.5 shadow-2xs"
+            >
+              <Icon name="cancel" className="text-[15px]" /> Cancel Order
+            </button>
+          )}
           {isDelivered && order.deliveredAt ? (
             <span className="text-on-surface-variant">Delivered {formatDate(order.deliveredAt)}</span>
           ) : (
@@ -254,9 +335,76 @@ function OrderCard({ order, onStart, onCancel, cancelling }) {
           ) : null}
         </div>
       </header>
+
+      {/* Cancellation Status Banner */}
+      {isCancellationRequested ? (
+        <div className="p-3.5 sm:p-4 rounded-2xl bg-amber-500/10 border border-amber-500/35 text-amber-900 dark:text-amber-200 flex flex-col gap-2 shadow-xs">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <span className="flex items-center gap-2 font-bold text-[14px]">
+              <Icon name="hourglass_top" className="text-[20px] text-amber-600 animate-spin" />
+              Cancellation is in progress
+            </span>
+            <span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-800 dark:text-amber-200 font-bold">
+              Under Admin Review
+            </span>
+          </div>
+          <p className="text-[12.5px] leading-relaxed text-on-surface-variant">
+            Your cancellation request has been submitted to the admin team and is in progress. Awaiting confirmation.
+          </p>
+          {order.cancellation?.reason && (
+            <p className="text-[12px] text-outline">Reason: <b className="text-on-surface">{order.cancellation.reason}</b></p>
+          )}
+        </div>
+      ) : isCancellationConfirmed && (order.cancellation?.status === 'Confirmed' || isCancelled) ? (
+        <div className="p-3.5 sm:p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/35 text-emerald-900 dark:text-emerald-200 flex flex-col gap-2 shadow-xs">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <span className="flex items-center gap-2 font-bold text-[14px]">
+              <Icon name="check_circle" className="text-[20px] text-emerald-600" />
+              Cancellation Confirmed
+            </span>
+            <span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-800 dark:text-emerald-200 font-bold">
+              Order Cancelled
+            </span>
+          </div>
+          {order.cancellation?.adminMessage ? (
+            <div className="p-2.5 rounded-xl bg-surface-container-lowest border border-outline-variant/40 text-[12.5px]">
+              <span className="text-[11px] font-bold text-secondary flex items-center gap-1 uppercase tracking-wider mb-0.5">
+                <Icon name="chat" className="text-[14px]" /> Message from WILDTANE Team:
+              </span>
+              <p className="italic font-semibold text-on-surface">"{order.cancellation.adminMessage}"</p>
+            </div>
+          ) : (
+            <p className="text-[12.5px] leading-relaxed text-on-surface-variant">
+              Your order cancellation has been confirmed by our team.
+            </p>
+          )}
+        </div>
+      ) : isCancellationRejected ? (
+        <div className="p-3.5 sm:p-4 rounded-2xl bg-rose-500/10 border border-rose-500/35 text-rose-900 dark:text-rose-200 flex flex-col gap-2 shadow-xs">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <span className="flex items-center gap-2 font-bold text-[14px]">
+              <Icon name="block" className="text-[20px] text-rose-600" />
+              Cancellation Rejected
+            </span>
+          </div>
+          {order.cancellation?.adminMessage ? (
+            <div className="p-2.5 rounded-xl bg-surface-container-lowest border border-outline-variant/40 text-[12.5px]">
+              <span className="text-[11px] font-bold text-error flex items-center gap-1 uppercase tracking-wider mb-0.5">
+                <Icon name="chat" className="text-[14px]" /> Notice from WILDTANE Team:
+              </span>
+              <p className="italic font-semibold text-on-surface">"{order.cancellation.adminMessage}"</p>
+            </div>
+          ) : (
+            <p className="text-[12.5px] leading-relaxed text-on-surface-variant">
+              Our team reviewed your cancellation request and could not approve it.
+            </p>
+          )}
+        </div>
+      ) : null}
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
         {order.items.map((it, idx) => (
-          <ItemRow key={`${it.productId}-${it.variantId || idx}`} order={order} it={it} elig={elig[idx]} onStart={onStart} onCancel={onCancel} cancelling={cancelling} />
+          <ItemRow key={`${it.productId}-${it.variantId || idx}`} order={order} it={it} elig={elig[idx]} onStart={onStart} onCancel={onCancel} cancelling={cancelling} onOpenCancel={onOpenCancel} />
         ))}
       </div>
       <footer className="flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-surface-container-high text-[12px] text-on-surface-variant">
@@ -360,12 +508,114 @@ function GuestLookup({ signedIn, phone }) {
   );
 }
 
+function CancelOrderModal({ order, open, onClose, onSuccess }) {
+  const [reason, setReason] = useState('Changed mind or style preference');
+  const [customReason, setCustomReason] = useState('');
+  const qc = useQueryClient();
+
+  const cancel = useMutation({
+    mutationFn: () => api.cancelOrder(order._id, reason === 'Other' ? customReason.trim() : reason),
+    onSuccess: (res) => {
+      toast.success('Cancellation request submitted to admin team. Awaiting confirmation.');
+      qc.invalidateQueries({ queryKey: ['returns'] });
+      qc.invalidateQueries({ queryKey: ['orders'] });
+      qc.invalidateQueries({ queryKey: ['order', order._id] });
+      onSuccess?.(res);
+      onClose();
+    },
+    onError: (e) => toast.error(e.message || 'Failed to submit cancellation request'),
+  });
+
+  if (!open || !order) return null;
+
+  const CANCELLATION_REASONS = [
+    'Changed mind or style preference',
+    'Ordered by mistake or duplicate order',
+    'Found a better price elsewhere',
+    'Delivery time is too long',
+    'Item no longer needed',
+    'Incorrect shipping address or phone number',
+    'Other',
+  ];
+
+  return (
+    <Modal open={open} onClose={onClose} title={`Cancel Order #${order.orderId}`} size="md">
+      <form onSubmit={(e) => { e.preventDefault(); cancel.mutate(); }} className="flex flex-col gap-4">
+        <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-900 dark:text-amber-200 text-[12.5px] leading-relaxed">
+          <p className="font-bold flex items-center gap-1.5 mb-1">
+            <Icon name="info" className="text-[16px]" /> 7-Day Post-Delivery Cancellation Policy
+          </p>
+          You can request cancellation anytime from order placement up to 7 days after the item is in your hands.
+          Once submitted, our admin team will review and confirm your cancellation request.
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <label className="text-[13px] font-bold text-on-surface">Please select a reason for cancellation:</label>
+          <div className="flex flex-col gap-1.5 max-h-52 overflow-y-auto pr-1">
+            {CANCELLATION_REASONS.map((r) => (
+              <label
+                key={r}
+                className={cn(
+                  'flex items-center gap-2.5 p-2.5 rounded-xl border text-[13px] cursor-pointer transition-all',
+                  reason === r
+                    ? 'border-secondary bg-secondary/10 font-bold ring-1 ring-secondary/30 text-on-surface'
+                    : 'border-surface-container-high hover:bg-surface-container-low text-on-surface-variant'
+                )}
+              >
+                <input
+                  type="radio"
+                  name="cancellationReason"
+                  value={r}
+                  checked={reason === r}
+                  onChange={() => setReason(r)}
+                  className="accent-secondary shrink-0"
+                />
+                <span>{r}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+
+        {reason === 'Other' && (
+          <div className="flex flex-col gap-1.5">
+            <label className="text-[12px] font-bold">Please specify your reason:</label>
+            <textarea
+              className="input w-full p-2.5 text-[13px] rounded-xl"
+              rows={2}
+              value={customReason}
+              onChange={(e) => setCustomReason(e.target.value)}
+              placeholder="Tell us why you would like to cancel this order..."
+              required
+            />
+          </div>
+        )}
+
+        <div className="flex items-center justify-end gap-2 pt-3 border-t border-surface-container-high">
+          <Button type="button" variant="ghost" onClick={onClose} disabled={cancel.isPending}>
+            Keep Order
+          </Button>
+          <Button
+            type="submit"
+            variant="filled"
+            className="bg-rose-600 hover:bg-rose-700 text-white font-bold"
+            loading={cancel.isPending}
+            disabled={reason === 'Other' && !customReason.trim()}
+          >
+            Submit Cancellation Request
+          </Button>
+        </div>
+      </form>
+    </Modal>
+  );
+}
+
 export default function ReturnsExchange({ defaultTab = 'orders' }) {
   const user = useUser();
   const money = useMoney();
   const { data: config } = useConfig();
   const qc = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
+  const [cancelOrderTarget, setCancelOrderTarget] = useState(null);
 
   const phone = config?.supportPhone || PHONE;
   const email = config?.supportEmail || EMAIL;
@@ -691,7 +941,7 @@ export default function ReturnsExchange({ defaultTab = 'orders' }) {
               </div>
             ) : (
               filteredOrders.map((order) => (
-                <OrderCard key={order._id} order={order} onStart={openModal} onCancel={onCancel} cancelling={cancelMutation.isPending} />
+                <OrderCard key={order._id} order={order} onStart={openModal} onCancel={onCancel} cancelling={cancelMutation.isPending} onOpenCancel={setCancelOrderTarget} />
               ))
             )}
           </div>
@@ -862,6 +1112,13 @@ export default function ReturnsExchange({ defaultTab = 'orders' }) {
           </form>
         )}
       </Modal>
+
+      <CancelOrderModal
+        order={cancelOrderTarget}
+        open={Boolean(cancelOrderTarget)}
+        onClose={() => setCancelOrderTarget(null)}
+        onSuccess={refresh}
+      />
     </div>
   );
 }

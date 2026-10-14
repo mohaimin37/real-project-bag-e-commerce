@@ -69,6 +69,7 @@ r.post('/orders/:id/approve-and-send', orders.adminApproveOrder);
 r.post('/orders/:id/send-email-invoice', orders.adminSendInvoiceEmail);
 r.post('/orders/:id/send-whatsapp-invoice', orders.adminSendInvoiceWhatsApp);
 r.patch('/orders/:id/status', validate(orderStatusSchema), orders.adminUpdateStatus);
+r.post('/orders/:id/cancellation-decision', orders.adminCancellationDecision);
 r.patch('/orders/:id/payment', validate(paymentStatusSchema), orders.adminUpdatePayment);
 r.post('/orders/:id/refund/retry', orders.adminRetryRefund);
 r.post('/orders/:id/shipment', orders.adminCreateShipment);

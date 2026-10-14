@@ -138,6 +138,7 @@ const orderSchema = new mongoose.Schema(
       requestedAt: Date,
       confirmedAt: Date,
       by: { type: String, enum: ['customer', 'admin', 'system'] },
+      adminMessage: { type: String, default: '' },
     },
     // Overall refund state (worst of the parts) plus one entry per payment source.
     refundDetails: {

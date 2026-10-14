@@ -647,42 +647,91 @@ ${note ? `<tr><td style="padding:4px 12px 4px 0;color:#666">Note</td><td>${esc(n
   });
 }
 
-// Cancellation policy: within 24 hours of placing the order, and never once it has shipped.
-export const CANCEL_WINDOW_MS = 24 * 60 * 60 * 1000;
+// Cancellation policy: Available from time of order placement up to 7 days after delivery (item in hand), then disappears.
+export const CANCEL_POST_DELIVERY_DAYS = 7;
+export const CANCEL_POST_DELIVERY_MS = CANCEL_POST_DELIVERY_DAYS * 24 * 60 * 60 * 1000;
+export const CANCEL_WINDOW_MS = CANCEL_POST_DELIVERY_MS;
 
 /**
- * Customer cancellation. The request is recorded first with a conditional update, so a double
- * click or two tabs can't both cancel (or refund) the same order. The server re-checks the rules:
- * within 24 hours of ordering and before the order is processed/shipped.
+ * Customer cancellation. The request is submitted to the admin team (status: 'Requested').
+ * Available anytime from order creation up to 7 days after the item is delivered.
+ * Once 7 days post-delivery pass, the option expires and disappears.
  */
 export async function cancelByCustomer(order, userId, reason) {
   if (order.orderStatus === 'Cancelled') throw ApiError.conflict('This order is already cancelled.');
-  if (!CUSTOMER_CANCELLABLE.includes(order.orderStatus)) {
-    throw ApiError.badRequest('This order is already being prepared and can no longer be cancelled online. Please contact support.');
+  if (order.orderStatus === 'Returned') throw ApiError.conflict('This order has already been returned.');
+  if (order.cancellation?.status === 'Requested') {
+    throw ApiError.conflict('A cancellation request for this order is already in progress and awaiting admin confirmation.');
   }
-  if (Date.now() - new Date(order.createdAt).getTime() > CANCEL_WINDOW_MS) {
-    throw ApiError.badRequest('Orders can only be cancelled within 24 hours of being placed. Please contact support for help.');
+
+  // Delivery check: if delivered, must be within 7 days of delivery
+  const deliveryTime = order.deliveredAt
+    ? new Date(order.deliveredAt).getTime()
+    : order.statusHistory?.find((s) => s.status === 'Delivered')?.at
+    ? new Date(order.statusHistory.find((s) => s.status === 'Delivered').at).getTime()
+    : null;
+
+  if (order.orderStatus === 'Delivered' && deliveryTime) {
+    if (Date.now() - deliveryTime > CANCEL_POST_DELIVERY_MS) {
+      throw ApiError.badRequest('The 7-day cancellation window has ended. Items can only be cancelled within 7 days of delivery.');
+    }
   }
 
   const claimed = await Order.findOneAndUpdate(
     {
       _id: order._id,
       user: userId,
-      orderStatus: { $in: CUSTOMER_CANCELLABLE },
+      orderStatus: { $nin: ['Cancelled', 'Returned'] },
       'cancellation.status': { $nin: ['Requested', 'Confirmed'] },
     },
-    { $set: { cancellation: { status: 'Requested', reason, requestedAt: new Date(), by: 'customer' } } },
+    {
+      $set: {
+        'cancellation.status': 'Requested',
+        'cancellation.reason': reason || '',
+        'cancellation.requestedAt': new Date(),
+        'cancellation.by': 'customer',
+        'cancellation.adminMessage': '',
+      },
+    },
     { returnDocument: 'after' }
   );
-  if (!claimed) throw ApiError.conflict('A cancellation for this order is already in progress or the order has changed. Please refresh.');
 
-  try {
-    const note = reason ? `Cancelled by customer: ${reason}` : 'Cancelled by customer';
-    return await changeOrderStatus(claimed, { status: 'Cancelled', note, notifyCustomer: true }, userId);
-  } catch (err) {
-    // Rules changed between the check and the update: release the request so the page shows the truth.
-    await Order.updateOne({ _id: order._id, 'cancellation.status': 'Requested' }, { $set: { 'cancellation.status': 'Rejected' } });
-    throw err;
+  if (!claimed) throw ApiError.conflict('A cancellation for this order is already in progress or the order has changed. Please refresh.');
+  return claimed;
+}
+
+/**
+ * Admin cancellation decision: Confirm (YES) or Reject (NO), with optional custom message to customer.
+ */
+export async function decideOrderCancellation(orderId, { decision, adminMessage, notifyCustomer = true }, adminUserId) {
+  const order = await Order.findById(orderId);
+  if (!order) throw ApiError.notFound('Order not found');
+
+  const cleanMsg = String(adminMessage || '').trim();
+
+  if (decision === 'Approved' || decision === 'Confirmed') {
+    order.set('cancellation.status', 'Confirmed');
+    order.set('cancellation.confirmedAt', new Date());
+    order.set('cancellation.adminMessage', cleanMsg);
+    if (!order.cancellation.requestedAt) order.set('cancellation.requestedAt', new Date());
+    if (!order.cancellation.by) order.set('cancellation.by', 'customer');
+    await order.save();
+
+    const note = cleanMsg ? `Cancellation confirmed by admin: ${cleanMsg}` : 'Cancellation confirmed by admin';
+    return await changeOrderStatus(order, { status: 'Cancelled', note, notifyCustomer }, adminUserId);
+  } else if (decision === 'Rejected') {
+    order.set('cancellation.status', 'Rejected');
+    order.set('cancellation.adminMessage', cleanMsg);
+    order.statusHistory.push({
+      status: order.orderStatus,
+      note: cleanMsg ? `Cancellation request rejected: ${cleanMsg}` : 'Cancellation request rejected by admin',
+      changedBy: adminUserId,
+      at: new Date(),
+    });
+    await order.save();
+    return order;
+  } else {
+    throw ApiError.badRequest('Invalid decision. Must be Approved or Rejected.');
   }
 }
 

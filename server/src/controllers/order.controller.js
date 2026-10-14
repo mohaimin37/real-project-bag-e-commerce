@@ -17,6 +17,7 @@ import {
   handleRazorpayWebhook,
   retryOrderRefund,
   createShipmentForOrder,
+  decideOrderCancellation,
 } from '../services/order.service.js';
 import { trackShipment, orderStatusFromProvider, shippingConfigured } from '../services/shipping.service.js';
 import { verifyRazorpayWebhookSignature } from '../services/payment.service.js';
@@ -130,6 +131,7 @@ export const adminListOrders = asyncHandler(async (req, res) => {
   const { page, limit, skip } = parsePagination(req.query, { defaultLimit: 20 });
   const filter = {};
   if (req.query.status) filter.orderStatus = req.query.status;
+  if (req.query.cancellationStatus) filter['cancellation.status'] = req.query.cancellationStatus;
   if (req.query.paymentStatus) filter.paymentStatus = req.query.paymentStatus;
   if (req.query.paymentMethod) filter.paymentMethod = req.query.paymentMethod;
   if (req.query.user && mongoose.isValidObjectId(req.query.user)) filter.user = req.query.user;
@@ -156,6 +158,14 @@ export const adminGetOrder = asyncHandler(async (req, res) => {
   if (!order) throw ApiError.notFound('Order not found');
   const notifications = await Notification.find({ order: order._id }).sort({ createdAt: -1 });
   res.json({ success: true, order, notifications });
+});
+
+export const adminCancellationDecision = asyncHandler(async (req, res) => {
+  const { decision, adminMessage, notifyCustomer } = req.body;
+  const order = await Order.findOne(findQuery(req.params.id));
+  if (!order) throw ApiError.notFound('Order not found');
+  const updated = await decideOrderCancellation(order._id, { decision, adminMessage, notifyCustomer }, req.user._id);
+  res.json({ success: true, order: updated });
 });
 
 export const adminUpdateStatus = asyncHandler(async (req, res) => {

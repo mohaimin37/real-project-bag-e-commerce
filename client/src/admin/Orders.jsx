@@ -45,7 +45,20 @@ export default function Orders() {
         </div>
       ),
     },
-    { key: 'status', header: 'Status', render: (o) => <StatusBadge status={o.orderStatus} /> },
+    {
+      key: 'status',
+      header: 'Status',
+      render: (o) => (
+        <div className="flex flex-col gap-1 items-start">
+          <StatusBadge status={o.orderStatus} />
+          {o.cancellation?.status === 'Requested' && (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10.5px] font-bold bg-amber-500/20 text-amber-800 dark:text-amber-200 border border-amber-500/40 animate-pulse">
+              <Icon name="hourglass_top" className="text-[12px]" /> Cancel Requested
+            </span>
+          )}
+        </div>
+      ),
+    },
     {
       key: 'print',
       header: '',
@@ -72,10 +85,23 @@ export default function Orders() {
       <PageHeader title="Orders" subtitle={query.data ? `${query.data.total} orders` : ' '} />
       <div className="flex gap-1 overflow-x-auto scrollbar-none mb-space-md border-b border-surface-container-high">
         {['', ...ORDER_STATUSES].map((s) => (
-          <button key={s || 'all'} type="button" onClick={() => set({ status: s })} className={cn('px-3 py-2.5 text-label-md whitespace-nowrap border-b-2 -mb-px transition-colors', (p.status || '') === s ? 'border-secondary text-on-surface' : 'border-transparent text-on-surface-variant hover:text-on-surface')}>
+          <button key={s || 'all'} type="button" onClick={() => set({ status: s, cancellationStatus: '' })} className={cn('px-3 py-2.5 text-label-md whitespace-nowrap border-b-2 -mb-px transition-colors', !p.cancellationStatus && (p.status || '') === s ? 'border-secondary text-on-surface' : 'border-transparent text-on-surface-variant hover:text-on-surface')}>
             {s || 'All orders'}
           </button>
         ))}
+        <button
+          type="button"
+          onClick={() => set({ status: '', cancellationStatus: 'Requested' })}
+          className={cn(
+            'px-3 py-2.5 text-label-md whitespace-nowrap border-b-2 -mb-px transition-colors flex items-center gap-1.5 font-bold',
+            p.cancellationStatus === 'Requested'
+              ? 'border-error text-error'
+              : 'border-transparent text-error/80 hover:text-error'
+          )}
+        >
+          <Icon name="hourglass_top" className="text-[16px]" />
+          Cancellation Requests
+        </button>
       </div>
       <Toolbar>
         <SearchBox value={p.q} onChange={(q) => set({ q })} placeholder="Order ID, name, email or phone…" />
