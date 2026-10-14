@@ -991,7 +991,7 @@ export default function Shop({ preset, categoryList, pageTitle, pageDescription,
   const isShopRoot = !preset && !categorySlug && !categoryList;
   // Clothing and Perfumes open like Men/Women: category circles above products grouped by section.
   const circleDept = ['clothing', 'fragrance'].includes(activeCategory?.slug) && !selectedCatParam;
-  const showCircles = ((preset === 'men' || preset === 'women') || circleDept) && !get('q');
+  const showCircles = ((preset === 'men' || preset === 'women' || preset === 'bags' || preset === 'universal') || circleDept || activeCategory?.slug === 'bags') && !get('q');
   const filtered = [...FILTER_KEYS, 'q', 'sort', 'category'].some((k) => get(k));
   const listLd = items.length && !filtered ? [itemListLd(items.slice(0, 24))] : [];
 

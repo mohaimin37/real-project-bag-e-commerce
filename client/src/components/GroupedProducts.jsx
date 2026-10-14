@@ -124,34 +124,20 @@ function ProductSlidingBar({ items, comfort, priority = false }) {
 }
 
 /**
- * Top "Shop by category" circles: one per category with real product photo and live item count.
- * Tapping one selects that category so it comes directly in front.
+ * Top Story Circles: displays subcategory options with real product photo and live item count.
+ * Tapping one selects that subcategory so it comes directly in front.
  */
-function CategoryCircles({ groups, activeSlug, onSelectCategory }) {
-  const items = groups.map((g) => {
-    const name = titleFor(g.cat);
-    const first = g.allItems[0];
-    const v = firstAvailable(first);
-    const raw = v?.images?.[0]?.url || first?.images?.[0]?.url || g.cat?.image?.url;
-    return {
-      slug: g.slug,
-      name,
-      count: g.count,
-      img: raw ? imgUrl(raw, 160) : productImage(first, v),
-      tone: categoryTone(g.cat || { name }),
-    };
-  });
-
+function SubcategoryCircles({ items, activeSlug, onSelectSubcategory, label = 'Bag Subcategories' }) {
   if (items.length < 2) return null;
 
   return (
-    <nav aria-label="Shop by category" className="mb-5 rounded-3xl border border-surface-container-high bg-surface-container-lowest/80 shadow-xs px-3 pt-3.5 pb-2.5 md:px-5 md:pt-4">
+    <nav aria-label={label} className="mb-5 rounded-3xl border border-surface-container-high bg-surface-container-lowest/80 shadow-xs px-3 pt-3.5 pb-2.5 md:px-5 md:pt-4">
       <div className="flex items-baseline justify-between gap-2 px-1 pb-2.5">
         <div className="flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-secondary animate-pulse" />
-          <h2 className="text-[12px] md:text-[13px] font-bold uppercase tracking-[0.14em] text-on-surface">Shop by category</h2>
+          <h2 className="text-[12px] md:text-[13px] font-bold uppercase tracking-[0.14em] text-on-surface">{label}</h2>
         </div>
-        <span className="text-[11px] text-outline font-medium">{items.length} categories</span>
+        <span className="text-[11px] text-outline font-medium">{items.length} subcategories</span>
       </div>
       <ul className="flex gap-3 md:gap-4 overflow-x-auto snap-x scrollbar-none pb-2 -mx-1 px-1 touch-pan-x">
         {items.map((c) => {
@@ -160,21 +146,21 @@ function CategoryCircles({ groups, activeSlug, onSelectCategory }) {
             <li key={c.slug} className="snap-start shrink-0">
               <button
                 type="button"
-                onClick={() => onSelectCategory(c.slug)}
-                className="group flex flex-col items-center gap-1.5 w-[68px] md:w-[84px] active:scale-95 transition-transform"
+                onClick={() => onSelectSubcategory(c.slug)}
+                className="group flex flex-col items-center gap-1.5 w-[68px] md:w-[84px] active:scale-95 transition-transform cursor-pointer"
                 title={`${c.name} (${c.count})`}
               >
                 <span
                   className={cn(
                     'relative p-[2.5px] rounded-full bg-gradient-to-tr shadow-sm transition-all duration-300',
-                    c.tone.grad || 'from-indigo-500 via-violet-500 to-rose-500',
+                    c.tone?.grad || 'from-indigo-500 via-rose-500 to-amber-500',
                     isActive ? 'scale-110 ring-2 ring-secondary ring-offset-2 ring-offset-surface' : 'group-hover:scale-105'
                   )}
                 >
                   <span className="block rounded-full bg-surface-container-lowest p-[2px]">
                     <img src={c.img} alt="" loading="lazy" decoding="async" className="w-14 h-14 md:w-[70px] md:h-[70px] rounded-full object-cover" />
                   </span>
-                  <span className={cn('absolute -bottom-0.5 -right-0.5 min-w-5 h-5 px-1 rounded-full text-[10px] font-bold leading-5 text-center ring-2 ring-surface-container-lowest', c.tone.solid)}>
+                  <span className={cn('absolute -bottom-0.5 -right-0.5 min-w-5 h-5 px-1 rounded-full text-[10px] font-bold leading-5 text-center ring-2 ring-surface-container-lowest', c.tone?.solid || 'bg-secondary text-on-secondary')}>
                     {c.count}
                   </span>
                 </span>
@@ -195,74 +181,144 @@ export default function GroupedProducts({ products, bySlug, order, comfort, load
   const showcaseRef = useRef(null);
 
   // Determine current department for top navigation
+  const isBags = preset === 'bags' || location.pathname.startsWith('/bags');
   const isMen = preset === 'men' || location.pathname.startsWith('/men');
   const isWomen = preset === 'women' || location.pathname.startsWith('/women');
   const isUniversal = preset === 'universal' || preset === 'unisex' || location.pathname.startsWith('/universal') || location.pathname.startsWith('/unisex');
 
-  // Build category groups and allItems
-  const groups = useMemo(() => {
+  // 1. EXTRACT SUBCATEGORIES (Backpacks, Handbags, Tote Bags, Laptop Bags, Office Bags, Sling Bags, Duffle Bags, Travel Bags, Clutches, etc.)
+  const subcategoryGroups = useMemo(() => {
+    const map = new Map();
+
+    for (const p of products) {
+      // Determine subcategory
+      const sub = p.subcategory;
+      let subSlug = sub?.slug;
+      let subName = sub?.name;
+
+      if (!subSlug) {
+        // Fallback: if category is not "bags", use category name
+        if (p.category?.slug && p.category.slug !== 'bags') {
+          subSlug = p.category.slug;
+          subName = p.category.name;
+        } else {
+          subSlug = '_other';
+          subName = 'Other Carry';
+        }
+      }
+
+      if (!map.has(subSlug)) {
+        const subData = bySlug?.get(subSlug) || sub || { name: subName, slug: subSlug };
+        map.set(subSlug, {
+          slug: subSlug,
+          name: subName,
+          sub: subData,
+          tagline: subData?.tagline || sub?.tagline || '',
+          tone: categoryTone(subData || { name: subName }),
+          items: [],
+          count: 0,
+        });
+      }
+
+      const entry = map.get(subSlug);
+      entry.items.push(p);
+      entry.count += 1;
+    }
+
+    const rank = (slug) => (order?.has(slug) ? order.get(slug) : Number.MAX_SAFE_INTEGER);
+
+    return [...map.values()]
+      .map((entry) => {
+        const first = entry.items[0];
+        const v = firstAvailable(first);
+        const raw = v?.images?.[0]?.url || first?.images?.[0]?.url || entry.sub?.image?.url;
+        const img = raw ? imgUrl(raw, 160) : productImage(first, v);
+        return {
+          ...entry,
+          img,
+        };
+      })
+      .sort((a, b) => {
+        const rankA = rank(a.slug);
+        const rankB = rank(b.slug);
+        if (rankA !== rankB && rankA !== Number.MAX_SAFE_INTEGER && rankB !== Number.MAX_SAFE_INTEGER) {
+          return rankA - rankB;
+        }
+        return b.count - a.count; // largest subcategory collections first
+      });
+  }, [products, bySlug, order]);
+
+  // 2. EXTRACT TOP-LEVEL CATEGORIES (Bags, Accessories, Clothing, Perfumes, etc.)
+  const categoryGroups = useMemo(() => {
     const cats = new Map();
     for (const p of products) {
       const catSlug = p.category?.slug || '_other';
-      const subSlug = p.subcategory?.slug || '_none';
       if (!cats.has(catSlug)) {
         cats.set(catSlug, {
           slug: catSlug,
-          cat: bySlug.get(catSlug) || p.category,
-          subs: new Map(),
+          cat: bySlug?.get(catSlug) || p.category || { name: catSlug, slug: catSlug },
+          items: [],
           count: 0,
         });
       }
       const g = cats.get(catSlug);
-      if (!g.subs.has(subSlug)) {
-        g.subs.set(subSlug, {
-          slug: subSlug,
-          sub: bySlug.get(subSlug) || p.subcategory,
-          items: [],
-        });
-      }
-      g.subs.get(subSlug).items.push(p);
+      g.items.push(p);
       g.count += 1;
     }
-    const rank = (slug) => (order.has(slug) ? order.get(slug) : Number.MAX_SAFE_INTEGER);
+    const rank = (slug) => (order?.has(slug) ? order.get(slug) : Number.MAX_SAFE_INTEGER);
     return [...cats.values()]
       .sort((a, b) => rank(a.slug) - rank(b.slug))
-      .map((g) => ({
-        ...g,
-        subs: [...g.subs.values()].sort((a, b) => (a.slug === '_none') - (b.slug === '_none') || rank(a.slug) - rank(b.slug)),
-        allItems: [...g.subs.values()].flatMap((s) => s.items),
-      }));
+      .map((g) => {
+        const first = g.items[0];
+        const v = firstAvailable(first);
+        const raw = v?.images?.[0]?.url || first?.images?.[0]?.url || g.cat?.image?.url;
+        return {
+          ...g,
+          name: titleFor(g.cat),
+          img: raw ? imgUrl(raw, 160) : productImage(first, v),
+          tone: categoryTone(g.cat || { name: g.name }),
+        };
+      });
   }, [products, bySlug, order]);
 
   const totalCount = products.length;
 
-  // Selected Category State: 'all' or specific category slug
-  const [activeCatSlug, setActiveCatSlug] = useState('all');
+  // Viewing mode: Subcategories vs Main Categories (Defaults to Subcategories whenever subcategories are available!)
+  const [panelMode, setPanelMode] = useState('subcategories'); // 'subcategories' | 'categories'
   const [activeSubSlug, setActiveSubSlug] = useState('all');
+  const [activeCatSlug, setActiveCatSlug] = useState('all');
   const [viewMode, setViewMode] = useState('slider'); // 'slider' | 'grid'
 
-  // When user clicks a category from side or bubbles: that category comes directly in front!
-  const handleSelectCategory = (slug) => {
-    setActiveCatSlug(slug);
-    setActiveSubSlug('all');
+  // When user clicks a subcategory from side, circles or mobile pills: that subcategory comes directly in front!
+  const handleSelectSubcategory = (slug) => {
+    setActiveSubSlug(slug);
     if (showcaseRef.current) {
       showcaseRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   };
 
-  const currentGroup = useMemo(() => {
-    if (activeCatSlug === 'all') return null;
-    return groups.find((g) => g.slug === activeCatSlug) || groups[0] || null;
-  }, [groups, activeCatSlug]);
+  const handleSelectCategory = (slug) => {
+    setActiveCatSlug(slug);
+    if (showcaseRef.current) {
+      showcaseRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
 
-  const currentDisplayItems = useMemo(() => {
-    if (!currentGroup) return [];
-    if (activeSubSlug === 'all') return currentGroup.allItems;
-    const sub = currentGroup.subs.find((s) => s.slug === activeSubSlug);
-    return sub ? sub.items : currentGroup.allItems;
-  }, [currentGroup, activeSubSlug]);
+  // The active Subcategory in front
+  const currentSubGroup = useMemo(() => {
+    if (activeSubSlug === 'all') return null;
+    return subcategoryGroups.find((s) => s.slug === activeSubSlug) || null;
+  }, [subcategoryGroups, activeSubSlug]);
+
+  // The active Category in front (if category mode)
+  const currentCatGroup = useMemo(() => {
+    if (activeCatSlug === 'all') return null;
+    return categoryGroups.find((c) => c.slug === activeCatSlug) || null;
+  }, [categoryGroups, activeCatSlug]);
 
   const grid = comfort ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6' : GRID_COLS;
+
+  const isSubcategoryMode = panelMode === 'subcategories' || subcategoryGroups.length > 1;
 
   return (
     <div className={cn('flex flex-col gap-5', className)}>
@@ -271,6 +327,15 @@ export default function GroupedProducts({ products, bySlug, order, comfort, load
         <div className="flex items-center gap-2">
           <span className="text-[12px] uppercase tracking-wider font-bold text-outline">Department:</span>
           <div className="inline-flex p-1 rounded-2xl bg-surface-container-high/70 border border-surface-container-highest">
+            <Link
+              to="/bags"
+              className={cn(
+                'px-3.5 py-1 rounded-xl text-[12px] font-bold flex items-center gap-1.5 transition-all',
+                isBags ? 'bg-secondary text-on-secondary shadow-xs' : 'text-on-surface-variant hover:text-on-surface'
+              )}
+            >
+              <Icon name="shopping_bag" className="text-[16px]" /> Bags
+            </Link>
             <Link
               to="/men"
               className={cn(
@@ -307,57 +372,62 @@ export default function GroupedProducts({ products, bySlug, order, comfort, load
         </div>
       </div>
 
-      {/* ── Top Category Story Circles (Quick jump) ── */}
-      {circles && groups.length > 1 && (
-        <CategoryCircles groups={groups} activeSlug={activeCatSlug} onSelectCategory={handleSelectCategory} />
+      {/* ── Top Story Circles (Quick jump into any Bag Subcategory) ── */}
+      {circles && subcategoryGroups.length > 1 && (
+        <SubcategoryCircles
+          items={subcategoryGroups}
+          activeSlug={activeSubSlug}
+          onSelectSubcategory={handleSelectSubcategory}
+          label={isBags ? 'Bag Subcategories' : isMen ? 'Men’s Bag Subcategories' : isWomen ? 'Women’s Bag Subcategories' : 'Bag Subcategories'}
+        />
       )}
 
-      {/* ── MOBILE: Horizontal Category Bar (< lg) ── */}
+      {/* ── MOBILE: Horizontal Subcategories Bar (< lg) ── */}
       <div className="lg:hidden flex flex-col gap-2">
         <div className="flex items-center justify-between px-1">
           <span className="text-[12px] font-bold uppercase tracking-wider text-outline flex items-center gap-1.5">
-            <Icon name="category" className="text-[15px] text-secondary" /> Side Categories
+            <Icon name="shopping_bag" className="text-[15px] text-secondary" /> Bag Subcategories
           </span>
-          {activeCatSlug !== 'all' && (
+          {activeSubSlug !== 'all' && (
             <button
               type="button"
-              onClick={() => handleSelectCategory('all')}
-              className="text-[11.5px] font-bold text-secondary hover:underline"
+              onClick={() => handleSelectSubcategory('all')}
+              className="text-[11.5px] font-bold text-secondary hover:underline cursor-pointer"
             >
-              View All Categories
+              View All Subcategories
             </button>
           )}
         </div>
         <div className="flex gap-2 overflow-x-auto scrollbar-none pb-1 -mx-1 px-1 touch-pan-x">
           <button
             type="button"
-            onClick={() => handleSelectCategory('all')}
+            onClick={() => handleSelectSubcategory('all')}
             className={cn(
-              'px-3.5 py-1.5 rounded-full text-[12px] font-bold shrink-0 transition-all border flex items-center gap-1.5',
-              activeCatSlug === 'all'
+              'px-3.5 py-1.5 rounded-full text-[12px] font-bold shrink-0 transition-all border flex items-center gap-1.5 cursor-pointer',
+              activeSubSlug === 'all'
                 ? 'bg-secondary text-on-secondary border-secondary shadow-xs'
                 : 'bg-surface-container-low border-surface-container-high text-on-surface'
             )}
           >
-            <Icon name="grid_view" className="text-[14px]" /> All ({totalCount})
+            <Icon name="grid_view" className="text-[14px]" /> All Subcategories ({totalCount})
           </button>
-          {groups.map((g) => {
-            const isActive = activeCatSlug === g.slug;
+          {subcategoryGroups.map((s) => {
+            const isActive = activeSubSlug === s.slug;
             return (
               <button
-                key={g.slug}
+                key={s.slug}
                 type="button"
-                onClick={() => handleSelectCategory(g.slug)}
+                onClick={() => handleSelectSubcategory(s.slug)}
                 className={cn(
-                  'px-3.5 py-1.5 rounded-full text-[12px] font-bold shrink-0 transition-all border flex items-center gap-1.5 whitespace-nowrap',
+                  'px-3.5 py-1.5 rounded-full text-[12px] font-bold shrink-0 transition-all border flex items-center gap-1.5 whitespace-nowrap cursor-pointer',
                   isActive
                     ? 'bg-secondary text-on-secondary border-secondary shadow-xs scale-102'
                     : 'bg-surface-container-low border-surface-container-high text-on-surface'
                 )}
               >
-                <span>{titleFor(g.cat)}</span>
+                <span>{s.name}</span>
                 <span className={cn('text-[10px] px-1.5 py-0.2 rounded-full', isActive ? 'bg-white/20 text-white' : 'bg-surface-container-high text-outline')}>
-                  {g.count}
+                  {s.count}
                 </span>
               </button>
             );
@@ -365,20 +435,20 @@ export default function GroupedProducts({ products, bySlug, order, comfort, load
         </div>
       </div>
 
-      {/* ── DESKTOP: 2-COLUMN LAYOUT (SIDE CATEGORIES + SLIDING BAR SHOWCASE) ── */}
+      {/* ── DESKTOP: 2-COLUMN LAYOUT (SIDE SUBCATEGORIES + SLIDING BAR SHOWCASE) ── */}
       <div className="flex flex-col lg:flex-row gap-6 items-start">
-        {/* ── Left Side Categories Option Panel ── */}
+        {/* ── Left Side Subcategories Option Panel ── */}
         <aside className="hidden lg:flex w-64 xl:w-72 shrink-0 flex-col gap-3 sticky top-28 self-start">
           <div className="card p-3.5 sm:p-4 rounded-3xl border border-surface-container-high bg-surface-container-lowest shadow-sm flex flex-col gap-3">
             {/* Header */}
             <div className="flex items-center justify-between pb-2 border-b border-surface-container-high">
               <div className="flex items-center gap-2">
                 <span className="w-8 h-8 rounded-xl bg-secondary/10 text-secondary flex items-center justify-center">
-                  <Icon name="category" className="text-[18px]" />
+                  <Icon name="shopping_bag" className="text-[18px]" />
                 </span>
                 <div>
-                  <h3 className="text-[13px] font-bold uppercase tracking-wider text-on-surface">Categories</h3>
-                  <p className="text-[11px] text-outline">{groups.length} collections</p>
+                  <h3 className="text-[13px] font-bold uppercase tracking-wider text-on-surface">Subcategories</h3>
+                  <p className="text-[11px] text-outline">{subcategoryGroups.length} bag types</p>
                 </div>
               </div>
               <span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface-variant font-bold">
@@ -386,13 +456,45 @@ export default function GroupedProducts({ products, bySlug, order, comfort, load
               </span>
             </div>
 
-            {/* "All Categories" option */}
+            {/* If there are multiple top-level categories, provide tab toggle */}
+            {categoryGroups.length > 1 && !isBags && (
+              <div className="grid grid-cols-2 p-1 rounded-xl bg-surface-container-low border border-surface-container-high text-[11.5px] font-bold">
+                <button
+                  type="button"
+                  onClick={() => setPanelMode('subcategories')}
+                  className={cn(
+                    'py-1 rounded-lg text-center transition-all cursor-pointer',
+                    panelMode === 'subcategories' ? 'bg-surface text-secondary shadow-xs' : 'text-outline hover:text-on-surface'
+                  )}
+                >
+                  Bag Types
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPanelMode('categories')}
+                  className={cn(
+                    'py-1 rounded-lg text-center transition-all cursor-pointer',
+                    panelMode === 'categories' ? 'bg-surface text-secondary shadow-xs' : 'text-outline hover:text-on-surface'
+                  )}
+                >
+                  Categories
+                </button>
+              </div>
+            )}
+
+            {/* "All Bag Subcategories" option */}
             <button
               type="button"
-              onClick={() => handleSelectCategory('all')}
+              onClick={() => {
+                if (panelMode === 'subcategories') {
+                  handleSelectSubcategory('all');
+                } else {
+                  handleSelectCategory('all');
+                }
+              }}
               className={cn(
-                'w-full flex items-center gap-3 p-2.5 rounded-2xl text-left transition-all text-[13px]',
-                activeCatSlug === 'all'
+                'w-full flex items-center gap-3 p-2.5 rounded-2xl text-left transition-all text-[13px] cursor-pointer',
+                (panelMode === 'subcategories' ? activeSubSlug === 'all' : activeCatSlug === 'all')
                   ? 'bg-secondary text-on-secondary font-bold shadow-sm'
                   : 'hover:bg-surface-container-low text-on-surface font-medium'
               )}
@@ -400,95 +502,146 @@ export default function GroupedProducts({ products, bySlug, order, comfort, load
               <span
                 className={cn(
                   'w-9 h-9 rounded-xl flex items-center justify-center text-[18px] shrink-0',
-                  activeCatSlug === 'all' ? 'bg-white/20 text-white' : 'bg-surface-container-high text-secondary'
+                  (panelMode === 'subcategories' ? activeSubSlug === 'all' : activeCatSlug === 'all')
+                    ? 'bg-white/20 text-white'
+                    : 'bg-surface-container-high text-secondary'
                 )}
               >
                 <Icon name="grid_view" />
               </span>
-              <span className="flex-1 truncate">All Categories</span>
+              <span className="flex-1 truncate">
+                {panelMode === 'subcategories' ? 'All Bag Subcategories' : 'All Categories'}
+              </span>
               <span
                 className={cn(
                   'text-[11px] font-mono px-1.5 py-0.5 rounded-md',
-                  activeCatSlug === 'all' ? 'bg-white/25 text-white' : 'bg-surface-container-high text-outline'
+                  (panelMode === 'subcategories' ? activeSubSlug === 'all' : activeCatSlug === 'all')
+                    ? 'bg-white/25 text-white'
+                    : 'bg-surface-container-high text-outline'
                 )}
               >
                 {totalCount}
               </span>
             </button>
 
-            {/* Individual Category options */}
+            {/* Individual Subcategory options (Backpacks, Handbags, Tote Bags, Laptop Bags, Office Bags, Sling Bags, Duffle Bags, Travel Bags, Clutches, etc.) */}
             <div className="flex flex-col gap-1.5 max-h-[calc(100vh-320px)] overflow-y-auto scrollbar-none pr-0.5">
-              {groups.map((g) => {
-                const isActive = activeCatSlug === g.slug;
-                const first = g.allItems[0];
-                const v = firstAvailable(first);
-                const raw = v?.images?.[0]?.url || first?.images?.[0]?.url || g.cat?.image?.url;
-                const img = raw ? imgUrl(raw, 100) : productImage(first, v);
-
-                return (
-                  <button
-                    key={g.slug}
-                    type="button"
-                    onClick={() => handleSelectCategory(g.slug)}
-                    className={cn(
-                      'w-full flex items-center gap-3 p-2 rounded-2xl text-left transition-all text-[12.5px] group relative',
-                      isActive
-                        ? 'bg-secondary/15 text-secondary border border-secondary/40 font-bold ring-1 ring-secondary/30 shadow-2xs'
-                        : 'hover:bg-surface-container-low text-on-surface font-medium border border-transparent'
-                    )}
-                  >
-                    <span
+              {panelMode === 'subcategories' ? (
+                subcategoryGroups.map((s) => {
+                  const isActive = activeSubSlug === s.slug;
+                  return (
+                    <button
+                      key={s.slug}
+                      type="button"
+                      onClick={() => handleSelectSubcategory(s.slug)}
                       className={cn(
-                        'w-9 h-9 rounded-xl overflow-hidden shrink-0 ring-1 ring-outline-variant/30 bg-surface-container-low flex items-center justify-center',
-                        isActive ? 'ring-2 ring-secondary shadow-xs scale-105' : 'group-hover:scale-105 transition-transform'
+                        'w-full flex items-center gap-3 p-2 rounded-2xl text-left transition-all text-[12.5px] group relative cursor-pointer',
+                        isActive
+                          ? 'bg-secondary/15 text-secondary border border-secondary/40 font-bold ring-1 ring-secondary/30 shadow-2xs'
+                          : 'hover:bg-surface-container-low text-on-surface font-medium border border-transparent'
                       )}
                     >
-                      {img ? (
-                        <img src={img} alt="" className="w-full h-full object-cover" />
-                      ) : (
-                        <Icon name="category" className="text-[18px] text-outline" />
-                      )}
-                    </span>
+                      <span
+                        className={cn(
+                          'w-9 h-9 rounded-xl overflow-hidden shrink-0 ring-1 ring-outline-variant/30 bg-surface-container-low flex items-center justify-center',
+                          isActive ? 'ring-2 ring-secondary shadow-xs scale-105' : 'group-hover:scale-105 transition-transform'
+                        )}
+                      >
+                        {s.img ? (
+                          <img src={s.img} alt="" className="w-full h-full object-cover" />
+                        ) : (
+                          <Icon name="shopping_bag" className="text-[18px] text-outline" />
+                        )}
+                      </span>
 
-                    <span className="flex-1 truncate leading-tight">{titleFor(g.cat)}</span>
+                      <span className="flex-1 truncate leading-tight">{s.name}</span>
 
-                    <span
+                      <span
+                        className={cn(
+                          'text-[10.5px] font-mono px-1.5 py-0.5 rounded-full shrink-0',
+                          isActive ? 'bg-secondary text-on-secondary font-black' : 'bg-surface-container-high text-outline'
+                        )}
+                      >
+                        {s.count}
+                      </span>
+
+                      {isActive && <span className="w-1.5 h-1.5 rounded-full bg-secondary shrink-0 animate-ping" />}
+                    </button>
+                  );
+                })
+              ) : (
+                categoryGroups.map((g) => {
+                  const isActive = activeCatSlug === g.slug;
+                  return (
+                    <button
+                      key={g.slug}
+                      type="button"
+                      onClick={() => handleSelectCategory(g.slug)}
                       className={cn(
-                        'text-[10.5px] font-mono px-1.5 py-0.5 rounded-full shrink-0',
-                        isActive ? 'bg-secondary text-on-secondary font-black' : 'bg-surface-container-high text-outline'
+                        'w-full flex items-center gap-3 p-2 rounded-2xl text-left transition-all text-[12.5px] group relative cursor-pointer',
+                        isActive
+                          ? 'bg-secondary/15 text-secondary border border-secondary/40 font-bold ring-1 ring-secondary/30 shadow-2xs'
+                          : 'hover:bg-surface-container-low text-on-surface font-medium border border-transparent'
                       )}
                     >
-                      {g.count}
-                    </span>
+                      <span
+                        className={cn(
+                          'w-9 h-9 rounded-xl overflow-hidden shrink-0 ring-1 ring-outline-variant/30 bg-surface-container-low flex items-center justify-center',
+                          isActive ? 'ring-2 ring-secondary shadow-xs scale-105' : 'group-hover:scale-105 transition-transform'
+                        )}
+                      >
+                        {g.img ? (
+                          <img src={g.img} alt="" className="w-full h-full object-cover" />
+                        ) : (
+                          <Icon name="category" className="text-[18px] text-outline" />
+                        )}
+                      </span>
 
-                    {isActive && <span className="w-1.5 h-1.5 rounded-full bg-secondary shrink-0 animate-ping" />}
-                  </button>
-                );
-              })}
+                      <span className="flex-1 truncate leading-tight">{g.name}</span>
+
+                      <span
+                        className={cn(
+                          'text-[10.5px] font-mono px-1.5 py-0.5 rounded-full shrink-0',
+                          isActive ? 'bg-secondary text-on-secondary font-black' : 'bg-surface-container-high text-outline'
+                        )}
+                      >
+                        {g.count}
+                      </span>
+
+                      {isActive && <span className="w-1.5 h-1.5 rounded-full bg-secondary shrink-0 animate-ping" />}
+                    </button>
+                  );
+                })
+              )}
             </div>
           </div>
         </aside>
 
-        {/* ── Right Main Area: The Category in Front with Sliding Bar ── */}
+        {/* ── Right Main Area: The Selected Subcategory in Front with Sliding Bar ── */}
         <main ref={showcaseRef} className="flex-1 min-w-0 flex flex-col gap-8 scroll-mt-28">
-          {/* CASE A: User clicked a particular category -> that category comes directly in front! */}
-          {currentGroup ? (
+          {/* CASE A: User clicked a particular SUBCATEGORY (e.g. Backpacks, Handbags, Tote Bags...) -> that subcategory comes directly in front! */}
+          {currentSubGroup ? (
             <section className="flex flex-col gap-4">
-              {/* Category Spotlight Header */}
+              {/* Subcategory Spotlight Header */}
               <div className="p-4 sm:p-5 rounded-3xl bg-gradient-to-r from-secondary/10 via-surface-container-low to-surface-container-lowest border border-secondary/25 shadow-xs flex flex-col gap-3">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className="flex items-center gap-3">
-                    <span aria-hidden="true" className={cn('w-2 h-8 rounded-full', categoryTone(currentGroup.cat).solid)} />
+                    <span aria-hidden="true" className={cn('w-2 h-8 rounded-full', currentSubGroup.tone?.solid || 'bg-secondary')} />
                     <div>
-                      <span className="text-[11px] font-bold uppercase tracking-widest text-secondary">
-                        {isMen ? 'Men’s Collection' : isWomen ? 'Women’s Collection' : 'Featured Collection'}
+                      <span className="text-[11px] font-bold uppercase tracking-widest text-secondary flex items-center gap-1.5">
+                        <Icon name="shopping_bag" className="text-[14px]" /> Bag Subcategory
                       </span>
                       <h2 className="font-display text-[22px] md:text-[28px] leading-tight text-on-surface">
-                        {titleFor(currentGroup.cat)}
+                        {currentSubGroup.name}
                       </h2>
+                      {currentSubGroup.tagline && (
+                        <p className="text-[12.5px] text-outline mt-0.5 max-w-xl">
+                          {currentSubGroup.tagline}
+                        </p>
+                      )}
                     </div>
                     <span className="text-[12px] font-mono px-2.5 py-1 rounded-full bg-secondary/15 text-secondary font-bold ml-1">
-                      {currentDisplayItems.length} items
+                      {currentSubGroup.items.length} items
                     </span>
                   </div>
 
@@ -496,7 +649,7 @@ export default function GroupedProducts({ products, bySlug, order, comfort, load
                     <button
                       type="button"
                       onClick={() => setViewMode(viewMode === 'slider' ? 'grid' : 'slider')}
-                      className="btn-tonal h-9 px-3 text-[12px] font-bold gap-1.5"
+                      className="btn-tonal h-9 px-3 text-[12px] font-bold gap-1.5 cursor-pointer"
                       title={viewMode === 'slider' ? 'Switch to Grid View' : 'Switch to Sliding Bar'}
                     >
                       <Icon name={viewMode === 'slider' ? 'grid_view' : 'view_carousel'} className="text-[17px]" />
@@ -505,91 +658,104 @@ export default function GroupedProducts({ products, bySlug, order, comfort, load
 
                     <button
                       type="button"
+                      onClick={() => handleSelectSubcategory('all')}
+                      className="btn-ghost h-9 px-2.5 text-[12px] text-secondary font-bold hover:underline cursor-pointer"
+                    >
+                      All Subcategories
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* The Sliding Bar (whatever items fit on screen come, clicking sliding buttons reveals more) */}
+              {viewMode === 'slider' ? (
+                <ProductSlidingBar items={currentSubGroup.items} comfort={comfort} priority={true} />
+              ) : (
+                <div className={grid}>
+                  {currentSubGroup.items.map((p, i) => (
+                    <ProductCard key={p._id} product={p} priority={i < 6} />
+                  ))}
+                </div>
+              )}
+            </section>
+          ) : currentCatGroup ? (
+            /* CASE B: User clicked a particular top-level Category */
+            <section className="flex flex-col gap-4">
+              <div className="p-4 sm:p-5 rounded-3xl bg-gradient-to-r from-secondary/10 via-surface-container-low to-surface-container-lowest border border-secondary/25 shadow-xs flex flex-col gap-3">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <span aria-hidden="true" className={cn('w-2 h-8 rounded-full', currentCatGroup.tone?.solid || 'bg-secondary')} />
+                    <div>
+                      <span className="text-[11px] font-bold uppercase tracking-widest text-secondary">
+                        Collection Showcase
+                      </span>
+                      <h2 className="font-display text-[22px] md:text-[28px] leading-tight text-on-surface">
+                        {currentCatGroup.name}
+                      </h2>
+                    </div>
+                    <span className="text-[12px] font-mono px-2.5 py-1 rounded-full bg-secondary/15 text-secondary font-bold ml-1">
+                      {currentCatGroup.items.length} items
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setViewMode(viewMode === 'slider' ? 'grid' : 'slider')}
+                      className="btn-tonal h-9 px-3 text-[12px] font-bold gap-1.5 cursor-pointer"
+                    >
+                      <Icon name={viewMode === 'slider' ? 'grid_view' : 'view_carousel'} className="text-[17px]" />
+                      {viewMode === 'slider' ? 'View as Grid' : 'View as Sliding Bar'}
+                    </button>
+
+                    <button
+                      type="button"
                       onClick={() => handleSelectCategory('all')}
-                      className="btn-ghost h-9 px-2.5 text-[12px] text-secondary font-bold hover:underline"
+                      className="btn-ghost h-9 px-2.5 text-[12px] text-secondary font-bold hover:underline cursor-pointer"
                     >
                       All Categories
                     </button>
                   </div>
                 </div>
-
-                {/* Subcategories filter chips */}
-                {currentGroup.subs.length > 1 && (
-                  <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-surface-container-high/60">
-                    <span className="text-[11.5px] font-bold text-outline uppercase tracking-wider mr-1">Types:</span>
-                    <button
-                      type="button"
-                      onClick={() => setActiveSubSlug('all')}
-                      className={cn(
-                        'h-7 px-3 rounded-full text-[11.5px] font-bold transition-all border',
-                        activeSubSlug === 'all'
-                          ? 'bg-secondary text-on-secondary border-secondary shadow-xs'
-                          : 'bg-surface-container-lowest border-surface-container-high text-on-surface hover:bg-surface-container-low'
-                      )}
-                    >
-                      All {currentGroup.cat?.name || ''} ({currentGroup.allItems.length})
-                    </button>
-                    {currentGroup.subs.map((s) => {
-                      const subName = s.slug === '_none' ? 'General' : s.sub?.name || s.slug;
-                      const isSubActive = activeSubSlug === s.slug;
-                      return (
-                        <button
-                          key={s.slug}
-                          type="button"
-                          onClick={() => setActiveSubSlug(s.slug)}
-                          className={cn(
-                            'h-7 px-3 rounded-full text-[11.5px] font-bold transition-all border',
-                            isSubActive
-                              ? 'bg-secondary text-on-secondary border-secondary shadow-xs'
-                              : 'bg-surface-container-lowest border-surface-container-high text-on-surface hover:bg-surface-container-low'
-                          )}
-                        >
-                          {subName} ({s.items.length})
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
               </div>
 
-              {/* The Sliding Bar (whatever items fit on screen come, clicking sliding buttons reveals more) */}
               {viewMode === 'slider' ? (
-                <ProductSlidingBar items={currentDisplayItems} comfort={comfort} priority={true} />
+                <ProductSlidingBar items={currentCatGroup.items} comfort={comfort} priority={true} />
               ) : (
                 <div className={grid}>
-                  {currentDisplayItems.map((p, i) => (
+                  {currentCatGroup.items.map((p, i) => (
                     <ProductCard key={p._id} product={p} priority={i < 6} />
                   ))}
                 </div>
               )}
             </section>
           ) : (
-            /* CASE B: "All Categories" active -> every category has its own Sliding Bar with sliding buttons */
+            /* CASE C: "All Subcategories" active -> every subcategory (Backpacks, Totes, Laptop Bags...) has its own Sliding Bar with sliding buttons */
             <div className="flex flex-col gap-10">
-              {groups.map((g, gi) => (
-                <section key={g.slug} id={`cat-${g.slug}`} className="flex flex-col gap-3 scroll-mt-32">
+              {subcategoryGroups.map((s, si) => (
+                <section key={s.slug} id={`sub-${s.slug}`} className="flex flex-col gap-3 scroll-mt-32">
                   <div className="flex items-center justify-between gap-3 pb-1 border-b border-surface-container-high">
                     <div className="flex items-center gap-2.5">
-                      <span aria-hidden="true" className={cn('w-1.5 h-6 rounded-full', categoryTone(g.cat).solid)} />
+                      <span aria-hidden="true" className={cn('w-1.5 h-6 rounded-full', s.tone?.solid || 'bg-secondary')} />
                       <h2 className="font-display text-[20px] md:text-[24px] leading-tight text-on-surface">
-                        {titleFor(g.cat)}
+                        {s.name}
                       </h2>
                       <span className="text-[12px] font-mono px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface-variant font-bold">
-                        {g.count}
+                        {s.count}
                       </span>
                     </div>
 
                     <button
                       type="button"
-                      onClick={() => handleSelectCategory(g.slug)}
-                      className="text-[12px] font-bold text-secondary hover:underline inline-flex items-center gap-1 group/btn"
+                      onClick={() => handleSelectSubcategory(s.slug)}
+                      className="text-[12px] font-bold text-secondary hover:underline inline-flex items-center gap-1 group/btn cursor-pointer"
                     >
-                      Focus on {titleFor(g.cat)} <Icon name="arrow_forward" className="text-[14px] group-hover/btn:translate-x-0.5 transition-transform" />
+                      Focus on {s.name} <Icon name="arrow_forward" className="text-[14px] group-hover/btn:translate-x-0.5 transition-transform" />
                     </button>
                   </div>
 
-                  {/* Each category gets its sliding bar with prev/next sliding buttons */}
-                  <ProductSlidingBar items={g.allItems} comfort={comfort} priority={gi === 0} />
+                  {/* Each subcategory gets its sliding bar with prev/next sliding buttons */}
+                  <ProductSlidingBar items={s.items} comfort={comfort} priority={si === 0} />
                 </section>
               ))}
             </div>
