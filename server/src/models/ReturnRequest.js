@@ -118,6 +118,7 @@ const returnRequestSchema = new mongoose.Schema(
       processedAt: Date,
     },
     adminNotes: { type: String, default: '' },
+    adminMessage: { type: String, default: '' },
     requestedAt: { type: Date, default: Date.now },
     resolvedAt: Date,
   },

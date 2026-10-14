@@ -19,23 +19,101 @@ const STATUS_TABS = [
   { id: 'Cancelled', label: 'Cancelled by customer' },
 ];
 
-/** The one decision a new request needs. Until it's made the customer sees "in process". */
+/** The decision a request needs. Admin can say YES (Confirm) or NO (Reject) with a custom message. */
 function DecisionBar({ request: r, busy, onDecide }) {
-  const [note, setNote] = useState('');
-  if (r.status !== 'Requested') return null;
+  const [adminMessage, setAdminMessage] = useState(r.adminMessage || '');
+
+  if (r.status !== 'Requested') {
+    return (
+      <div
+        className={cn(
+          'p-4 rounded-2xl border flex flex-col gap-2.5',
+          ['Approved', 'Pickup Scheduled', 'In Inspection', 'Completed'].includes(r.status)
+            ? 'border-emerald-500/40 bg-emerald-500/5'
+            : 'border-rose-500/40 bg-rose-500/5'
+        )}
+      >
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <div className="flex items-center gap-2">
+            <Icon
+              name={r.status === 'Rejected' ? 'cancel' : 'check_circle'}
+              className={cn('text-[20px]', r.status === 'Rejected' ? 'text-rose-600' : 'text-emerald-600')}
+            />
+            <h4 className="text-label-lg font-bold">
+              {r.status === 'Rejected' ? 'Return Rejected by Admin' : 'Return Confirmed / Approved'}
+            </h4>
+          </div>
+          <span className="text-[11.5px] font-mono px-2 py-0.5 rounded bg-surface-container text-outline">
+            Customer-visible status
+          </span>
+        </div>
+        {r.adminMessage ? (
+          <div className="p-3 rounded-xl bg-surface-container-low border border-outline-variant/40 text-[13px]">
+            <span className="font-bold text-outline text-[11px] block uppercase tracking-wider mb-1 flex items-center gap-1">
+              <Icon name="chat" className="text-[14px] text-secondary" /> Admin Message to Customer:
+            </span>
+            <p className="text-on-surface font-semibold italic">"{r.adminMessage}"</p>
+          </div>
+        ) : (
+          <p className="text-[12px] text-outline italic">No custom message sent to customer.</p>
+        )}
+      </div>
+    );
+  }
+
   return (
-    <div className="p-4 rounded-xl border-2 border-secondary/40 bg-secondary/5 flex flex-col gap-3">
+    <div className="p-4 sm:p-5 rounded-2xl border-2 border-secondary/40 bg-secondary/5 flex flex-col gap-3 shadow-xs">
       <div>
-        <h4 className="text-label-lg font-bold flex items-center gap-1.5"><Icon name="gavel" className="text-[20px] text-secondary" /> Approve or reject this {r.type}?</h4>
-        <p className="text-body-sm text-on-surface-variant">
-          The customer sees <b>“{r.type === 'exchange' ? 'Exchange' : 'Return'} in process”</b> until you decide. Approving {r.type === 'return' ? 'asks them how they want their money back (UPI, bank, original payment or wallet) and ' : ''}lets you book the pickup.
-          Rejecting shows <b>“This item cannot be returned or exchanged”</b>. They get an email either way.
+        <h4 className="text-label-lg font-bold flex items-center gap-2 text-on-surface">
+          <span className="w-8 h-8 rounded-xl bg-secondary/15 text-secondary flex items-center justify-center">
+            <Icon name="gavel" className="text-[19px]" />
+          </span>
+          Admin Decision: Confirm (YES) or Reject (NO) this {r.type}?
+        </h4>
+        <p className="text-body-sm text-on-surface-variant mt-1 leading-relaxed">
+          The customer currently sees <b>“Return is in progress”</b>. Once you confirm, the customer will see <b>“Return Confirmed”</b> along with whatever message you enter below (e.g. <i>"Return this item when it reaches to you"</i>, or empty message). If rejected, the customer sees <b>“Return Rejected”</b>.
         </p>
       </div>
-      <input className="input h-10" value={note} onChange={(e) => setNote(e.target.value)} placeholder="Note for the customer (optional) — e.g. reason for rejecting" maxLength={300} />
-      <div className="flex flex-wrap gap-2">
-        <button type="button" disabled={busy} onClick={() => onDecide('Approved', note)} className="btn-primary h-10 px-5 gap-1.5"><Icon name="check_circle" className="text-[18px]" /> Approve</button>
-        <button type="button" disabled={busy} onClick={() => window.confirm('Reject this request? The customer will see that the item cannot be returned or exchanged.') && onDecide('Rejected', note)} className="btn-tonal h-10 px-5 gap-1.5 text-error"><Icon name="block" className="text-[18px]" /> Reject</button>
+
+      <div className="flex flex-col gap-1.5">
+        <label className="text-[12px] font-bold text-on-surface flex items-center justify-between">
+          <span>Message to Customer:</span>
+          <span className="text-[11px] font-normal text-outline">Displayed in customer's order return history</span>
+        </label>
+        <textarea
+          className="input w-full py-2 px-3 text-[13px] rounded-xl"
+          rows={2}
+          value={adminMessage}
+          onChange={(e) => setAdminMessage(e.target.value)}
+          placeholder="e.g. Return this item when it reaches to you / Keep tags intact for pickup..."
+          maxLength={500}
+        />
+      </div>
+
+      <div className="flex flex-wrap items-center gap-3 pt-1">
+        <button
+          type="button"
+          disabled={busy}
+          onClick={() => onDecide('Approved', adminMessage)}
+          className="btn-primary h-10 px-5 gap-2 font-bold shadow-sm"
+        >
+          <Icon name="check_circle" className="text-[18px]" />
+          Confirm Return (Say YES)
+        </button>
+
+        <button
+          type="button"
+          disabled={busy}
+          onClick={() => {
+            if (window.confirm('Reject this return request? The customer will see that the return has been rejected.')) {
+              onDecide('Rejected', adminMessage);
+            }
+          }}
+          className="btn-tonal h-10 px-5 gap-2 text-error font-bold border border-error/30 hover:bg-error/10"
+        >
+          <Icon name="block" className="text-[18px]" />
+          Reject Return (Say NO)
+        </button>
       </div>
     </div>
   );
@@ -137,14 +215,20 @@ export default function Returns() {
     setStatusUpdate({
       status: req.status,
       note: '',
+      adminMessage: req.adminMessage || '',
       adminNotes: req.adminNotes || '',
     });
   };
 
-  const decide = (status, note) => {
+  const decide = (status, adminMsg) => {
     updateMutation.mutate({
       id: selectedRequest._id,
-      body: { status, note: note?.trim() || (status === 'Approved' ? 'Request approved' : 'Request not approved — this item cannot be returned or exchanged'), adminNotes: statusUpdate.adminNotes },
+      body: {
+        status,
+        note: adminMsg?.trim() || (status === 'Approved' ? 'Return Confirmed by Admin' : 'Return Request Rejected by Admin'),
+        adminMessage: adminMsg?.trim() || '',
+        adminNotes: statusUpdate.adminNotes,
+      },
     });
   };
 
@@ -156,6 +240,7 @@ export default function Returns() {
       body: {
         status: statusUpdate.status,
         note: statusUpdate.note || `Status marked as ${statusUpdate.status} by Admin`,
+        adminMessage: statusUpdate.adminMessage !== undefined ? statusUpdate.adminMessage : (selectedRequest.adminMessage || ''),
         adminNotes: statusUpdate.adminNotes,
       },
     });
@@ -514,6 +599,19 @@ export default function Returns() {
                     onChange={(e) => setStatusUpdate((prev) => ({ ...prev, note: e.target.value }))}
                   />
                 </div>
+              </div>
+
+              <div>
+                <label className="text-label-sm text-outline block mb-1">
+                  Message to Customer (displayed in customer's order return section)
+                </label>
+                <input
+                  type="text"
+                  className="input h-10 w-full"
+                  placeholder="e.g. Return this item when it reaches to you / Keep dust bag ready"
+                  value={statusUpdate.adminMessage || ''}
+                  onChange={(e) => setStatusUpdate((prev) => ({ ...prev, adminMessage: e.target.value }))}
+                />
               </div>
 
               <div>

@@ -60,11 +60,34 @@ function itemState(elig, request, order) {
   const what = request?.type === 'exchange' ? 'Exchange' : 'Return';
   switch (request?.status) {
     case 'Requested':
-      return { tone: 'info', icon: 'hourglass_top', title: `${what} in process`, text: 'Waiting for approval from our team. We usually reply within 1–2 working days.' };
+      return {
+        tone: 'info',
+        icon: 'hourglass_top',
+        title: `${what} is in progress`,
+        text: 'Your return request has been submitted to the admin team and is in progress. Waiting for confirmation.',
+      };
     case 'Approved':
-      return { tone: 'good', icon: 'task_alt', title: `${what} approved`, text: request.needsRefundDetails ? 'Tell us how you want your money back so we can send the refund.' : 'We’ll book a doorstep pickup and update you here.' };
+      return {
+        tone: 'good',
+        icon: 'task_alt',
+        title: `${what} Confirmed`,
+        text: request?.adminMessage
+          ? `Message from WILDTANE team: “${request.adminMessage}”`
+          : request.needsRefundDetails
+          ? 'Return confirmed! Tell us how you want your money back so we can send the refund.'
+          : 'Return confirmed! We will arrange a doorstep courier pickup and keep you updated here.',
+        adminMessage: request?.adminMessage,
+      };
     case 'Pickup Scheduled':
-      return { tone: 'good', icon: 'local_shipping', title: 'Pickup booked', text: 'Keep the item packed with its tags for the courier.' };
+      return {
+        tone: 'good',
+        icon: 'local_shipping',
+        title: 'Pickup booked',
+        text: request?.adminMessage
+          ? `Message from WILDTANE team: “${request.adminMessage}”`
+          : 'Keep the item packed with its tags for the courier.',
+        adminMessage: request?.adminMessage,
+      };
     case 'In Inspection':
       return { tone: 'good', icon: 'search_check', title: 'Item received', text: 'We’re checking the item. Your refund or replacement follows.' };
     case 'Completed':
@@ -74,7 +97,15 @@ function itemState(elig, request, order) {
           ? { tone: 'good', icon: 'task_alt', title: 'Refund sent', text: refundSentText(request) }
           : { tone: 'done', icon: 'currency_rupee', title: 'Returned', text: request.refundStatus === 'Failed' ? 'Your refund needs attention — our team will contact you.' : 'We’ve received the item. Your refund is being sent — you’ll see “Refund sent” here with the reference.' };
     case 'Rejected':
-      return { tone: 'bad', icon: 'block', title: 'This item cannot be returned or exchanged', text: 'Our team reviewed the request and could not approve it. Contact us if you have questions.' };
+      return {
+        tone: 'bad',
+        icon: 'block',
+        title: `${what} Rejected`,
+        text: request?.adminMessage
+          ? `Notice from WILDTANE team: “${request.adminMessage}”`
+          : 'Our team reviewed the request and could not approve it. Contact us if you have questions.',
+        adminMessage: request?.adminMessage,
+      };
     default:
       if (order?.orderStatus === 'Cancelled') {
         return { tone: 'bad', icon: 'cancel', title: 'Order cancelled', text: 'This order was cancelled and cannot be returned or exchanged.' };

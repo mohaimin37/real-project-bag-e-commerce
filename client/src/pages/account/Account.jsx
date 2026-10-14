@@ -421,13 +421,42 @@ function OrderList({ items, money, page, pages, onPage }) {
                   </span>
                 )}
 
-                {/* 7-Day Return / Exchange Highlight */}
-                {isDelivered && (
-                  <span className="inline-flex items-center gap-1 text-[10.5px] font-bold text-teal-800 dark:text-teal-200 bg-teal-500/15 border border-teal-500/35 px-2.5 py-0.5 rounded-full">
-                    <Icon name="sync_alt" className="text-[12px] text-teal-600 dark:text-teal-400" /> 7-Day Return / Exchange
+                {/* Return / Exchange Status or 7-Day Window Highlight */}
+                {o.returnExchange ? (
+                  <span className={cn(
+                    'inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full border',
+                    o.returnExchange.status === 'Requested'
+                      ? 'bg-amber-500/15 border-amber-500/35 text-amber-800 dark:text-amber-200'
+                      : ['Approved', 'Pickup Scheduled', 'In Inspection'].includes(o.returnExchange.status)
+                      ? 'bg-emerald-500/15 border-emerald-500/35 text-emerald-800 dark:text-emerald-200'
+                      : o.returnExchange.status === 'Completed'
+                      ? 'bg-teal-500/15 border-teal-500/35 text-teal-800 dark:text-teal-200'
+                      : 'bg-rose-500/15 border-rose-500/35 text-rose-800 dark:text-rose-200'
+                  )}>
+                    <Icon
+                      name={o.returnExchange.status === 'Requested' ? 'hourglass_top' : o.returnExchange.status === 'Rejected' ? 'cancel' : 'check_circle'}
+                      className="text-[13px]"
+                    />
+                    {o.returnExchange.status === 'Requested'
+                      ? 'Return is in progress'
+                      : ['Approved', 'Pickup Scheduled', 'In Inspection'].includes(o.returnExchange.status)
+                      ? 'Return Confirmed'
+                      : o.returnExchange.status === 'Completed'
+                      ? 'Return Completed'
+                      : 'Return Rejected'}
                   </span>
-                )}
+                ) : isDelivered && !isExpired ? (
+                  <span className="inline-flex items-center gap-1 text-[10.5px] font-bold text-teal-800 dark:text-teal-200 bg-teal-500/15 border border-teal-500/35 px-2.5 py-0.5 rounded-full">
+                    <Icon name="sync_alt" className="text-[12px] text-teal-600 dark:text-teal-400" /> 7-Day Return Active
+                  </span>
+                ) : null}
               </div>
+
+              {o.returnExchange?.adminMessage && (
+                <p className="text-[12px] text-secondary font-medium italic line-clamp-1 mb-1">
+                  💬 Team Message: "{o.returnExchange.adminMessage}"
+                </p>
+              )}
 
               <p className="text-body-sm font-semibold text-on-surface line-clamp-1">
                 {o.items.map((i) => i.productName).join(', ')}
@@ -522,6 +551,99 @@ function CancellationCard({ order: o, money }) {
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+/** Return status card with admin message, progress, and confirmation */
+function ReturnCard({ order: o, money }) {
+  const rx = o.returnExchange;
+  if (!rx) return null;
+
+  const isRequested = rx.status === 'Requested';
+  const isApproved = ['Approved', 'Pickup Scheduled', 'In Inspection'].includes(rx.status);
+  const isCompleted = rx.status === 'Completed';
+  const isRejected = rx.status === 'Rejected';
+  const isCancelled = rx.status === 'Cancelled';
+
+  const title = isRequested
+    ? 'Return is in progress'
+    : isApproved
+    ? 'Return Confirmed'
+    : isCompleted
+    ? 'Return Completed'
+    : isRejected
+    ? 'Return Rejected'
+    : 'Return Cancelled';
+
+  const toneClass = isRequested
+    ? 'bg-amber-500/10 border-amber-500/30 text-amber-900 dark:text-amber-200'
+    : isApproved || isCompleted
+    ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-900 dark:text-emerald-200'
+    : 'bg-rose-500/10 border-rose-500/30 text-rose-900 dark:text-rose-200';
+
+  const iconName = isRequested
+    ? 'hourglass_top'
+    : isApproved || isCompleted
+    ? 'check_circle'
+    : 'cancel';
+
+  return (
+    <div className={cn('mt-3 p-4 sm:p-5 rounded-2xl border text-on-surface flex flex-col gap-3 shadow-xs', toneClass)}>
+      <div className="flex items-start gap-3">
+        <span className={cn(
+          'w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-2xs',
+          isRequested
+            ? 'bg-amber-500/20 text-amber-700 dark:text-amber-300'
+            : isApproved || isCompleted
+            ? 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-300'
+            : 'bg-rose-500/20 text-rose-700 dark:text-rose-300'
+        )}>
+          <Icon name={iconName} className="text-[24px]" />
+        </span>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="font-bold text-[15px]">{title}</span>
+            <span className="text-[11px] font-mono font-bold px-2 py-0.5 rounded-full bg-surface-container border border-outline-variant/30 text-on-surface">
+              Req #{rx.requestId}
+            </span>
+          </div>
+
+          <p className="text-on-surface-variant text-[13px] leading-relaxed mt-1">
+            {isRequested && 'Your return request has been submitted to the admin team and is in progress. Awaiting confirmation.'}
+            {isApproved && 'Your return has been confirmed! Doorstep pickup will be scheduled shortly.'}
+            {isCompleted && 'Your return has been inspected and completed. Refund has been initiated.'}
+            {isRejected && 'Our team reviewed your request and could not approve this return.'}
+            {isCancelled && 'This return request was cancelled.'}
+          </p>
+
+          {/* ADMIN MESSAGE TO USER */}
+          {rx.adminMessage ? (
+            <div className="mt-2.5 p-3 rounded-xl bg-surface-container-lowest/90 border border-outline-variant/50 text-[13px] shadow-2xs">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-secondary flex items-center gap-1.5 mb-0.5">
+                <Icon name="chat" className="text-[15px]" /> Message from WILDTANE Team:
+              </span>
+              <p className="text-on-surface font-semibold italic">"{rx.adminMessage}"</p>
+            </div>
+          ) : isApproved ? (
+            <div className="mt-2 p-2.5 rounded-lg bg-surface-container-lowest/70 border border-outline-variant/40 text-[12px] text-outline italic">
+              Return confirmed. Please keep the item packed in original condition with tags ready for the pickup courier.
+            </div>
+          ) : null}
+        </div>
+      </div>
+
+      <div className="pt-2 border-t border-outline-variant/30 flex flex-wrap items-center justify-between gap-2 text-[12px]">
+        <span className="text-outline">
+          Reason: <b className="text-on-surface">{rx.reason}</b>
+        </span>
+        <Link
+          to={`/returns-exchange?order=${o.orderId}&tab=requests`}
+          className="text-secondary font-bold hover:underline inline-flex items-center gap-1"
+        >
+          View Return & Pickup Details <Icon name="arrow_forward" className="text-[14px]" />
+        </Link>
+      </div>
     </div>
   );
 }
@@ -627,13 +749,13 @@ function OrderDetail() {
             </button>
           )}
           {canCancel && <Button variant="tonal" size="sm" icon="cancel" className="text-error" onClick={() => setCancelOpen(true)}>Cancel order</Button>}
-          {canReturnOrExchange && (
+          {canReturnOrExchange ? (
             <div className="flex flex-col gap-1.5 w-full sm:w-auto">
               <Link
                 to={`/returns-exchange?order=${o.orderId}&type=return`}
                 className="btn bg-surface-container-high hover:bg-surface-container-highest text-on-surface font-semibold text-[12px] h-8 px-3.5 flex items-center justify-center gap-1.5 shadow-2xs border border-outline-variant/60 transition-all"
               >
-                <Icon name="assignment_return" className="text-[16px] text-teal-600 dark:text-teal-400" /> Return for Refund (7-Day Policy)
+                <Icon name="assignment_return" className="text-[16px] text-teal-600 dark:text-teal-400" /> Return for Refund (7-Day Window: {daysLeft}d left)
               </Link>
               <Link
                 to={`/returns-exchange?order=${o.orderId}&type=exchange`}
@@ -642,12 +764,30 @@ function OrderDetail() {
                 <Icon name="published_with_changes" className="text-[16px]" /> Exchange Product ({daysLeft}d left)
               </Link>
             </div>
-          )}
-          {isExpired && !['Cancelled', 'Returned'].includes(o.orderStatus) && (
-            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[12px] font-semibold bg-surface-container-high text-on-surface-variant border border-outline-variant/60">
-              <Icon name="lock" className="text-[16px] text-outline" /> 7-Day Window Complete (Final Sale)
+          ) : o.returnExchange ? (
+            <span className={cn(
+              'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[12px] font-bold border',
+              o.returnExchange.status === 'Requested'
+                ? 'bg-amber-500/15 border-amber-500/35 text-amber-800 dark:text-amber-200'
+                : ['Approved', 'Pickup Scheduled', 'In Inspection'].includes(o.returnExchange.status)
+                ? 'bg-emerald-500/15 border-emerald-500/35 text-emerald-800 dark:text-emerald-200'
+                : o.returnExchange.status === 'Completed'
+                ? 'bg-teal-500/15 border-teal-500/35 text-teal-800 dark:text-teal-200'
+                : 'bg-rose-500/15 border-rose-500/35 text-rose-800 dark:text-rose-200'
+            )}>
+              <Icon
+                name={o.returnExchange.status === 'Requested' ? 'hourglass_top' : o.returnExchange.status === 'Rejected' ? 'cancel' : 'check_circle'}
+                className="text-[16px]"
+              />
+              {o.returnExchange.status === 'Requested'
+                ? 'Return is in progress'
+                : ['Approved', 'Pickup Scheduled', 'In Inspection'].includes(o.returnExchange.status)
+                ? 'Return Confirmed'
+                : o.returnExchange.status === 'Completed'
+                ? 'Return Completed'
+                : 'Return Rejected'}
             </span>
-          )}
+          ) : null}
         </div>
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-space-lg">
@@ -690,6 +830,8 @@ function OrderDetail() {
             <p className="text-label-sm font-normal text-outline mt-0.5">Paid via {PAYMENT_LABELS[o.paymentMethod] || o.paymentMethod}</p>
             {o.orderStatus === 'Cancelled' || o.cancellation?.status === 'Requested' ? (
               <CancellationCard order={o} money={money} />
+            ) : o.returnExchange ? (
+              <ReturnCard order={o} money={money} />
             ) : o.coinsEarned > 0 ? (
               <div className="mt-3 p-3.5 rounded-2xl bg-gradient-to-r from-rose-500/15 via-rose-500/10 to-rose-600/10 border border-rose-500/30 text-on-surface flex items-start gap-3 shadow-xs">
                 <span className="w-8 h-8 rounded-xl bg-rose-500/20 text-rose-700 dark:text-rose-300 flex items-center justify-center shrink-0">

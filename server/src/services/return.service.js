@@ -39,6 +39,7 @@ function requestSummary(req) {
     // Approved return still waiting for the customer to say where the money goes.
     needsRefundDetails: needsRefundDetails(req),
     canCancel: CUSTOMER_CANCELLABLE_STATUSES.includes(req.status) && !req.reversePickup?.shipmentId,
+    adminMessage: req.adminMessage || '',
   };
 }
 
@@ -433,6 +434,7 @@ export async function createReturnExchangeRequest(userId, payload, opts = {}) {
     requestedAt: new Date(),
     refundMethod: destination.refundMethod,
     exchangePreference: type === 'exchange' ? exchangePreference : undefined,
+    adminMessage: '',
   };
 
   await order.save();
@@ -491,11 +493,13 @@ export async function notifyReturnDecision(request, order) {
             ? ['', 'Please tell us how you would like your money back (UPI, bank account or another option):', requestLink(request)]
             : []),
           '',
+          ...(request.adminMessage ? [`Message from WILDTANE: "${request.adminMessage}"`, ''] : []),
           'We will arrange the doorstep pickup and keep you posted.',
         ]
       : [
           `We’re sorry — your ${what} request ${request.requestId} for order ${order.orderId} was not approved, so this item cannot be returned or exchanged.`,
           '',
+          ...(request.adminMessage ? [`Message from WILDTANE: "${request.adminMessage}"`, ''] : []),
           'If you have questions, reply to this email or call our support team.',
         ];
   const outcome = await sendEmail({

@@ -140,7 +140,7 @@ export const adminGetReturn = asyncHandler(async (req, res) => {
 });
 
 export const adminUpdateReturnStatus = asyncHandler(async (req, res) => {
-  const { status, note, adminNotes } = req.body;
+  const { status, note, adminNotes, adminMessage } = req.body;
   if (!RETURN_STATUSES.includes(status)) throw ApiError.badRequest('Invalid status');
 
   const request = await ReturnRequest.findById(req.params.id);
@@ -153,6 +153,7 @@ export const adminUpdateReturnStatus = asyncHandler(async (req, res) => {
 
   request.status = status;
   if (adminNotes !== undefined) request.adminNotes = adminNotes;
+  if (adminMessage !== undefined) request.adminMessage = String(adminMessage).slice(0, 1000);
   request.statusHistory.push({
     status,
     note: note || `Status updated to ${status} by admin`,
@@ -174,6 +175,9 @@ export const adminUpdateReturnStatus = asyncHandler(async (req, res) => {
   if (order) {
     if (order.returnExchange) {
       order.returnExchange.status = status;
+      if (adminMessage !== undefined) {
+        order.returnExchange.adminMessage = String(adminMessage).slice(0, 1000);
+      }
       order.markModified('returnExchange');
     }
     if (status === 'Completed' && request.type === 'return') {
