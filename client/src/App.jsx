@@ -241,6 +241,7 @@ export default function App() {
         <Route element={<StoreLayout />}>
           <Route index element={<Home />} />
           <Route path="shop" element={<Shop />} />
+          <Route path="all" element={<Shop key="all" preset="all" />} />
           <Route path="shop/:category" element={<Shop />} />
           <Route path="men" element={<Shop key="men" preset="men" />} />
           <Route path="women" element={<Shop key="women" preset="women" />} />

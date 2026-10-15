@@ -492,7 +492,179 @@ export const CLOTHING_UNIVERSAL_MENU = {
   ],
 };
 
+/**
+ * Grand Atelier - All Collections (Categories in Circles, Subcategories Below)
+ * For the main shop, all products, and universal browsing.
+ */
+export const CLOTHING_ALL_MENU = {
+  key: 'all',
+  title: 'All Collections',
+  subtitle: 'Luxury Bags, Apparel, Leather & Fragrance',
+  tag: 'Full-Grain Italian Leather & 1680D Ballistic',
+  categories: [
+    {
+      id: 'all',
+      name: 'All Store',
+      slug: '',
+      icon: 'apps',
+      img: '/uploads/seed/terminal-traveler.jpg',
+      badge: 'ALL',
+      subcategories: [
+        { name: 'Backpacks', slug: 'backpacks', icon: 'backpack', img: '/uploads/seed/backpack-terracotta.jpg', badge: 'POPULAR' },
+        { name: 'Luxury Handbags', slug: 'handbags', icon: 'shopping_bag', img: '/uploads/seed/handbag-rose.jpg', badge: 'LUXE' },
+        { name: 'Office Laptop Bags', slug: 'laptop-bags', icon: 'laptop_mac', img: '/uploads/seed/catalog/laptop-sterling.jpg', badge: 'TECH' },
+        { name: 'T-Shirts & Tops', slug: 'clothing-t-shirts', icon: 'apparel', img: '/uploads/seed/catalog/cl-tees-stack.jpg', badge: 'HOT' },
+        { name: 'Executive Briefcases', slug: 'office-bags', icon: 'business_center', img: '/uploads/seed/briefcase-oxford.jpg', badge: 'WORK' },
+        { name: 'Cabin Trolley Luggage', slug: 'cabin-luggage', icon: 'luggage', img: '/uploads/seed/cabin-aluminium.jpg', badge: 'AIRPORT' },
+        { name: 'Travel Duffels', slug: 'duffle-bags', icon: 'flight_takeoff', img: '/uploads/seed/duffle-tan.jpg' },
+        { name: 'Bifold Wallets', slug: 'wallets', icon: 'wallet', img: '/uploads/seed/catalog/wallet-woodland.jpg', badge: 'BESTSELLER' },
+        { name: 'Dresses & Sundresses', slug: 'clothing-dresses', icon: 'checkroom', img: '/uploads/seed/catalog/cl-tees-rail.jpg', badge: 'NEW' },
+        { name: 'Perfumes & Fragrances', slug: 'fragrance', icon: 'local_florist', img: '/uploads/seed/catalog/pf-oils-amber-green.jpg' },
+        { name: 'Crossbody & Slings', slug: 'crossbody-bags', icon: 'work', img: '/uploads/seed/catalog/crossbody-cloud.jpg' },
+        { name: 'Leather Belts', slug: 'belts', icon: 'styler', img: '/uploads/seed/catalog/keyfob-brown.jpg' },
+      ],
+    },
+    {
+      id: 'bags',
+      name: 'Bags & Packs',
+      slug: 'backpacks',
+      icon: 'backpack',
+      img: '/uploads/seed/catalog/backpack-hudson.jpg',
+      badge: 'BAGS',
+      subcategories: [
+        { name: 'All Bags', slug: 'backpacks', icon: 'backpack', img: '/uploads/seed/catalog/backpack-hudson.jpg' },
+        { name: 'Laptop Backpacks', slug: 'backpacks', icon: 'backpack', img: '/uploads/seed/backpack-terracotta.jpg', badge: 'POPULAR' },
+        { name: 'Handbags & Totes', slug: 'handbags', icon: 'shopping_bag', img: '/uploads/seed/handbag-sienna.jpg', badge: 'LUXE' },
+        { name: 'Office Laptop Bags', slug: 'laptop-bags', icon: 'laptop_mac', img: '/uploads/seed/catalog/laptop-sterling.jpg', badge: 'TECH' },
+        { name: 'Executive Briefcases', slug: 'office-bags', icon: 'business_center', img: '/uploads/seed/briefcase-oxford.jpg' },
+        { name: 'Crossbody & Slings', slug: 'crossbody-bags', icon: 'work', img: '/uploads/seed/catalog/crossbody-cloud.jpg' },
+        { name: 'Travel Duffels', slug: 'duffle-bags', icon: 'flight_takeoff', img: '/uploads/seed/duffle-tan.jpg' },
+      ],
+    },
+    {
+      id: 'men',
+      name: "Men's Atelier",
+      slug: 'men-bags',
+      icon: 'man',
+      img: '/uploads/seed/briefcase-black.jpg',
+      badge: 'MEN',
+      subcategories: [
+        { name: 'All Men Bags', slug: 'men-bags', icon: 'backpack', img: '/uploads/seed/catalog/backpack-hudson.jpg' },
+        { name: 'Office Laptop Bags', slug: 'laptop-bags', icon: 'laptop_mac', img: '/uploads/seed/catalog/laptop-sterling.jpg', badge: 'TECH' },
+        { name: 'T-Shirts & Tees', slug: 'clothing-t-shirts', icon: 'apparel', img: '/uploads/seed/catalog/cl-tees-stack.jpg', badge: 'HOT' },
+        { name: 'Jackets & Blazers', slug: 'clothing-jackets', icon: 'styler', img: '/uploads/seed/catalog/cl-tees-rail.jpg' },
+        { name: 'Bifold Wallets', slug: 'wallets', icon: 'wallet', img: '/uploads/seed/catalog/wallet-woodland.jpg' },
+        { name: 'Leather Belts', slug: 'belts', icon: 'styler', img: '/uploads/seed/catalog/keyfob-brown.jpg' },
+      ],
+    },
+    {
+      id: 'women',
+      name: "Women's Atelier",
+      slug: 'women-handbags-purses',
+      icon: 'woman',
+      img: '/uploads/seed/handbag-rose.jpg',
+      badge: 'WOMEN',
+      subcategories: [
+        { name: 'Luxury Handbags', slug: 'handbags', icon: 'shopping_bag', img: '/uploads/seed/handbag-rose.jpg', badge: 'POPULAR' },
+        { name: 'Dresses & Sundresses', slug: 'clothing-dresses', icon: 'checkroom', img: '/uploads/seed/catalog/cl-tees-rail.jpg', badge: 'HOT' },
+        { name: 'Work Totes', slug: 'tote-bags', icon: 'shopping_basket', img: '/uploads/seed/tote-ochre.jpg' },
+        { name: 'Crossbody Bags', slug: 'crossbody-bags', icon: 'backpack', img: '/uploads/seed/catalog/crossbody-cloud.jpg' },
+        { name: 'Evening Clutches', slug: 'clutches', icon: 'account_balance_wallet', img: '/uploads/seed/clutch-espresso.jpg' },
+        { name: 'Fashion Backpacks', slug: 'backpacks', icon: 'backpack', img: '/uploads/seed/backpack-terracotta.jpg' },
+      ],
+    },
+    {
+      id: 'clothing',
+      name: 'Clothing & Apparel',
+      slug: 'clothing',
+      icon: 'checkroom',
+      img: '/uploads/seed/catalog/cl-tees-rail.jpg',
+      badge: 'APPAREL',
+      subcategories: [
+        { name: 'All Clothing', slug: 'clothing', icon: 'checkroom', img: '/uploads/seed/catalog/cl-tees-rail.jpg' },
+        { name: 'T-Shirts & Tops', slug: 'clothing-t-shirts', icon: 'apparel', img: '/uploads/seed/catalog/cl-tees-stack.jpg', badge: 'HOT' },
+        { name: 'Dresses & Sundresses', slug: 'clothing-dresses', icon: 'checkroom', img: '/uploads/seed/catalog/cl-tees-rail.jpg', badge: 'NEW' },
+        { name: 'Shirts & Blouses', slug: 'clothing-shirts', icon: 'checkroom', img: '/uploads/seed/catalog/cl-tees-rail.jpg' },
+        { name: 'Jackets & Outerwear', slug: 'clothing-jackets', icon: 'styler', img: '/uploads/seed/catalog/cl-tees-rail.jpg' },
+        { name: 'Knitwear & Hoodies', slug: 'clothing-knitwear', icon: 'checkroom', img: '/uploads/seed/catalog/cl-tees-stack.jpg' },
+        { name: 'Jeans & Denim', slug: 'clothing-jeans', icon: 'apparel', img: '/uploads/seed/catalog/cl-tees-rail.jpg' },
+      ],
+    },
+    {
+      id: 'travel',
+      name: 'Travel & Luggage',
+      slug: 'travel-bags',
+      icon: 'flight_takeoff',
+      img: '/uploads/seed/cabin-aluminium.jpg',
+      badge: 'TRAVEL',
+      subcategories: [
+        { name: 'All Travel Carry', slug: 'travel-bags', icon: 'flight_takeoff', img: '/uploads/seed/duffle-tan.jpg' },
+        { name: 'Cabin Trolley Luggage', slug: 'cabin-luggage', icon: 'luggage', img: '/uploads/seed/cabin-aluminium.jpg', badge: 'AIRPORT' },
+        { name: 'Travel Backpacks', slug: 'backpacks', icon: 'flight_takeoff', img: '/uploads/seed/apex-navy.jpg' },
+        { name: 'Travel Duffels', slug: 'duffle-bags', icon: 'fitness_center', img: '/uploads/seed/catalog/duffle-highway.jpg' },
+        { name: 'Weekender Bags', slug: 'weekender-bags', icon: 'flight_takeoff', img: '/uploads/seed/duffle-tan.jpg' },
+        { name: 'Packing Organizers', slug: 'travel-organisers', icon: 'inventory_2', img: '/uploads/seed/packing-cube.jpg' },
+      ],
+    },
+    {
+      id: 'wallets',
+      name: 'Wallets & Leather',
+      slug: 'wallets',
+      icon: 'account_balance_wallet',
+      img: '/uploads/seed/catalog/wallet-woodland.jpg',
+      badge: 'LEATHER',
+      subcategories: [
+        { name: 'All Wallets', slug: 'wallets', icon: 'wallet', img: '/uploads/seed/catalog/wallet-woodland.jpg' },
+        { name: 'Bifold Wallets', slug: 'wallets', icon: 'wallet', img: '/uploads/seed/catalog/wallet-woodland.jpg', badge: 'BESTSELLER' },
+        { name: 'Card Holders', slug: 'card-holders', icon: 'credit_card', img: '/uploads/seed/cardholder-tan.jpg' },
+        { name: 'Zip Wallets', slug: 'wallets', icon: 'wallet', img: '/uploads/seed/catalog/wallet-zip.jpg' },
+        { name: 'Passport Holders', slug: 'passport-holders', icon: 'badge', img: '/uploads/seed/catalog/passport-atlas.jpg' },
+      ],
+    },
+    {
+      id: 'fragrance',
+      name: 'Perfumes & Scents',
+      slug: 'fragrance',
+      icon: 'local_florist',
+      img: '/uploads/seed/catalog/pf-oils-amber-green.jpg',
+      badge: 'SCENTS',
+      subcategories: [
+        { name: 'All Perfumes', slug: 'fragrance', icon: 'local_florist', img: '/uploads/seed/catalog/pf-oils-amber-green.jpg' },
+        { name: 'Eau de Parfum', slug: 'perfumes-eau-de-parfum', icon: 'local_florist', badge: 'SIGNATURE' },
+        { name: 'Attars & Perfume Oils', slug: 'perfumes-attars', icon: 'water_drop', badge: 'PURE' },
+        { name: 'Travel Minis', slug: 'perfumes-minis', icon: 'luggage' },
+      ],
+    },
+    {
+      id: 'accessories',
+      name: 'Accessories & EDC',
+      slug: 'accessories',
+      icon: 'watch',
+      img: '/uploads/seed/catalog/keyset-onyx.jpg',
+      badge: 'EDC',
+      subcategories: [
+        { name: 'All Accessories', slug: 'accessories', icon: 'watch', img: '/uploads/seed/catalog/keyset-onyx.jpg' },
+        { name: 'Leather Belts', slug: 'belts', icon: 'styler', img: '/uploads/seed/catalog/keyfob-brown.jpg' },
+        { name: 'Keychains & Charms', slug: 'accessories', icon: 'vpn_key', img: '/uploads/seed/catalog/keyfob-brown.jpg' },
+        { name: 'Tech & Toiletry Kits', slug: 'travel-utility', icon: 'inventory_2', img: '/uploads/seed/catalog/dopp-heritage-brown.jpg' },
+      ],
+    },
+  ],
+};
+
 const DEPARTMENT_THEMES = {
+  all: {
+    accentGradient: 'from-rose-600 via-amber-600 to-indigo-600',
+    ringActive: 'from-rose-500 via-amber-500 to-indigo-500',
+    headerBadge: 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30',
+    glowColor: 'bg-rose-500/15',
+    pulseColor: 'bg-rose-500',
+    activeCircleRing: 'ring-rose-500/80 dark:ring-rose-400',
+    activeSubBadge: 'bg-rose-500/20 text-rose-700 dark:text-rose-300',
+    labelAccent: 'text-rose-600 dark:text-rose-400',
+    titleGradient: 'from-rose-600 via-amber-600 to-indigo-600 dark:from-rose-400 dark:via-amber-400 dark:to-indigo-300',
+    categoryTag: "Grand Atelier",
+  },
   men: {
     accentGradient: 'from-amber-500 via-rose-500 to-indigo-600',
     ringActive: 'from-amber-500 via-orange-500 to-rose-600',
@@ -550,12 +722,17 @@ const DEPARTMENT_THEMES = {
  * - BELOW CIRCLES: Their Subcategories.
  */
 export default function ClothingCategoryMenu({
-  preset = 'men',
+  preset = 'all',
   selectedCategory = '',
   onSelectCategory,
   totalProductsCount = null,
 }) {
-  const normalizedPreset = preset === 'unisex' ? 'universal' : preset;
+  const normalizedPreset =
+    preset === 'unisex'
+      ? 'universal'
+      : preset === 'new' || preset === 'bestsellers' || !preset
+      ? 'all'
+      : preset;
   const menuConfig =
     normalizedPreset === 'women'
       ? CLOTHING_WOMEN_MENU
@@ -563,9 +740,11 @@ export default function ClothingCategoryMenu({
       ? CLOTHING_BAGS_MENU
       : normalizedPreset === 'universal'
       ? CLOTHING_UNIVERSAL_MENU
-      : CLOTHING_MEN_MENU;
+      : normalizedPreset === 'men'
+      ? CLOTHING_MEN_MENU
+      : CLOTHING_ALL_MENU;
 
-  const theme = DEPARTMENT_THEMES[normalizedPreset] || DEPARTMENT_THEMES.men;
+  const theme = DEPARTMENT_THEMES[normalizedPreset] || DEPARTMENT_THEMES.all;
 
   const circlesRef = useRef(null);
   const subcatsRef = useRef(null);
@@ -696,7 +875,7 @@ export default function ClothingCategoryMenu({
         <div className="flex items-center justify-between pb-2.5 mb-1 px-1">
           <div className="flex items-center gap-2">
             <span className="text-[11.5px] sm:text-[12px] font-black uppercase tracking-[0.18em] text-on-surface">
-              {preset === 'men' ? "Men's Collections" : preset === 'women' ? "Women's Collections" : preset === 'bags' ? "Bag Collections" : "Universal Collections"}
+              {normalizedPreset === 'men' ? "Men's Collections" : normalizedPreset === 'women' ? "Women's Collections" : normalizedPreset === 'bags' ? "Bag Collections" : normalizedPreset === 'universal' ? "Universal Collections" : "All Collections"}
             </span>
             <span className="text-[9.5px] uppercase font-bold px-2 py-0.5 rounded-full bg-surface-container text-on-surface-variant border border-outline-variant/30">
               Tap to browse

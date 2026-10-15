@@ -1219,10 +1219,10 @@ export default function Shop({ preset, categoryList, pageTitle, pageDescription,
         </>
       )}
 
-      {/* ── UPPER PORTION CATEGORIES AND BELOW SUBCATEGORIES FOR BAGS, MEN, WOMEN, UNIVERSAL ── */}
-      {!get('q') && ['bags', 'men', 'women', 'universal', 'unisex'].includes(preset || dirKey) && (
+      {/* ── UPPER PORTION CATEGORIES AND BELOW SUBCATEGORIES FOR ALL, BAGS, MEN, WOMEN, UNIVERSAL ── */}
+      {!get('q') && (
         <ClothingCategoryMenu
-          preset={(preset || dirKey) === 'unisex' ? 'universal' : (preset || dirKey)}
+          preset={(preset || dirKey) === 'unisex' ? 'universal' : (preset || dirKey || 'all')}
           selectedCategory={selectedCatParam || categorySlug || ''}
           onSelectCategory={(slug) => {
             update({ category: slug });
@@ -1230,21 +1230,6 @@ export default function Shop({ preset, categoryList, pageTitle, pageDescription,
           }}
           totalProductsCount={total ?? items.length}
         />
-      )}
-
-      {/* Category Rail (hidden on Bags, Men and Women pages which have dedicated ClothingCategoryMenu, when searching, etc.) */}
-      {!get('q') && !dirKey && !isShopRoot && !circleDept && !isGenderPage && preset !== 'bags' && !(chipParent && chipList.length > 0) && (
-        <div className="container-x pt-2 md:pt-4">
-          <CategoryRail
-            tree={tree}
-            activeSlug={effectiveCategory}
-            rootSlug={rootCategory?.slug}
-            preset={preset}
-            selectedCategory={selectedCatParam}
-            onSelectCategory={(c) => update({ category: c })}
-            onNavigate={(to) => navigate(to)}
-          />
-        </div>
       )}
 
 

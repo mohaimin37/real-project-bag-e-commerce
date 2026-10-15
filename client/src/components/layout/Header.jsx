@@ -23,6 +23,7 @@ export { LogoMark };
 // Main storefront navigation (desktop bar; the side menu repeats it on phones).
 export const MAIN_NAV = [
   ['/', 'Home', true],
+  ['/all', 'All'],
   ['/men', 'Men'],
   ['/women', 'Women'],
   ['/bags', 'Bags'],
@@ -491,8 +492,9 @@ export function SearchPill({ onOpen, onVoiceOpen, className }) {
 }
 
 // Nav items that open a mega menu, and the directory each one shows.
-const MEGA = { '/women': 'women', '/men': 'men', '/bags': 'bags', '/shop/accessories': 'accessories', '/shop/travel-utility': 'travel' };
+const MEGA = { '/all': 'all', '/women': 'women', '/men': 'men', '/bags': 'bags', '/shop/accessories': 'accessories', '/shop/travel-utility': 'travel' };
 const MEGA_EXTRAS = {
+  all: [['/new-arrivals', 'New arrivals'], ['/bestsellers', 'Bestsellers'], ['/offers', 'Offers']],
   women: [['/women?newArrival=true&sort=newest', 'New arrivals'], ['/women?bestseller=true&sort=bestseller', 'Bestsellers'], ['/women?onSale=true', 'Sale']],
   men: [['/men?newArrival=true&sort=newest', 'New arrivals'], ['/men?bestseller=true&sort=bestseller', 'Bestsellers'], ['/men?onSale=true', 'Sale']],
   bags: [['/new-arrivals', 'New arrivals'], ['/bestsellers', 'Bestsellers'], ['/offers', 'Offers']],
@@ -509,7 +511,7 @@ function MegaNavItem({ to, label, dirKey, className }) {
   const [armed, setArmed] = useState(false);
   const timer = useRef(null);
   const { pathname } = useLocation();
-  const isFashion = dirKey === 'men' || dirKey === 'women' || dirKey === 'bags';
+  const isFashion = dirKey === 'men' || dirKey === 'women' || dirKey === 'bags' || dirKey === 'all';
   const { sections } = useDirectory(dirKey, armed && !isFashion);
   const panelId = `mega-${dirKey}`;
   useEffect(() => setOpen(false), [pathname]);
@@ -624,7 +626,7 @@ export default function Header() {
   const isMobileCustomHeader =
     pathname === '/' ||
     pathname.startsWith('/shop') ||
-    ['/men', '/women', '/universal', '/unisex', '/offers', '/bags', '/new-arrivals', '/bestsellers'].includes(pathname) ||
+    ['/all', '/men', '/women', '/universal', '/unisex', '/offers', '/bags', '/new-arrivals', '/bestsellers'].includes(pathname) ||
     /^\/(women|men|bags|accessories|travel-utility)\/[^/]+/.test(pathname);
 
   // A soft shadow once the page scrolls, so the sticky header lifts off the content.

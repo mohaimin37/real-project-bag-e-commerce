@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { cn, imgUrl } from '../../lib/format';
 import { Icon } from '../ui';
-import { CLOTHING_MEN_MENU, CLOTHING_WOMEN_MENU, CLOTHING_BAGS_MENU } from './ClothingCategoryMenu';
+import { CLOTHING_MEN_MENU, CLOTHING_WOMEN_MENU, CLOTHING_BAGS_MENU, CLOTHING_ALL_MENU } from './ClothingCategoryMenu';
 
 /**
  * Fashion & Category Mega Menu for Men, Women and Bags in the Main Navbar.
@@ -12,8 +12,9 @@ import { CLOTHING_MEN_MENU, CLOTHING_WOMEN_MENU, CLOTHING_BAGS_MENU } from './Cl
 export default function FashionMegaMenu({ dirKey = 'men', onClose }) {
   const isMen = dirKey === 'men';
   const isBags = dirKey === 'bags';
-  const menu = isBags ? CLOTHING_BAGS_MENU : isMen ? CLOTHING_MEN_MENU : CLOTHING_WOMEN_MENU;
-  const basePath = isBags ? '/bags' : isMen ? '/men' : '/women';
+  const isWomen = dirKey === 'women';
+  const menu = isBags ? CLOTHING_BAGS_MENU : isMen ? CLOTHING_MEN_MENU : isWomen ? CLOTHING_WOMEN_MENU : CLOTHING_ALL_MENU;
+  const basePath = isBags ? '/bags' : isMen ? '/men' : isWomen ? '/women' : '/shop';
   const featuredImage = menu.featuredImage || (isBags ? '/uploads/seed/terminal-traveler.jpg' : isMen ? '/uploads/seed/briefcase-black.jpg' : '/uploads/seed/handbag-rose.jpg');
 
   const columns = menu.categories.filter((c) => c.id !== 'all');
