@@ -32,7 +32,7 @@ export default function ShopWidgetsBar({ state, activeCount, onClear, total, vie
   return (
     // Desktop only: on phones the Sort / Filter bar and quick chips above already do this, and the
     // products should start on the first screen.
-    <div className="hidden md:block bg-surface-container-lowest/80 backdrop-blur-md rounded-2xl border border-outline-variant/30 p-2.5 md:p-3.5 shadow-xs space-y-2.5">
+    <div className="hidden md:block bg-surface-container-lowest rounded-2xl border border-outline-variant/40 p-2.5 md:p-3 shadow-xs space-y-2">
       {/* ── TOP ROW: Widget Header & View Controls ── */}
       <div className="flex items-center justify-between gap-2 flex-wrap">
         <div className="flex items-center gap-2">
