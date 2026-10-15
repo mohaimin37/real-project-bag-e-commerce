@@ -1,0 +1,181 @@
+{
+  "at": "2026-10-14T18:04:30.433Z",
+  "categories": [
+    {
+      "_id": "6abe81bb7583fc36b88c0577",
+      "name": "Wallets",
+      "slug": "wallets",
+      "tagline": "RFID bifold wallets, cardholders & coin purses",
+      "description": "",
+      "parent": "6abe81bc7583fc36b88c0584",
+      "sortOrder": 1,
+      "isActive": true,
+      "showInMenu": true,
+      "createdAt": "2026-10-01T15:52:27.683Z",
+      "updatedAt": "2026-10-11T07:56:52.145Z",
+      "__v": 0,
+      "image": {
+        "url": "/uploads/seed/catalog/wallet-woodland.jpg"
+      }
+    },
+    {
+      "_id": "6acdc6af37ca5731f1b3f04a",
+      "name": "Card Holders",
+      "slug": "card-holders",
+      "tagline": "",
+      "description": "",
+      "parent": "6abe81bb7583fc36b88c0577",
+      "department": "all",
+      "level": 3,
+      "icon": "",
+      "banner": {
+        "url": "",
+        "title": "",
+        "subtitle": ""
+      },
+      "metaTitle": "",
+      "metaDescription": "",
+      "sortOrder": 972,
+      "isActive": true,
+      "showInMenu": true,
+      "showOnHome": false,
+      "isFeatured": false,
+      "createdAt": "2026-10-13T05:50:39.564Z",
+      "updatedAt": "2026-10-13T05:50:39.564Z",
+      "__v": 0
+    },
+    {
+      "_id": "6acdc6af37ca5731f1b3f04b",
+      "name": "Coin Purses",
+      "slug": "coin-purses",
+      "tagline": "",
+      "description": "",
+      "parent": "6abe81bb7583fc36b88c0577",
+      "department": "all",
+      "level": 3,
+      "icon": "",
+      "banner": {
+        "url": "",
+        "title": "",
+        "subtitle": ""
+      },
+      "metaTitle": "",
+      "metaDescription": "",
+      "sortOrder": 973,
+      "isActive": true,
+      "showInMenu": true,
+      "showOnHome": false,
+      "isFeatured": false,
+      "createdAt": "2026-10-13T05:50:39.659Z",
+      "updatedAt": "2026-10-13T05:50:39.659Z",
+      "__v": 0
+    },
+    {
+      "_id": "6acdc6af37ca5731f1b3f04d",
+      "name": "Travel Wallets",
+      "slug": "travel-wallets",
+      "tagline": "",
+      "description": "",
+      "parent": "6abe81bb7583fc36b88c0577",
+      "department": "all",
+      "level": 3,
+      "icon": "",
+      "banner": {
+        "url": "",
+        "title": "",
+        "subtitle": ""
+      },
+      "metaTitle": "",
+      "metaDescription": "",
+      "sortOrder": 975,
+      "isActive": true,
+      "showInMenu": true,
+      "showOnHome": false,
+      "isFeatured": false,
+      "createdAt": "2026-10-13T05:50:39.867Z",
+      "updatedAt": "2026-10-13T05:50:39.867Z",
+      "__v": 0
+    }
+  ],
+  "createdCategories": [
+    "6acfc42e11aa1c49ed7dcee0",
+    "6acfc42e11aa1c49ed7dcee1"
+  ],
+  "products": [
+    {
+      "_id": "6ac4b6db55ce20f6ef6742bd",
+      "category": "6abe81bc7583fc36b88c0584",
+      "subcategory": "6ac4b6da55ce20f6ef6742af"
+    },
+    {
+      "_id": "6aca61cc3f965f784fb5fa28",
+      "category": "6abe81bc7583fc36b88c0584",
+      "subcategory": "6ac4b6da55ce20f6ef6742af"
+    },
+    {
+      "_id": "6abe9c536b50385d6a994e25",
+      "category": "6abe81bc7583fc36b88c0584",
+      "subcategory": "6abe81bb7583fc36b88c0577"
+    },
+    {
+      "_id": "6abea97af45a1e987e571733",
+      "category": "6abe81bc7583fc36b88c0584",
+      "subcategory": "6abe81bb7583fc36b88c0577"
+    },
+    {
+      "_id": "6abf423ac59ab9d07eadb205",
+      "category": "6abe81bc7583fc36b88c0584",
+      "subcategory": "6abe81bb7583fc36b88c0577"
+    },
+    {
+      "_id": "6abf423ac59ab9d07eadb218",
+      "category": "6abe81bc7583fc36b88c0584",
+      "subcategory": "6abe81bb7583fc36b88c0577"
+    },
+    {
+      "_id": "6abf423ac59ab9d07eadb21a",
+      "category": "6abe81bc7583fc36b88c0584",
+      "subcategory": "6abe81bb7583fc36b88c0577"
+    },
+    {
+      "_id": "6abf423ac59ab9d07eadb229",
+      "category": "6abe81bc7583fc36b88c0584",
+      "subcategory": "6abe81bb7583fc36b88c0577"
+    },
+    {
+      "_id": "6abf423bc59ab9d07eadb24d",
+      "category": "6abe81bc7583fc36b88c0584",
+      "subcategory": "6abe81bb7583fc36b88c0577"
+    },
+    {
+      "_id": "6ac4b6db55ce20f6ef6742e2",
+      "category": "6abe81bc7583fc36b88c0584",
+      "subcategory": "6abe81bb7583fc36b88c0577"
+    },
+    {
+      "_id": "6ac4b6db55ce20f6ef6742e6",
+      "category": "6abe81bc7583fc36b88c0584",
+      "subcategory": "6abe81bb7583fc36b88c0577"
+    },
+    {
+      "_id": "6ac899634ef8012c182b492d",
+      "category": "6abe81bc7583fc36b88c0584",
+      "subcategory": "6abe81bb7583fc36b88c0577"
+    },
+    {
+      "_id": "6ac904b21ebed23facf2862b",
+      "category": "6abe81bc7583fc36b88c0584",
+      "subcategory": "6abe81bb7583fc36b88c0577"
+    },
+    {
+      "_id": "6ac904b41ebed23facf28660",
+      "category": "6abe81bc7583fc36b88c0584",
+      "subcategory": "6abe81bb7583fc36b88c0577"
+    },
+    {
+      "_id": "6aca61cc3f965f784fb5fa1f",
+      "category": "6abe81bc7583fc36b88c0584",
+      "subcategory": "6abe81bb7583fc36b88c0577"
+    }
+  ]
+}

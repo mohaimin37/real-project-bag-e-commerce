@@ -18,11 +18,11 @@ cpSync('server/uploads', 'client/public/uploads', {
 
 // 2. Build once to bundle the edge function. With base = "client" the CLI writes the bundle to
 //    client/.netlify/ but uploads from ./.netlify/, so copy it across (otherwise it's left out).
-run('npx netlify build');
+run('npx --yes netlify build');
 const edge = 'client/.netlify/edge-functions-dist';
 if (!existsSync(edge)) throw new Error(`Edge function bundle not found in ${edge}`);
 mkdirSync('.netlify/edge-functions-dist', { recursive: true });
 cpSync(edge, '.netlify/edge-functions-dist', { recursive: true });
 
 // 3. Deploy (the CLI rebuilds, then uploads the site, the API function and the edge function).
-run('npx netlify deploy --prod --dir client/dist --functions client/netlify/functions --skip-functions-cache');
+run('npx --yes netlify deploy --prod --dir client/dist --functions client/netlify/functions --skip-functions-cache');

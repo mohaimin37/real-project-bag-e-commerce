@@ -192,3 +192,22 @@ Public-domain (CC0) photos from StockSnap and rawpixel, found via openverse.org.
 | catalog/cl-dress-floral.jpg | https://stocksnap.io/photo/woman-dress-KDQ60E3BPD | Valeria Boltneva (StockSnap, CC0) |
 | catalog/cl-dress-sundress.jpg | https://stocksnap.io/photo/girl-dress-7HIJXYHAC3 | Matt Moloney (StockSnap, CC0) |
 | catalog/cl-dress-white.jpg | https://stocksnap.io/photo/woman-dress-OO6YBBXJAB | Matt Bango (StockSnap, CC0) |
+
+
+## More Wallets & Perfumes (CC0)
+
+Public-domain (CC0) photos from rawpixel and StockSnap, found via openverse.org. No attribution is required; credited as a courtesy.
+
+| File | Source | Creator |
+|---|---|---|
+| catalog/wl-tan-bifold.jpg | https://www.rawpixel.com/image/5947687/free-public-domain-cc0-photo | — (rawpixel, CC0) |
+| catalog/wl-espresso-stitched.jpg | https://www.rawpixel.com/image/5945784/free-public-domain-cc0-photo | — (rawpixel, CC0) |
+| catalog/wl-charcoal-coin-pocket.jpg | https://www.rawpixel.com/image/5920849/empty-wallet-free-public-domain-cc0-image | — (rawpixel, CC0) |
+| catalog/wl-black-key-case.jpg | https://www.rawpixel.com/image/6057787/free-public-domain-cc0-photo | — (rawpixel, CC0) |
+| catalog/wl-black-coin-pouch.jpg | https://www.rawpixel.com/image/5957959/free-public-domain-cc0-photo | — (rawpixel, CC0) |
+| catalog/wl-walnut-pocket.jpg | https://www.rawpixel.com/image/5914361/image-public-domain-person-money | — (rawpixel, CC0) |
+| catalog/pf-amber-ribbon.jpg | https://www.rawpixel.com/image/6033978/perfume-free-public-domain-cc0-photo | — (rawpixel, CC0) |
+| catalog/pf-calendula-oil.jpg | https://www.rawpixel.com/image/5910756/image-flower-public-domain-nature | — (rawpixel, CC0) |
+| catalog/pf-herb-oil-duo.jpg | https://www.rawpixel.com/image/5911014/image-flower-public-domain-glass | — (rawpixel, CC0) |
+| catalog/pf-oud-dropper.jpg | https://www.rawpixel.com/image/11515770/dropper-bottle-blank-retro-label | — (rawpixel, CC0) |
+| catalog/pf-saffron-oil.jpg | https://stocksnap.io/photo/cosmetics-care-GZAJOCOQCW | Authentic Stock (StockSnap, CC0) |

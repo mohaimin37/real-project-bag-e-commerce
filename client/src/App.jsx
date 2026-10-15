@@ -153,13 +153,13 @@ function StoreLayout() {
   // Shows the wheel by itself once a day while today's spin is available.
   useDailySpinPrompt(() => setSpinOpen(true));
   return (
-    <div className="min-h-screen flex flex-col w-full max-w-full overflow-x-clip">
+    <div className="min-h-screen flex flex-col w-full max-w-full overflow-x-hidden">
       <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[100] btn-primary">
         Skip to content
       </a>
       <Header />
       <InstallAppBanner />
-      <main id="main" className="flex-1 w-full max-w-full overflow-x-clip">
+      <main id="main" className="flex-1 w-full max-w-full overflow-x-hidden">
         <Suspense fallback={<PageLoader />}>
           {/* Keyed by path so each page fades in on navigation. */}
           <div key={pathname} className="page-enter">

@@ -450,11 +450,11 @@ function StockShowcaseBox({ variant }) {
         </div>
       )}
 
-      {/* Shopper live activity pulse div */}
+      {/* Delivery & returns line (no invented "people viewing" counts) */}
       <div className="pt-2 border-t border-outline-variant/15 flex items-center justify-between gap-2 text-[11px] sm:text-[11.5px] text-on-surface-variant flex-wrap">
         <span className="flex items-center gap-1.5 font-medium">
-          <Icon name="visibility" className="text-[15px] text-secondary" />
-          <span><strong>6 people</strong> viewing this bag right now</span>
+          <Icon name="local_shipping" className="text-[15px] text-secondary" />
+          <span>Tracked delivery across India</span>
         </span>
         <span className="flex items-center gap-1 text-secondary font-medium">
           <Icon name="verified_user" className="text-[13px]" /> 7-Day Returns

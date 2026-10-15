@@ -85,6 +85,14 @@ export const orderStatusSchema = z.object({
   // When the step actually happened (defaults to now). Lets staff log a scan made earlier.
   at: z.preprocess((v) => (v === '' || v == null ? undefined : v), z.coerce.date().optional()),
   notifyCustomer: z.boolean().optional().default(true),
+  // Personal message to the customer with this update (shown on their order page and in the email).
+  customerMessage: z.string().trim().max(1000).optional().default(''),
+});
+
+/** A message to the customer about their order, sent from the admin order page at any time. */
+export const orderMessageSchema = z.object({
+  text: z.string().trim().min(2, 'Write a message').max(1000),
+  email: z.boolean().optional().default(true),
 });
 
 export const paymentStatusSchema = z.object({ paymentStatus: z.enum(PAYMENT_STATUSES) });

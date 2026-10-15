@@ -1,0 +1,70 @@
+{
+ "products": [
+  {
+   "_id": "6acfc96f9b4cebfff273d265",
+   "sku": "WT-WL01",
+   "name": "Classic Tan Leather Bifold",
+   "slug": "classic-tan-leather-bifold"
+  },
+  {
+   "_id": "6acfc96f9b4cebfff273d267",
+   "sku": "WT-WL02",
+   "name": "Espresso Stitched Bifold",
+   "slug": "espresso-stitched-bifold"
+  },
+  {
+   "_id": "6acfc96f9b4cebfff273d269",
+   "sku": "WT-WL03",
+   "name": "Charcoal Coin-Pocket Wallet",
+   "slug": "charcoal-coin-pocket-wallet"
+  },
+  {
+   "_id": "6acfc96f9b4cebfff273d26b",
+   "sku": "WT-WL04",
+   "name": "Black Leather Key Case",
+   "slug": "black-leather-key-case"
+  },
+  {
+   "_id": "6acfc96f9b4cebfff273d26d",
+   "sku": "WT-WL05",
+   "name": "Black Leather Coin Pouch Wallet",
+   "slug": "black-leather-coin-pouch-wallet"
+  },
+  {
+   "_id": "6acfc9709b4cebfff273d26f",
+   "sku": "WT-WL06",
+   "name": "Walnut Slim Pocket Wallet",
+   "slug": "walnut-slim-pocket-wallet"
+  },
+  {
+   "_id": "6acfc9709b4cebfff273d271",
+   "sku": "WT-PF08",
+   "name": "Amber Ribbon Eau de Parfum",
+   "slug": "amber-ribbon-eau-de-parfum"
+  },
+  {
+   "_id": "6acfc9709b4cebfff273d273",
+   "sku": "WT-PF09",
+   "name": "Calendula Perfume Oil",
+   "slug": "calendula-perfume-oil"
+  },
+  {
+   "_id": "6acfc9709b4cebfff273d275",
+   "sku": "WT-PF10",
+   "name": "Rosemary & Wildflower Oil Duo",
+   "slug": "rosemary-and-wildflower-oil-duo"
+  },
+  {
+   "_id": "6acfc9709b4cebfff273d277",
+   "sku": "WT-PF11",
+   "name": "Oud Attar Dropper",
+   "slug": "oud-attar-dropper"
+  },
+  {
+   "_id": "6acfc9709b4cebfff273d279",
+   "sku": "WT-PF12",
+   "name": "Saffron Amber Perfume Oil",
+   "slug": "saffron-amber-perfume-oil"
+  }
+ ]
+}

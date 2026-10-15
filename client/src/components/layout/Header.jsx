@@ -16,6 +16,7 @@ import { prefersReducedMotion } from '../../theme/engine';
 import { useDirectory } from '../../lib/directory';
 import { openSpinWheel, useSpinStatus } from '../growth/SpinWheelModal';
 import { DIRECTORIES } from '../../content/taxonomy';
+import FashionMegaMenu from './FashionMegaMenu';
 
 export { LogoMark };
 
@@ -505,25 +506,26 @@ const MEGA_EXTRAS = {
  */
 function MegaNavItem({ to, label, dirKey, className }) {
   const [open, setOpen] = useState(false);
-  const [armed, setArmed] = useState(false); // counts load on first hover/focus, not on every page view
+  const [armed, setArmed] = useState(false);
   const timer = useRef(null);
   const { pathname } = useLocation();
-  const { sections } = useDirectory(dirKey, armed);
+  const isFashion = dirKey === 'men' || dirKey === 'women' || dirKey === 'bags';
+  const { sections } = useDirectory(dirKey, armed && !isFashion);
   const panelId = `mega-${dirKey}`;
   useEffect(() => setOpen(false), [pathname]);
   useEffect(() => () => clearTimeout(timer.current), []);
   const show = () => {
     setArmed(true);
     clearTimeout(timer.current);
-    timer.current = setTimeout(() => setOpen(true), 120);
+    timer.current = setTimeout(() => setOpen(true), 100);
   };
   const hide = () => {
     clearTimeout(timer.current);
-    timer.current = setTimeout(() => setOpen(false), 150);
+    timer.current = setTimeout(() => setOpen(false), 140);
   };
   const groups = (sections || []).flatMap((s) => s.groups);
   const hasMenu = Boolean(DIRECTORIES[dirKey]);
-  const ready = groups.length > 0;
+  const ready = isFashion || groups.length > 0;
   return (
     <div
       className="static"
@@ -537,34 +539,38 @@ function MegaNavItem({ to, label, dirKey, className }) {
         {label}
         {hasMenu && <Icon name="expand_more" className={cn('text-[15px] ml-0.5 opacity-60 transition-transform', open && 'rotate-180')} />}
       </NavLink>
-      {hasMenu && open && ready && (
-        <div id={panelId} role="region" aria-label={`${label} menu`} className="absolute left-0 right-0 top-full z-50 bg-surface-container-lowest border-y border-surface-container-high shadow-lift animate-fade-in">
-          <div className="max-w-[1280px] mx-auto px-6 py-5 grid grid-cols-[1fr_200px] gap-6">
-            <div className="grid grid-cols-4 gap-x-6 gap-y-5 max-h-[60vh] overflow-y-auto scrollbar-none">
-              {groups.map((g) => (
-                <div key={g.key} className="min-w-0">
-                  <Link to={g.to} className="text-[13px] font-bold text-on-surface hover:text-secondary">{g.label}</Link>
-                  <ul className="mt-1.5 flex flex-col gap-1">
-                    {g.items.map((i) => (
-                      <li key={i.slug}>
-                        <Link to={i.to} className="text-[12.5px] text-on-surface-variant hover:text-on-surface hover:underline flex justify-between gap-2">
-                          <span className="truncate">{i.label}</span>
-                          <span className="text-[11px] text-outline">{i.count}</span>
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
-            </div>
-            <div className="flex flex-col gap-1.5 border-l border-surface-container-high pl-5">
-              <Link to={to} className="text-[13px] font-bold text-on-surface hover:text-secondary flex items-center gap-1">Shop all {label} <Icon name="arrow_forward" className="text-[15px]" /></Link>
-              {(MEGA_EXTRAS[dirKey] || []).map(([href, text]) => (
-                <Link key={href} to={href} className="text-[12.5px] text-on-surface-variant hover:text-on-surface hover:underline">{text}</Link>
-              ))}
+      {hasMenu && open && (
+        isFashion ? (
+          <FashionMegaMenu dirKey={dirKey} onClose={() => setOpen(false)} />
+        ) : ready ? (
+          <div id={panelId} role="region" aria-label={`${label} menu`} className="absolute left-0 right-0 top-full z-50 bg-surface-container-lowest border-y border-surface-container-high shadow-lift animate-fade-in">
+            <div className="max-w-[1280px] mx-auto px-6 py-5 grid grid-cols-[1fr_200px] gap-6">
+              <div className="grid grid-cols-4 gap-x-6 gap-y-5 max-h-[60vh] overflow-y-auto scrollbar-none">
+                {groups.map((g) => (
+                  <div key={g.key} className="min-w-0">
+                    <Link to={g.to} className="text-[13px] font-bold text-on-surface hover:text-secondary">{g.label}</Link>
+                    <ul className="mt-1.5 flex flex-col gap-1">
+                      {g.items.map((i) => (
+                        <li key={i.slug}>
+                          <Link to={i.to} className="text-[12.5px] text-on-surface-variant hover:text-on-surface hover:underline flex justify-between gap-2">
+                            <span className="truncate">{i.label}</span>
+                            <span className="text-[11px] text-outline">{i.count}</span>
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+              <div className="flex flex-col gap-1.5 border-l border-surface-container-high pl-5">
+                <Link to={to} className="text-[13px] font-bold text-on-surface hover:text-secondary flex items-center gap-1">Shop all {label} <Icon name="arrow_forward" className="text-[15px]" /></Link>
+                {(MEGA_EXTRAS[dirKey] || []).map(([href, text]) => (
+                  <Link key={href} to={href} className="text-[12.5px] text-on-surface-variant hover:text-on-surface hover:underline">{text}</Link>
+                ))}
+              </div>
             </div>
           </div>
-        </div>
+        ) : null
       )}
     </div>
   );

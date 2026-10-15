@@ -921,6 +921,19 @@ function OrderDetail() {
             )}
           </div>
         </div>
+        {o.customerMessages?.length > 0 && (
+          <div className="lg:col-span-2 card p-space-lg">
+            <h3 className="text-headline-sm mb-space-md flex items-center gap-2"><Icon name="forum" className="text-secondary" /> Messages from WILDTANE</h3>
+            <ul className="flex flex-col gap-2.5">
+              {[...o.customerMessages].reverse().map((m, i) => (
+                <li key={i} className="p-3 rounded-xl bg-secondary/10 border border-secondary/20">
+                  <p className="text-body-sm whitespace-pre-line">{m.text}</p>
+                  <p className="text-label-sm font-normal text-outline mt-1">{formatDateTime(m.sentAt)}{m.status ? ` · ${m.status}` : ''}</p>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
         <div className="lg:col-span-2 card p-space-lg">
           <h3 className="text-headline-sm mb-space-md">Status timeline</h3>
           <OrderTimeline order={o} />

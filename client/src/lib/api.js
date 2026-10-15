@@ -204,6 +204,7 @@ export const adminApi = {
   invoicePreview: (id) => http.get(`/admin/orders/${id}/invoice-preview`),
   invoicePdf: (id) => http.get(`/admin/orders/${id}/invoice.pdf`, { responseType: 'blob', timeout: 60000 }),
   orderStatus: (id, body) => http.patch(`/admin/orders/${id}/status`, body),
+  orderMessage: (id, body) => http.post(`/admin/orders/${id}/message`, body),
   decideCancellation: (id, body) => http.post(`/admin/orders/${id}/cancellation-decision`, body),
   orderPayment: (id, paymentStatus) => http.patch(`/admin/orders/${id}/payment`, { paymentStatus }),
   retryRefund: (id) => http.post(`/admin/orders/${id}/refund/retry`),

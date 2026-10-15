@@ -59,7 +59,8 @@ function ProductSlidingBar({ items, comfort, priority = false }) {
   };
 
   return (
-    <div className="relative group/slider-wrap">
+    // min-w-0 / w-full: the track must not grow to its content's width, or the % card widths explode.
+    <div className="relative group/slider-wrap w-full min-w-0 max-w-full">
       {/* Sliding Button - Left */}
       <button
         type="button"
@@ -68,14 +69,14 @@ function ProductSlidingBar({ items, comfort, priority = false }) {
         aria-label="Slide to previous items"
         title="Previous items"
         className={cn(
-          "absolute -left-3 sm:-left-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center transition-all duration-300 shadow-xl border",
+          "absolute left-1 sm:left-2 top-1/2 -translate-y-1/2 z-20 w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center transition-all duration-300 shadow-xl border",
           "bg-surface/95 backdrop-blur-md border-surface-container-highest text-on-surface hover:bg-secondary hover:text-on-secondary active:scale-90",
           canLeft
             ? "opacity-95 hover:opacity-100 cursor-pointer hover:scale-105"
             : "opacity-0 pointer-events-none"
         )}
       >
-        <Icon name="chevron_left" className="text-[24px] sm:text-[26px]" />
+        <Icon name="chevron_left" className="text-[22px] sm:text-[24px]" />
       </button>
 
       {/* The Sliding Bar Track */}
@@ -83,7 +84,7 @@ function ProductSlidingBar({ items, comfort, priority = false }) {
         ref={trackRef}
         tabIndex={0}
         aria-label="Products sliding bar"
-        className="grid grid-flow-col auto-cols-[calc(84%-8px)] sm:auto-cols-[calc(48%-10px)] md:auto-cols-[calc(33.333%-14px)] lg:auto-cols-[calc(25%-15px)] gap-3.5 md:gap-5 overflow-x-auto snap-x snap-mandatory scroll-smooth scrollbar-none py-2 px-1 focus-visible:ring-1 focus-visible:ring-secondary rounded-2xl"
+        className="w-full min-w-0 grid grid-flow-col auto-cols-[calc(46%-6px)] sm:auto-cols-[calc(48%-10px)] md:auto-cols-[calc(33.333%-14px)] lg:auto-cols-[calc(25%-15px)] gap-3.5 md:gap-5 overflow-x-auto snap-x snap-mandatory scroll-smooth scrollbar-none py-2 px-1 focus-visible:ring-1 focus-visible:ring-secondary rounded-2xl overscroll-x-contain"
       >
         {items.map((p, i) => (
           <div key={p._id} className="snap-start h-full">
@@ -100,14 +101,14 @@ function ProductSlidingBar({ items, comfort, priority = false }) {
         aria-label="Slide to next items"
         title="Next items"
         className={cn(
-          "absolute -right-3 sm:-right-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center transition-all duration-300 shadow-xl border",
+          "absolute right-1 sm:right-2 top-1/2 -translate-y-1/2 z-20 w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center transition-all duration-300 shadow-xl border",
           "bg-surface/95 backdrop-blur-md border-surface-container-highest text-on-surface hover:bg-secondary hover:text-on-secondary active:scale-90",
           canRight
             ? "opacity-95 hover:opacity-100 cursor-pointer hover:scale-105"
             : "opacity-0 pointer-events-none"
         )}
       >
-        <Icon name="chevron_right" className="text-[24px] sm:text-[26px]" />
+        <Icon name="chevron_right" className="text-[22px] sm:text-[24px]" />
       </button>
 
       {/* Live scroll progress bar */}
@@ -131,7 +132,8 @@ function SubcategoryCircles({ items, activeSlug, onSelectSubcategory, label = 'B
   if (items.length < 2) return null;
 
   return (
-    <nav aria-label={label} className="mb-5 rounded-3xl border border-surface-container-high bg-surface-container-lowest/80 shadow-xs px-3 pt-3.5 pb-2.5 md:px-5 md:pt-4">
+    // Larger screens only: phones get the scrollable pill bar below (it also has "All").
+    <nav aria-label={label} className="hidden lg:block mb-5 rounded-3xl border border-surface-container-high bg-surface-container-lowest/80 shadow-xs px-3 pt-3.5 pb-2.5 md:px-5 md:pt-4">
       <div className="flex items-baseline justify-between gap-2 px-1 pb-2.5">
         <div className="flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-secondary animate-pulse" />
@@ -176,7 +178,7 @@ function SubcategoryCircles({ items, activeSlug, onSelectSubcategory, label = 'B
   );
 }
 
-export default function GroupedProducts({ products, bySlug, order, comfort, loadingMore, className, circles, preset }) {
+export default function GroupedProducts({ products, bySlug, order, comfort, loadingMore, className, circles, circleLabel = 'Bag subcategories', preset }) {
   const location = useLocation();
   const showcaseRef = useRef(null);
 
@@ -324,9 +326,9 @@ export default function GroupedProducts({ products, bySlug, order, comfort, load
     <div className={cn('flex flex-col gap-5', className)}>
       {/* ── Top Department Switcher & Sliding Bar Indicator ── */}
       <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-surface-container-high">
-        <div className="flex items-center gap-2">
-          <span className="text-[12px] uppercase tracking-wider font-bold text-outline">Department:</span>
-          <div className="inline-flex p-1 rounded-2xl bg-surface-container-high/70 border border-surface-container-highest">
+        <div className="flex items-center gap-2 min-w-0 max-w-full">
+          <span className="hidden sm:inline text-[12px] uppercase tracking-wider font-bold text-outline">Department:</span>
+          <div className="inline-flex p-1 rounded-2xl bg-surface-container-high/70 border border-surface-container-highest overflow-x-auto scrollbar-none max-w-full">
             <Link
               to="/bags"
               className={cn(
@@ -366,19 +368,16 @@ export default function GroupedProducts({ products, bySlug, order, comfort, load
           </div>
         </div>
 
-        <div className="flex items-center gap-2 text-[12px] text-outline">
-          <Icon name="view_carousel" className="text-[16px] text-secondary" />
-          <span>Interactive Sliding Bar &bull; Click arrows to slide items</span>
-        </div>
+        <span className="hidden lg:inline text-[12px] text-outline">{totalCount} item{totalCount === 1 ? '' : 's'}</span>
       </div>
 
-      {/* ── Top Story Circles (Quick jump into any Bag Subcategory) ── */}
+      {/* ── Top circles: one per subcategory (same on Clothing, Men, Women, Bags, Universal) ── */}
       {circles && subcategoryGroups.length > 1 && (
         <SubcategoryCircles
           items={subcategoryGroups}
           activeSlug={activeSubSlug}
           onSelectSubcategory={handleSelectSubcategory}
-          label={isBags ? 'Bag Subcategories' : isMen ? 'Men’s Bag Subcategories' : isWomen ? 'Women’s Bag Subcategories' : 'Bag Subcategories'}
+          label={circleLabel}
         />
       )}
 
@@ -386,7 +385,7 @@ export default function GroupedProducts({ products, bySlug, order, comfort, load
       <div className="lg:hidden flex flex-col gap-2">
         <div className="flex items-center justify-between px-1">
           <span className="text-[12px] font-bold uppercase tracking-wider text-outline flex items-center gap-1.5">
-            <Icon name="shopping_bag" className="text-[15px] text-secondary" /> Bag Subcategories
+            <Icon name="category" className="text-[15px] text-secondary" /> {circleLabel}
           </span>
           {activeSubSlug !== 'all' && (
             <button
@@ -448,7 +447,7 @@ export default function GroupedProducts({ products, bySlug, order, comfort, load
                 </span>
                 <div>
                   <h3 className="text-[13px] font-bold uppercase tracking-wider text-on-surface">Subcategories</h3>
-                  <p className="text-[11px] text-outline">{subcategoryGroups.length} bag types</p>
+                  <p className="text-[11px] text-outline">{subcategoryGroups.length} options</p>
                 </div>
               </div>
               <span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface-variant font-bold">
@@ -467,7 +466,7 @@ export default function GroupedProducts({ products, bySlug, order, comfort, load
                     panelMode === 'subcategories' ? 'bg-surface text-secondary shadow-xs' : 'text-outline hover:text-on-surface'
                   )}
                 >
-                  Bag Types
+                  Subcategories
                 </button>
                 <button
                   type="button"
@@ -482,7 +481,7 @@ export default function GroupedProducts({ products, bySlug, order, comfort, load
               </div>
             )}
 
-            {/* "All Bag Subcategories" option */}
+            {/* "All Subcategories" option */}
             <button
               type="button"
               onClick={() => {
@@ -510,7 +509,7 @@ export default function GroupedProducts({ products, bySlug, order, comfort, load
                 <Icon name="grid_view" />
               </span>
               <span className="flex-1 truncate">
-                {panelMode === 'subcategories' ? 'All Bag Subcategories' : 'All Categories'}
+                {panelMode === 'subcategories' ? 'All Subcategories' : 'All Categories'}
               </span>
               <span
                 className={cn(
@@ -618,7 +617,8 @@ export default function GroupedProducts({ products, bySlug, order, comfort, load
         </aside>
 
         {/* ── Right Main Area: The Selected Subcategory in Front with Sliding Bar ── */}
-        <main ref={showcaseRef} className="flex-1 min-w-0 flex flex-col gap-8 scroll-mt-28">
+        {/* w-full: in the phone (column) layout `items-start` would otherwise size this to its content. */}
+        <main ref={showcaseRef} className="w-full flex-1 min-w-0 flex flex-col gap-8 scroll-mt-28">
           {/* CASE A: User clicked a particular SUBCATEGORY (e.g. Backpacks, Handbags, Tote Bags...) -> that subcategory comes directly in front! */}
           {currentSubGroup ? (
             <section className="flex flex-col gap-4">

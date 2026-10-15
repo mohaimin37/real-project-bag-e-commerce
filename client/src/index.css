@@ -260,6 +260,7 @@
   *,
   *::before,
   *::after {
+    box-sizing: border-box;
     font-variant-numeric: normal;
     font-feature-settings: "zero" 0;
   }
@@ -269,9 +270,10 @@
     @apply bg-surface text-on-surface font-sans antialiased;
     font-variant-numeric: normal;
     font-feature-settings: "zero" 0;
-    overflow-x: clip;
+    overflow-x: hidden !important;
+    position: relative;
     width: 100%;
-    max-width: 100%;
+    max-width: 100vw;
   }
   html {
     scroll-behavior: smooth;
@@ -289,8 +291,9 @@
   }
   #root {
     width: 100%;
-    max-width: 100%;
-    overflow-x: clip;
+    max-width: 100vw;
+    overflow-x: hidden !important;
+    position: relative;
   }
   img {
     -webkit-user-drag: none;

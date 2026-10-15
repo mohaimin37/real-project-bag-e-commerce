@@ -29,6 +29,12 @@ async function start() {
   };
   process.on('SIGINT', shutdown);
   process.on('SIGTERM', shutdown);
+  process.on('uncaughtException', (err) => {
+    console.error('Server Uncaught Exception:', err);
+  });
+  process.on('unhandledRejection', (reason, promise) => {
+    console.error('Server Unhandled Rejection at:', promise, 'reason:', reason);
+  });
 }
 
 if (cluster.isPrimary && WORKERS > 1) {

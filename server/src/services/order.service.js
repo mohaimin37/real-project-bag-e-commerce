@@ -383,8 +383,9 @@ async function restoreInventory(order) {
   order.coinsReversed = true;
 }
 
-export async function changeOrderStatus(order, { status, note, trackingNumber, courier, at, notifyCustomer = false }, changedBy) {
-  if (order.orderStatus === status && !trackingNumber && !courier) return order;
+export async function changeOrderStatus(order, { status, note, trackingNumber, courier, at, notifyCustomer = false, customerMessage = '' }, changedBy) {
+  const message = String(customerMessage || '').trim().slice(0, 1000);
+  if (order.orderStatus === status && !trackingNumber && !courier && !message) return order;
   if (['Cancelled', 'Returned'].includes(order.orderStatus) && status !== order.orderStatus) {
     throw ApiError.badRequest(`This order is ${order.orderStatus.toLowerCase()} and can no longer change status`);
   }
@@ -403,6 +404,7 @@ export async function changeOrderStatus(order, { status, note, trackingNumber, c
   }
   if (trackingNumber !== undefined) order.trackingNumber = trackingNumber;
   if (courier !== undefined) order.courier = courier;
+  if (message) order.customerMessages.push({ text: message, status, emailed: Boolean(notifyCustomer && order.email), sentAt: new Date(), by: changedBy });
   if (RESTOCK_STATUSES.includes(status)) await restoreInventory(order);
   if (status === 'Delivered') {
     if (!order.deliveredAt) order.deliveredAt = when;
@@ -443,9 +445,13 @@ export async function changeOrderStatus(order, { status, note, trackingNumber, c
       Setting.get()
         .then((st) => dispatchInvoice(order, st))
         .catch((e) => console.error('[invoice] dispatch failed:', e.message));
+      // The invoice email is standard; a personal message goes as its own short email.
+      if (message) notifyCustomerOfStatus(order, when, note, message).catch((e) => console.error('[email] status update failed:', e.message));
     } else {
-      notifyCustomerOfStatus(order, when, note).catch((e) => console.error('[email] status update failed:', e.message));
+      notifyCustomerOfStatus(order, when, note, message).catch((e) => console.error('[email] status update failed:', e.message));
     }
+  } else if (!statusChanged && message && notifyCustomer) {
+    sendOrderMessageEmail(order, message).catch((e) => console.error('[email] order message failed:', e.message));
   }
   return order;
 }
@@ -608,7 +614,30 @@ const STATUS_MESSAGES = {
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 
-async function notifyCustomerOfStatus(order, when, note) {
+/** A message from the team about an order, by email (also listed on the customer's order page). */
+export async function sendOrderMessageEmail(order, message) {
+  if (!order.email) return;
+  const link = `${env.siteUrl}/account/orders/${order.orderId}`;
+  await sendEmail({
+    to: order.email,
+    subject: `Message about your order ${order.orderId}`,
+    text: [`Hi ${order.customerName},`, '', message, '', `Order: ${order.orderId} (${order.orderStatus})`, `View your order: ${link}`, '', 'WILDTANE'].join('\n'),
+    html: `<p>Hi ${esc(order.customerName)},</p><p style="white-space:pre-line">${esc(message)}</p><p style="color:#666">Order <b>${esc(order.orderId)}</b> · ${esc(order.orderStatus)}</p><p><a href="${esc(link)}" style="background:#000;color:#fff;padding:12px 20px;text-decoration:none;border-radius:4px;display:inline-block">View your order</a></p><p>WILDTANE</p>`,
+  });
+}
+
+/** Sends a team message about an order: saved on the order (customer sees it), emailed if asked. */
+export async function addOrderMessage(order, { text, email = true }, adminId) {
+  const message = String(text || '').trim().slice(0, 1000);
+  if (message.length < 2) throw ApiError.badRequest('Write a message');
+  const emailed = Boolean(email && order.email);
+  order.customerMessages.push({ text: message, status: order.orderStatus, emailed, sentAt: new Date(), by: adminId });
+  await order.save();
+  if (emailed) sendOrderMessageEmail(order, message).catch((e) => console.error('[email] order message failed:', e.message));
+  return order;
+}
+
+async function notifyCustomerOfStatus(order, when, note, message = '') {
   if (!order.email) return;
   const status = order.orderStatus;
   const time = when.toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Kolkata' });
@@ -619,7 +648,7 @@ async function notifyCustomerOfStatus(order, when, note) {
   const lines = [
     `Hi ${order.customerName},`,
     '',
-    `${STATUS_MESSAGES[status] || `Your order status is now ${status}.`}`,
+    message || `${STATUS_MESSAGES[status] || `Your order status is now ${status}.`}`,
     ...(refund.length ? ['', 'Refund:', ...refund.map((l) => `• ${l}`)] : []),
     '',
     `Order: ${order.orderId}`,
@@ -634,7 +663,7 @@ async function notifyCustomerOfStatus(order, when, note) {
     to: order.email,
     subject: `Order ${order.orderId}: ${status}`,
     text: lines.join('\n'),
-    html: `<p>Hi ${esc(order.customerName)},</p><p>${esc(STATUS_MESSAGES[status] || `Your order status is now ${status}.`)}</p>
+    html: `<p>Hi ${esc(order.customerName)},</p><p style="white-space:pre-line">${esc(message || STATUS_MESSAGES[status] || `Your order status is now ${status}.`)}</p>
 ${refund.length ? `<p><b>Refund</b></p><ul>${refund.map((l) => `<li>${esc(l)}</li>`).join('')}</ul>` : ''}
 <table style="border-collapse:collapse;font-size:14px">
 <tr><td style="padding:4px 12px 4px 0;color:#666">Order</td><td><b>${esc(order.orderId)}</b></td></tr>

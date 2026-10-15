@@ -18,6 +18,7 @@ import {
   retryOrderRefund,
   createShipmentForOrder,
   decideOrderCancellation,
+  addOrderMessage,
 } from '../services/order.service.js';
 import { trackShipment, orderStatusFromProvider, shippingConfigured } from '../services/shipping.service.js';
 import { verifyRazorpayWebhookSignature } from '../services/payment.service.js';
@@ -172,6 +173,14 @@ export const adminUpdateStatus = asyncHandler(async (req, res) => {
   const order = await Order.findOne(findQuery(req.params.id));
   if (!order) throw ApiError.notFound('Order not found');
   await changeOrderStatus(order, req.body, req.user._id);
+  res.json({ success: true, order });
+});
+
+/** Admin: message the customer about their order (shown on their order page; emailed if asked). */
+export const adminMessageCustomer = asyncHandler(async (req, res) => {
+  const order = await Order.findOne(findQuery(req.params.id));
+  if (!order) throw ApiError.notFound('Order not found');
+  await addOrderMessage(order, req.body, req.user._id);
   res.json({ success: true, order });
 });
 

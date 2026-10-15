@@ -40,7 +40,7 @@ export default function ShopWidgetsBar({ state, activeCount, onClear, total, vie
             <Icon name="tune" className="text-[15px]" />
           </span>
           <span className="text-[12.5px] font-bold text-on-surface">
-            Fast Shopping Widgets
+            Quick filters
           </span>
           {activeCount > 0 && (
             <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-secondary text-on-secondary shadow-2xs">
@@ -49,7 +49,7 @@ export default function ShopWidgetsBar({ state, activeCount, onClear, total, vie
           )}
           {total != null && (
             <span className="text-[11px] text-outline hidden sm:inline">
-              ({total} bag{total === 1 ? '' : 's'})
+              ({total} item{total === 1 ? '' : 's'})
             </span>
           )}
         </div>

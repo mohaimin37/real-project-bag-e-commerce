@@ -94,7 +94,23 @@ export const WOMEN = {
       ],
     },
     {
-      title: "Women's Accessories",
+      title: "Women's Clothing & Apparel",
+      groups: [
+        {
+          key: 'clothing', label: 'Clothing & Apparel', parent: 'clothing',
+          items: [
+            it('Dresses', 'clothing-dresses', { badge: 'HOT' }),
+            it('T-Shirts & Tops', 'clothing-t-shirts'),
+            it('Shirts & Blouses', 'clothing-shirts'),
+            it('Jackets & Outerwear', 'clothing-jackets'),
+            it('Knitwear & Sweaters', 'clothing-knitwear'),
+            it('Jeans & Pants', 'clothing-jeans'),
+          ],
+        },
+      ],
+    },
+    {
+      title: "Women's Accessories & Perfumes",
       groups: [
         {
           key: 'accessories', label: 'Accessories', parent: 'women-accessories',
@@ -104,6 +120,14 @@ export const WOMEN = {
             it('Keychains and Bag Charms', 'women-keychains'), it('Card Holders', 'women-card-holders'), it('Coin Purses', 'women-coin-purses'),
             it('Cosmetic Bags', 'women-cosmetic-bags'), it('Jewelry Organizers', 'women-jewelry-organizers', { also: ['women-jewelry-pouches'] }),
             it('Travel Organizers', 'women-travel-organizers'),
+          ],
+        },
+        {
+          key: 'perfumes', label: 'Perfumes & Fragrances', parent: 'fragrance',
+          items: [
+            it('Eau de Parfum', 'perfumes-eau-de-parfum', { badge: 'NEW' }),
+            it('Attars & Perfume Oils', 'perfumes-attars'),
+            it('Minis & Travel Sizes', 'perfumes-minis'),
           ],
         },
       ],
@@ -183,7 +207,22 @@ export const MEN = {
       ],
     },
     {
-      title: "Men's Accessories",
+      title: "Men's Clothing & Apparel",
+      groups: [
+        {
+          key: 'clothing', label: 'Clothing & Apparel', parent: 'clothing',
+          items: [
+            it('T-Shirts & Tees', 'clothing-t-shirts', { badge: 'POPULAR' }),
+            it('Shirts', 'clothing-shirts'),
+            it('Jackets & Blazers', 'clothing-jackets', { badge: 'NEW' }),
+            it('Knitwear & Hoodies', 'clothing-knitwear'),
+            it('Jeans & Denim', 'clothing-jeans'),
+          ],
+        },
+      ],
+    },
+    {
+      title: "Men's Accessories & Fragrance",
       groups: [
         {
           key: 'accessories', label: 'Accessories', parent: 'men-accessories', also: ['men-belts'],
@@ -192,6 +231,14 @@ export const MEN = {
             it('Travel Organizers', 'men-travel-organizers', { also: ['men-tech-organizers'] }), it('Passport Holders', 'men-passport-holders'),
             it('Toiletry Pouches', 'men-toiletry-bags'), it('Sunglasses', 'men-sunglasses', { optional: true }), it('Caps and Hats', 'men-caps-hats', { optional: true }),
             it('Everyday Carry Accessories', 'men-everyday-carry'),
+          ],
+        },
+        {
+          key: 'perfumes', label: 'Perfumes & Fragrance', parent: 'fragrance',
+          items: [
+            it('Eau de Parfum', 'perfumes-eau-de-parfum', { badge: 'NEW' }),
+            it('Attars & Perfume Oils', 'perfumes-attars'),
+            it('Minis & Travel Sizes', 'perfumes-minis'),
           ],
         },
       ],

@@ -115,6 +115,17 @@ const orderSchema = new mongoose.Schema(
     paymentReference: String,
     paymentDetails: { type: mongoose.Schema.Types.Mixed, default: null },
     orderStatus: { type: String, enum: ORDER_STATUSES, default: 'Pending', index: true },
+    // Messages the team sent the customer about this order (shown on their order page; emailed when chosen).
+    customerMessages: [
+      {
+        _id: false,
+        text: { type: String, maxlength: 1000 },
+        status: String, // the order status the message went with, if any
+        emailed: { type: Boolean, default: false },
+        sentAt: { type: Date, default: Date.now },
+        by: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+      },
+    ],
     statusHistory: [
       {
         _id: false,

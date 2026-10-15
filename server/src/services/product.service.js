@@ -145,6 +145,19 @@ export async function getFacets(baseFilter) {
         price: [{ $group: { _id: null, min: { $min: '$finalPrice' }, max: { $max: '$finalPrice' } } }],
         sizes: [{ $group: { _id: '$sizeGroup', count: { $sum: 1 } } }],
         genders: [{ $group: { _id: '$gender', count: { $sum: 1 } } }],
+        // Main category of each product (Bags, Clothing, Accessories…) — the Men / Women category circles.
+        categories: [
+          { $sort: { isFeatured: -1, isBestseller: -1, createdAt: -1 } },
+          {
+            $group: {
+              _id: '$category',
+              count: { $sum: 1 },
+              // A real product photo for the circle (main photo, else the first variant's).
+              img: { $first: { $ifNull: [{ $arrayElemAt: ['$images.url', 0] }, { $arrayElemAt: [{ $arrayElemAt: ['$variants.images.url', 0] }, 0] }] } },
+            },
+          },
+          { $sort: { count: -1 } },
+        ],
         onSale: [{ $match: { $expr: { $lt: ['$finalPrice', '$price'] } } }, { $count: 'n' }],
         // How many products clear each discount step, so empty steps are hidden.
         discounts: [
@@ -176,6 +189,7 @@ export async function getFacets(baseFilter) {
     price: result.price[0] ? { min: result.price[0].min, max: result.price[0].max } : { min: 0, max: 0 },
     sizes: Object.fromEntries(result.sizes.map((s) => [s._id || 'small', s.count])),
     genders: Object.fromEntries(result.genders.map((g) => [g._id || 'unisex', g.count])),
+    categories: result.categories.filter((c) => c._id).map((c) => ({ id: String(c._id), count: c.count, img: c.img || '' })),
     onSale: result.onSale[0]?.n || 0,
     discounts: { 10: result.discounts[0]?.d10 || 0, 25: result.discounts[0]?.d25 || 0, 40: result.discounts[0]?.d40 || 0 },
     bestseller: result.flags[0]?.bestseller || 0,

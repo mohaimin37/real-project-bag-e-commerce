@@ -4,7 +4,7 @@ import { useDispatch } from 'react-redux';
 import { keepPreviousData, useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { api } from '../lib/api';
 import { cn, imgUrl } from '../lib/format';
-import { TAB_TONES } from '../lib/categoryTone';
+import { TAB_TONES, categoryTone } from '../lib/categoryTone';
 import { useCategories, useConfig, useMoney } from '../hooks/useStore';
 import { useCart } from '../hooks/useCart';
 import { setCartOpen, setSearchOpen } from '../store';
@@ -14,7 +14,9 @@ import { Drawer, ErrorState, Icon, Modal, Spinner, Toggle } from '../components/
 import ShopWidgetsBar from '../components/layout/ShopWidgetsBar';
 import Breadcrumbs from '../components/layout/Breadcrumbs';
 import { BAGS } from '../content/taxonomy';
+import { prefersReducedMotion } from '../theme/engine';
 import GroupedProducts from '../components/GroupedProducts';
+import ClothingCategoryMenu from '../components/layout/ClothingCategoryMenu';
 import { OffersCarousel, YourOffersStrip } from '../components/offers';
 
 
@@ -263,6 +265,18 @@ const DEPARTMENT_NAV = [
 ];
 
 export const DEPARTMENT_SHORTCUTS = {
+  bags: [
+    { key: 'all', label: 'All Bags', category: '', icon: 'shopping_bag', img: '/uploads/seed/terminal-traveler.jpg' },
+    { key: 'backpacks', label: 'Backpacks', category: 'backpacks', icon: 'backpack', img: '/uploads/seed/backpack-terracotta.jpg' },
+    { key: 'handbags', label: 'Handbags & Totes', category: 'handbags', icon: 'shopping_bag', img: '/uploads/seed/handbag-sienna.jpg' },
+    { key: 'laptop-bags', label: 'Laptop Bags', category: 'laptop-bags', icon: 'laptop_mac', img: '/uploads/seed/catalog/laptop-sterling.jpg' },
+    { key: 'office-bags', label: 'Briefcases', category: 'office-bags', icon: 'business_center', img: '/uploads/seed/briefcase-oxford.jpg' },
+    { key: 'cabin-luggage', label: 'Cabin Luggage', category: 'cabin-luggage', icon: 'luggage', img: '/uploads/seed/cabin-aluminium.jpg' },
+    { key: 'duffle-bags', label: 'Travel Duffels', category: 'duffle-bags', icon: 'flight_takeoff', img: '/uploads/seed/duffle-tan.jpg' },
+    { key: 'crossbody-bags', label: 'Crossbody & Slings', category: 'crossbody-bags', icon: 'work', img: '/uploads/seed/catalog/crossbody-cloud.jpg' },
+    { key: 'clutches', label: 'Clutches', category: 'clutches', icon: 'account_balance_wallet', img: '/uploads/seed/clutch-espresso.jpg' },
+    { key: 'wallets', label: 'Wallets', category: 'wallets', icon: 'wallet', img: '/uploads/seed/catalog/wallet-woodland.jpg' },
+  ],
   men: [
     { key: 'all', label: 'All Men', category: '', icon: 'man', img: '/uploads/seed/briefcase-black.jpg' },
     { key: 'office-bags', label: 'Briefcases', category: 'office-bags', icon: 'business_center', img: '/uploads/seed/briefcase-oxford.jpg' },
@@ -449,7 +463,97 @@ function DepartmentHero({ page, current, onSelectCategory, selectedCategory }) {
   );
 }
 
-function Filters({ facets, state, flat, activeCategory, lockedGender, lockedFlag }) {
+/**
+ * Men / Women / Universal: one photo card per main category of the shopper's products (Bags,
+ * Clothing, Walletsâ€¦), with a real product photo and item count. Picking one filters the page; its
+ * subcategories then appear in the filter panel's "Category" section, as on the Clothing page.
+ * Desktop: one even row (wraps if needed). Phones: a swipeable row.
+ */
+const CARD = 'group relative shrink-0 snap-start w-[112px] sm:w-[128px] md:w-auto aspect-[4/5] rounded-2xl overflow-hidden text-left transition-all duration-300';
+
+function CategoryCircles({ items, activeSlug, onPick, label, total, loading }) {
+  // Phones: keep the picked card in view in the swipeable row (horizontal scroll only, never the page).
+  const listRef = useRef(null);
+  useEffect(() => {
+    const ul = listRef.current;
+    const card = ul?.querySelector('[aria-pressed="true"]');
+    if (!ul || !card || ul.scrollWidth <= ul.clientWidth) return;
+    const left = card.offsetLeft - (ul.clientWidth - card.offsetWidth) / 2;
+    ul.scrollTo({ left: Math.max(0, left), behavior: 'smooth' });
+  }, [activeSlug, items.length]);
+  const cols = 'md:grid md:grid-cols-4 lg:grid-cols-7';
+  const shell = (children) => (
+    <nav aria-label={label} className="mb-5 rounded-3xl border border-surface-container-high bg-gradient-to-br from-surface-container-lowest via-surface-container-lowest to-secondary/5 shadow-xs p-3 md:p-5">
+      <div className="flex items-end justify-between gap-2 px-1 pb-3">
+        <div>
+          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-secondary">Categories</p>
+          <h2 className="font-display text-[19px] md:text-[23px] leading-tight text-on-surface">{label}</h2>
+        </div>
+        {!loading && <span className="hidden sm:inline text-[11.5px] text-outline font-medium shrink-0">{items.length} categories · {total} items</span>}
+      </div>
+      {children}
+    </nav>
+  );
+  // Same size while loading, so the products below don't jump when the cards arrive.
+  if (loading) {
+    return shell(
+      <div className={cn('flex gap-2.5 md:gap-3 overflow-hidden', cols)} aria-hidden="true">
+        {Array.from({ length: 7 }, (_, i) => <div key={i} className={cn(CARD, 'bg-surface-container animate-pulse')} />)}
+      </div>
+    );
+  }
+  if (items.length < 2) return null;
+  const isAll = !activeSlug;
+  return shell(
+    <ul ref={listRef} className={cn('flex gap-2.5 md:gap-3 overflow-x-auto md:overflow-visible snap-x scrollbar-none -mx-1 px-1 pb-1 touch-pan-x', cols)}>
+      <li className="contents">
+        <button
+          type="button"
+          onClick={() => onPick('')}
+          aria-pressed={isAll}
+          className={cn(CARD, 'bg-gradient-to-br from-secondary via-secondary/85 to-primary text-on-secondary flex flex-col justify-between p-3', isAll ? 'ring-2 ring-secondary ring-offset-2 ring-offset-surface shadow-lg' : 'opacity-90 hover:opacity-100 hover:-translate-y-0.5 hover:shadow-md')}
+        >
+          <Icon name="apps" className="text-[30px]" />
+          <span>
+            <span className="block text-[15px] font-bold leading-tight">All</span>
+            <span className="block text-[11.5px] opacity-85">{total} items</span>
+          </span>
+        </button>
+      </li>
+      {items.map((c) => {
+        const on = activeSlug === c.slug;
+        return (
+          <li key={c.slug} className="contents">
+            <button
+              type="button"
+              onClick={() => onPick(on ? '' : c.slug)}
+              aria-pressed={on}
+              title={`${c.name} (${c.count})`}
+              className={cn(CARD, 'bg-surface-container', on ? 'ring-2 ring-secondary ring-offset-2 ring-offset-surface shadow-lg' : 'hover:-translate-y-0.5 hover:shadow-md')}
+            >
+              {c.img ? (
+                <img src={imgUrl(c.img, 320)} alt="" loading="lazy" decoding="async" className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+              ) : (
+                <span className="absolute inset-0 flex items-center justify-center text-secondary"><Icon name="category" className="text-[34px]" /></span>
+              )}
+              <span aria-hidden="true" className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/15 to-transparent" />
+              {on && (
+                <span className="absolute top-2 right-2 w-6 h-6 rounded-full bg-secondary text-on-secondary flex items-center justify-center shadow">
+                  <Icon name="check" className="text-[16px]" />
+                </span>
+              )}
+              <span className="absolute inset-x-0 bottom-0 p-2.5 text-white">
+                <span className="block text-[13.5px] md:text-[14.5px] font-bold leading-tight drop-shadow">{c.name}</span>
+                <span className="block text-[11px] text-white/80">{c.count} item{c.count === 1 ? '' : 's'}</span>
+              </span>
+            </button>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+function Filters({ facets, state, flat, activeCategory, lockedGender, lockedFlag, mainCategories }) {
   const { get, getList, update, toggleIn } = state;
   const money = useMoney();
   const [min, setMin] = useState(get('minPrice'));
@@ -471,9 +575,28 @@ function Filters({ facets, state, flat, activeCategory, lockedGender, lockedFlag
 
   return (
     <div className="flex flex-col">
+      {/* Men / Women before a category is picked: the main categories, like Clothing's list. */}
+      {lockedGender && !activeCategory && mainCategories?.length > 0 && (
+        <Section title="Category">
+          <div className="flex flex-col">
+            {mainCategories.map((c) => (
+              <button key={c.slug} type="button" onClick={() => update({ category: c.slug })} className="flex items-center justify-between py-1.5 text-[13px] hover:text-secondary text-left transition-colors">
+                <span>{c.name}</span>
+                <span className="text-[11px] text-outline">{c.count}</span>
+              </button>
+            ))}
+          </div>
+        </Section>
+      )}
       {subcats?.length > 0 && (
         <Section title="Category">
           <div className="flex flex-col">
+            {/* Men / Women: back to every category, or from a subcategory up to its main category. */}
+            {lockedGender && (
+              <button type="button" onClick={() => update({ category: parentCat && listParent === parentCat ? parentCat.slug : '' })} className="flex items-center gap-1 py-1.5 text-[13px] text-on-surface-variant hover:text-secondary text-left">
+                <Icon name="chevron_left" className="text-[16px]" /> {parentCat && listParent === parentCat ? `All ${parentCat.name}` : 'All categories'}
+              </button>
+            )}
             {/* Way back up to the parent, shown while a subcategory is selected. */}
             {!lockedGender && parentCat && listParent === parentCat && (
               <Link to={`/shop/${parentCat.slug}`} className="flex items-center gap-1 py-1.5 text-[13px] text-on-surface-variant hover:text-secondary">
@@ -918,6 +1041,30 @@ export default function Shop({ preset, categoryList, pageTitle, pageDescription,
     staleTime: 5 * 60 * 1000,
   });
 
+  // Men / Women: the main categories of this shopper's products (Bags, Clothing, Accessories…), counted
+  // without the selected category so every circle stays visible while one is picked.
+  const isGenderPage = ['men', 'women', 'universal', 'unisex'].includes(preset);
+  // "Men’s Wallets" / "Women’s Wallets" / "Universal Wallets"
+  const genderLabel = genderPage ? (preset === 'men' || preset === 'women' ? `${genderPage.title}’s` : genderPage.title) : '';
+  const productsTopRef = useRef(null);
+  const genderFacets = useQuery({
+    queryKey: ['facets', 'gender-categories', pageGender],
+    queryFn: () => api.facets({ gender: pageGender }),
+    select: (d) => d.facets?.categories || [],
+    enabled: isGenderPage,
+    staleTime: 5 * 60 * 1000,
+  });
+  const genderCategories = useMemo(
+    () =>
+      (genderFacets.data || [])
+        .map((f) => {
+          const c = flat.find((x) => String(x._id) === f.id);
+          return c && { slug: c.slug, name: c.name, count: f.count, img: f.img || c.image?.url || '', tone: categoryTone(c) };
+        })
+        .filter(Boolean),
+    [genderFacets.data, flat]
+  );
+
   const items = useMemo(() => products.data?.pages.flatMap((p) => p.items) || [], [products.data]);
   const total = products.data?.pages[0]?.total;
   const { hasNextPage, isFetchingNextPage, fetchNextPage } = products;
@@ -934,7 +1081,7 @@ export default function Shop({ preset, categoryList, pageTitle, pageDescription,
         : preset === 'offers'
       ? 'Offers'
       : genderPage && activeCategory
-      ? `${genderPage.title}’s ${activeCategory.name}`
+      ? `${genderLabel} ${activeCategory.name}`
       : genderPage?.title ||
         activeCategory?.name ||
         // While the category list is still loading, name the page from its address (never "All products").
@@ -991,7 +1138,11 @@ export default function Shop({ preset, categoryList, pageTitle, pageDescription,
   const isShopRoot = !preset && !categorySlug && !categoryList;
   // Clothing and Perfumes open like Men/Women: category circles above products grouped by section.
   const circleDept = ['clothing', 'fragrance'].includes(activeCategory?.slug) && !selectedCatParam;
-  const showCircles = ((preset === 'men' || preset === 'women' || preset === 'bags' || preset === 'universal') || circleDept || activeCategory?.slug === 'bags') && !get('q');
+  // Men and Women use the same layout as Clothing: one panel of subcategory circles above products
+  // grouped by subcategory (no separate menu banner on top).
+  // (Men / Women show main-category circles instead — see CategoryCircles.)
+  const showCircles = (preset === 'bags' || circleDept || activeCategory?.slug === 'bags') && !isGenderPage && !get('q');
+  const circleLabel = preset === 'men' ? 'Men’s subcategories' : preset === 'women' ? 'Women’s subcategories' : preset === 'universal' || preset === 'unisex' ? 'Universal subcategories' : circleDept && activeCategory ? `${activeCategory.name} subcategories` : 'Bag subcategories';
   const filtered = [...FILTER_KEYS, 'q', 'sort', 'category'].some((k) => get(k));
   const listLd = items.length && !filtered ? [itemListLd(items.slice(0, 24))] : [];
 
@@ -1015,7 +1166,7 @@ export default function Shop({ preset, categoryList, pageTitle, pageDescription,
   // only very large results render batch by batch.
   const waitForAll = grouped && Boolean(products.data) && hasNextPage && !products.isPlaceholderData && (total ?? 0) <= 360;
 
-  const filters = <Filters facets={facets.data} state={state} flat={flat} activeCategory={activeCategory} lockedGender={Boolean(genderPage)} lockedFlag={Boolean(flagPage)} />;
+  const filters = <Filters facets={facets.data} state={state} flat={flat} activeCategory={activeCategory} lockedGender={Boolean(genderPage)} lockedFlag={Boolean(flagPage)} mainCategories={isGenderPage ? genderCategories : undefined} />;
 
   return (
     <>
@@ -1029,7 +1180,7 @@ export default function Shop({ preset, categoryList, pageTitle, pageDescription,
                 : preset === 'bags' && !selectedCatParam
                   ? BAGS_PAGE.seoTitle
                   : genderPage && activeCategory
-                    ? `${genderPage.title}’s ${activeCategory.name} — WILDTANE`
+                    ? `${genderLabel} ${activeCategory.name} — WILDTANE`
                     : genderPage
                       ? genderPage.seoTitle
                       : activeCategory
@@ -1068,8 +1219,21 @@ export default function Shop({ preset, categoryList, pageTitle, pageDescription,
         </>
       )}
 
-      {/* Category Rail (hidden when searching, and on pages whose "Shop by category" panel already lists the same options) */}
-      {!get('q') && !dirKey && !isShopRoot && !circleDept && !(chipParent && chipList.length > 0) && (
+      {/* ── UPPER PORTION CATEGORIES AND BELOW SUBCATEGORIES FOR BAGS, MEN, WOMEN, UNIVERSAL ── */}
+      {!get('q') && ['bags', 'men', 'women', 'universal', 'unisex'].includes(preset) && (
+        <ClothingCategoryMenu
+          preset={preset === 'unisex' ? 'universal' : preset}
+          selectedCategory={selectedCatParam || categorySlug || ''}
+          onSelectCategory={(slug) => {
+            update({ category: slug });
+            productsTopRef.current?.scrollIntoView({ behavior: prefersReducedMotion() ? 'auto' : 'smooth', block: 'start' });
+          }}
+          totalProductsCount={total ?? items.length}
+        />
+      )}
+
+      {/* Category Rail (hidden on Bags, Men and Women pages which have dedicated ClothingCategoryMenu, when searching, etc.) */}
+      {!get('q') && !dirKey && !isShopRoot && !circleDept && !isGenderPage && preset !== 'bags' && !(chipParent && chipList.length > 0) && (
         <div className="container-x pt-2 md:pt-4">
           <CategoryRail
             tree={tree}
@@ -1083,8 +1247,6 @@ export default function Shop({ preset, categoryList, pageTitle, pageDescription,
         </div>
       )}
 
-      {/* Department pages (Men, Women, Bags, Accessories, Travel) open straight onto the products,
-          divided by category headers below — no tiles or option strips in front of them. */}
 
       {/* ── MOBILE VIEW (< md): FLIPKART MOBILE SEARCH & FILTER TOP BAR ── */}
       <div className="md:hidden sticky top-0 z-40 bg-surface-container-lowest border-b border-outline-variant/30 shadow-xs">
@@ -1392,6 +1554,10 @@ export default function Shop({ preset, categoryList, pageTitle, pageDescription,
             onViewDensityChange={setViewDensity}
           />
 
+          <div ref={productsTopRef} className="scroll-mt-28" aria-hidden="true" />
+
+          {/* While a new category loads, the current products stay (dimmed) instead of flashing empty. */}
+          <div className={cn('transition-opacity duration-300', products.isPlaceholderData && 'opacity-50 pointer-events-none')} aria-busy={products.isPlaceholderData || undefined}>
           {products.isError ? (
             <ErrorState error={products.error} onRetry={products.refetch} />
           ) : products.data && items.length === 0 ? (
@@ -1440,6 +1606,7 @@ export default function Shop({ preset, categoryList, pageTitle, pageDescription,
               comfort={viewDensity === 'comfort'}
               loadingMore={hasNextPage || isFetchingNextPage}
               circles={showCircles}
+              circleLabel={circleLabel}
               preset={preset}
             />
           ) : (
@@ -1456,6 +1623,7 @@ export default function Shop({ preset, categoryList, pageTitle, pageDescription,
               {isFetchingNextPage && Array.from({ length: 4 }, (_, i) => <ProductCardSkeleton key={`more-${i}`} />)}
             </div>
           )}
+          </div>
 
           {!grouped && <div ref={sentinel} className="flex justify-center py-4 min-h-[1px]">
             {!infinite && items.length > 0 ? (

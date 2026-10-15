@@ -113,11 +113,79 @@ const toLocalInput = (d = new Date()) => {
   return x.toISOString().slice(0, 16);
 };
 
+/** Ready-made message for each step; the admin can edit it before sending. */
+export function statusMessageTemplate(status, o, { courier, trackingNumber } = {}) {
+  const name = (o.customerName || '').split(' ')[0] || 'there';
+  const id = o.orderId;
+  const track = trackingNumber ? ` Tracking: ${courier ? `${courier} ` : ''}${trackingNumber}.` : '';
+  return {
+    Confirmed: `Hi ${name}, thank you for shopping with WILDTANE! Your order ${id} is confirmed and we’re getting it ready.`,
+    Processing: `Hi ${name}, your order ${id} is being prepared by our team.`,
+    Packed: `Hi ${name}, your order ${id} is packed and waiting for the courier.`,
+    Shipped: `Hi ${name}, good news — your order ${id} has shipped.${track}`,
+    'Out for Delivery': `Hi ${name}, your order ${id} is out for delivery today. Please keep your phone handy.${track}`,
+    Delivered: `Hi ${name}, your order ${id} has been delivered. We hope you love it! If anything isn’t right, you can return or exchange it within 7 days.`,
+    Cancelled: `Hi ${name}, your order ${id} has been cancelled. Any amount paid will be refunded as shown on your order page.`,
+    Returned: `Hi ${name}, we’ve received your return for order ${id}. Your refund details are on your order page.`,
+  }[status] || '';
+}
+
+/** Opens WhatsApp with the message ready to send to the customer's number (no API needed). */
+export function whatsappLink(phone, text) {
+  const digits = String(phone || '').replace(/\D/g, '');
+  const to = digits.length === 10 ? `91${digits}` : digits;
+  return to ? `https://wa.me/${to}?text=${encodeURIComponent(text)}` : '';
+}
+
+/** Send the customer a message about this order at any time; lists what was sent before. */
+function CustomerMessages({ order: o, onSaved }) {
+  const [text, setText] = useState('');
+  const [email, setEmail] = useState(true);
+  const send = useMutation({
+    mutationFn: () => adminApi.orderMessage(o._id, { text: text.trim(), email }),
+    onSuccess: () => {
+      toast.success(email ? 'Message sent — emailed and shown on their order page' : 'Message added to their order page');
+      setText('');
+      onSaved();
+    },
+    onError: (e) => toast.error(e.message),
+  });
+  const phone = o.phone || o.shippingAddress?.phone;
+  const wa = text.trim() ? whatsappLink(phone, text.trim()) : '';
+  const sent = [...(o.customerMessages || [])].reverse();
+  return (
+    <div className="flex flex-col gap-3">
+      <Textarea rows={3} maxLength={1000} value={text} onChange={(e) => setText(e.target.value)} placeholder="e.g. Your bag is being personalised — it will ship tomorrow." aria-label="Message to the customer" />
+      <div className="flex flex-wrap items-center gap-2">
+        <Toggle checked={email} onChange={setEmail} label="Also email it" />
+        <span className="flex-1" />
+        {wa && (
+          <a href={wa} target="_blank" rel="noopener noreferrer" className="btn-tonal btn-sm gap-1.5"><Icon name="chat" className="text-[16px]" /> WhatsApp</a>
+        )}
+        <Button size="sm" icon="send" loading={send.isPending} disabled={text.trim().length < 2} onClick={() => send.mutate()}>Send</Button>
+      </div>
+      {sent.length > 0 && (
+        <ul className="flex flex-col gap-2 pt-2 border-t border-surface-container-high">
+          {sent.map((m, i) => (
+            <li key={i} className="p-2.5 rounded-lg bg-surface-container-low text-body-sm">
+              <p className="whitespace-pre-line">{m.text}</p>
+              <p className="text-label-sm font-normal text-outline mt-1">{formatDateTime(m.sentAt)}{m.status ? ` · ${m.status}` : ''} · {m.emailed ? 'emailed + on order page' : 'on order page'}</p>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
 function StatusUpdater({ order: o, onSaved }) {
   const confirm = useConfirm();
   const currentIdx = STEP_NAMES.indexOf(o.orderStatus);
   const nextStep = STEP_NAMES[currentIdx + 1] || (o.orderStatus === 'Pending' ? 'Confirmed' : '');
-  const blank = () => ({ status: nextStep || o.orderStatus, at: toLocalInput(), note: '', trackingNumber: o.trackingNumber || '', courier: o.courier || '', notifyCustomer: true });
+  const blank = () => {
+    const status = nextStep || o.orderStatus;
+    return { status, at: toLocalInput(), note: '', trackingNumber: o.trackingNumber || '', courier: o.courier || '', notifyCustomer: true, customerMessage: status !== o.orderStatus ? statusMessageTemplate(status, o, o) : '', messageEdited: false };
+  };
   const [form, setForm] = useState(blank);
   const [key, setKey] = useState(o.updatedAt);
   if (key !== o.updatedAt) {
@@ -126,6 +194,9 @@ function StatusUpdater({ order: o, onSaved }) {
     setForm(blank());
   }
   const set = (k) => (e) => setForm({ ...form, [k]: e?.target ? e.target.value : e });
+  // Picking another step refreshes the ready-made message, unless the admin already rewrote it.
+  const pickStatus = (status) =>
+    setForm((f) => ({ ...f, status, customerMessage: f.messageEdited ? f.customerMessage : status !== o.orderStatus ? statusMessageTemplate(status, o, f) : '' }));
   const lastAt = (s) => [...(o.statusHistory || [])].reverse().find((h) => h.status === s)?.at;
 
   const save = useMutation({
@@ -143,7 +214,8 @@ function StatusUpdater({ order: o, onSaved }) {
       const ok = await confirm({ title: `Mark as ${form.status}?`, message: 'Stock will be returned to inventory and any coupon use released. This status is final.', confirmLabel: `Mark ${form.status}` });
       if (!ok) return;
     }
-    save.mutate({ ...form, at: form.at ? new Date(form.at).toISOString() : undefined });
+    const { messageEdited, ...body } = form;
+    save.mutate({ ...body, customerMessage: body.customerMessage.trim(), at: form.at ? new Date(form.at).toISOString() : undefined });
   };
 
   const showTracking = ['Shipped', 'Out for Delivery', 'Delivered'].includes(form.status) || o.trackingNumber;
@@ -160,7 +232,7 @@ function StatusUpdater({ order: o, onSaved }) {
               type="button"
               role="radio"
               aria-checked={selected}
-              onClick={() => setForm({ ...form, status: s })}
+              onClick={() => pickStatus(s)}
               className={cn(
                 'flex items-center gap-3 px-3 py-2 rounded-xl border text-left transition-all',
                 selected ? 'border-secondary bg-secondary/10 ring-2 ring-secondary/20' : 'border-surface-container-high hover:bg-surface-container-low',
@@ -194,8 +266,18 @@ function StatusUpdater({ order: o, onSaved }) {
           <Field label="Tracking #"><Input value={form.trackingNumber} onChange={set('trackingNumber')} /></Field>
         </div>
       )}
-      <Field label="Note for customer & timeline"><Textarea rows={2} value={form.note} onChange={set('note')} placeholder="e.g. Handed to courier at 4 pm" /></Field>
-      <Toggle checked={form.notifyCustomer} onChange={(v) => setForm({ ...form, notifyCustomer: v })} label={`Email the customer (${o.email})`} />
+      <Field label="Message to the customer" hint="Ready-made for this step — edit it as you like. Shown on their order page, and emailed if switched on below.">
+        <Textarea rows={3} maxLength={1000} value={form.customerMessage} onChange={(e) => setForm({ ...form, customerMessage: e.target.value, messageEdited: true })} placeholder="Write a message to the customer (optional)" />
+      </Field>
+      <Field label="Internal timeline note (optional)"><Input value={form.note} onChange={set('note')} placeholder="e.g. Handed to courier at 4 pm" /></Field>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <Toggle checked={form.notifyCustomer} onChange={(v) => setForm({ ...form, notifyCustomer: v })} label={`Email the customer (${o.email})`} />
+        {form.customerMessage.trim() && whatsappLink(o.phone || o.shippingAddress?.phone, form.customerMessage) && (
+          <a href={whatsappLink(o.phone || o.shippingAddress?.phone, form.customerMessage)} target="_blank" rel="noopener noreferrer" className="btn-tonal btn-sm gap-1.5">
+            <Icon name="chat" className="text-[16px]" /> Also send on WhatsApp
+          </a>
+        )}
+      </div>
       <Button type="submit" loading={save.isPending} icon="update">
         {form.status === o.orderStatus ? 'Save tracking details' : `Mark as ${form.status}`}
       </Button>
@@ -204,7 +286,7 @@ function StatusUpdater({ order: o, onSaved }) {
         <summary className="cursor-pointer text-on-surface-variant hover:text-on-surface">Cancel or return this order…</summary>
         <div className="flex gap-2 mt-2">
           {['Cancelled', 'Returned'].map((s) => (
-            <button key={s} type="button" onClick={() => setForm({ ...form, status: s })} className={cn('chip h-9 border', form.status === s ? 'bg-error text-on-error border-error' : 'border-surface-container-high hover:bg-surface-container-low')}>
+            <button key={s} type="button" onClick={() => pickStatus(s)} className={cn('chip h-9 border', form.status === s ? 'bg-error text-on-error border-error' : 'border-surface-container-high hover:bg-surface-container-low')}>
               {s === 'Cancelled' ? 'Cancel order' : 'Mark returned'}
             </button>
           ))}
@@ -906,6 +988,9 @@ export default function OrderDetail() {
             ) : (
               <StatusUpdater order={o} onSaved={refresh} />
             )}
+          </Panel>
+          <Panel title="Messages to customer">
+            <CustomerMessages order={o} onSaved={refresh} />
           </Panel>
           <Panel title="Payment">
             <div className="flex flex-col gap-space-sm">
