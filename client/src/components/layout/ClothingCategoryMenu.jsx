@@ -506,7 +506,6 @@ export const CLOTHING_UNIVERSAL_MENU = {
   ],
 };
 
-/**
 const DEPARTMENT_THEMES = {
   men: {
     accentGradient: 'from-amber-500 via-rose-500 to-indigo-600',
