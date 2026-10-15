@@ -289,7 +289,7 @@ export default function GroupedProducts({ products, bySlug, order, comfort, load
   const [panelMode, setPanelMode] = useState('subcategories'); // 'subcategories' | 'categories'
   const [activeSubSlug, setActiveSubSlug] = useState('all');
   const [activeCatSlug, setActiveCatSlug] = useState('all');
-  const [viewMode, setViewMode] = useState('slider'); // 'slider' | 'grid'
+  const [viewMode, setViewMode] = useState('grid'); // 'grid' | 'slider'
 
   // When user clicks a subcategory from side, circles or mobile pills: that subcategory comes directly in front!
   const handleSelectSubcategory = (slug) => {
@@ -667,16 +667,12 @@ export default function GroupedProducts({ products, bySlug, order, comfort, load
                 </div>
               </div>
 
-              {/* The Sliding Bar (whatever items fit on screen come, clicking sliding buttons reveals more) */}
-              {viewMode === 'slider' ? (
-                <ProductSlidingBar items={currentSubGroup.items} comfort={comfort} priority={true} />
-              ) : (
-                <div className={grid}>
-                  {currentSubGroup.items.map((p, i) => (
-                    <ProductCard key={p._id} product={p} priority={i < 6} />
-                  ))}
-                </div>
-              )}
+              {/* Products Grid directly below */}
+              <div className={grid}>
+                {currentSubGroup.items.map((p, i) => (
+                  <ProductCard key={p._id} product={p} priority={i < 6} />
+                ))}
+              </div>
             </section>
           ) : currentCatGroup ? (
             /* CASE B: User clicked a particular top-level Category */
@@ -719,15 +715,12 @@ export default function GroupedProducts({ products, bySlug, order, comfort, load
                 </div>
               </div>
 
-              {viewMode === 'slider' ? (
-                <ProductSlidingBar items={currentCatGroup.items} comfort={comfort} priority={true} />
-              ) : (
-                <div className={grid}>
-                  {currentCatGroup.items.map((p, i) => (
-                    <ProductCard key={p._id} product={p} priority={i < 6} />
-                  ))}
-                </div>
-              )}
+              {/* Products Grid directly below */}
+              <div className={grid}>
+                {currentCatGroup.items.map((p, i) => (
+                  <ProductCard key={p._id} product={p} priority={i < 6} />
+                ))}
+              </div>
             </section>
           ) : (
             /* CASE C: "All Subcategories" active -> every subcategory (Backpacks, Totes, Laptop Bags...) has its own Sliding Bar with sliding buttons */
@@ -754,8 +747,12 @@ export default function GroupedProducts({ products, bySlug, order, comfort, load
                     </button>
                   </div>
 
-                  {/* Each subcategory gets its sliding bar with prev/next sliding buttons */}
-                  <ProductSlidingBar items={s.items} comfort={comfort} priority={si === 0} />
+                  {/* Each subcategory renders its products below in a responsive grid, NO horizontal sliding */}
+                  <div className={grid}>
+                    {s.items.map((p, i) => (
+                      <ProductCard key={p._id} product={p} priority={si === 0 && i < 4} />
+                    ))}
+                  </div>
                 </section>
               ))}
             </div>

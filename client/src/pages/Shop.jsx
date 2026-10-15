@@ -1155,7 +1155,7 @@ export default function Shop({ preset, categoryList, pageTitle, pageDescription,
   // ── Everything open, divided into category › subcategory sections ──
   // Listing pages load their whole result (filters/sort/search applied) and group it by each
   // product's own category and subcategory. The home page keeps its one-page preview.
-  const grouped = !isHome;
+  const grouped = false;
   const bySlug = useMemo(() => new Map(flat.map((c) => [c.slug, c])), [flat]);
   const treeOrder = useMemo(() => new Map(flat.map((c, i) => [c.slug, i])), [flat]);
   useEffect(() => {
