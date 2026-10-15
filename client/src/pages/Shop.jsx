@@ -1220,9 +1220,9 @@ export default function Shop({ preset, categoryList, pageTitle, pageDescription,
       )}
 
       {/* ── UPPER PORTION CATEGORIES AND BELOW SUBCATEGORIES FOR BAGS, MEN, WOMEN, UNIVERSAL ── */}
-      {!get('q') && ['bags', 'men', 'women', 'universal', 'unisex'].includes(preset) && (
+      {!get('q') && ['bags', 'men', 'women', 'universal', 'unisex'].includes(preset || dirKey) && (
         <ClothingCategoryMenu
-          preset={preset === 'unisex' ? 'universal' : preset}
+          preset={(preset || dirKey) === 'unisex' ? 'universal' : (preset || dirKey)}
           selectedCategory={selectedCatParam || categorySlug || ''}
           onSelectCategory={(slug) => {
             update({ category: slug });
@@ -1493,7 +1493,7 @@ export default function Shop({ preset, categoryList, pageTitle, pageDescription,
               {products.isPlaceholderData && <span className="text-[12px] text-outline inline-flex items-center gap-1"><Spinner className="w-3 h-3" /> Updating…</span>}
             </div>
             {activeCategory?.tagline && <p className="-mt-1 text-[13px] text-on-surface-variant max-w-2xl">{activeCategory.tagline}</p>}
-            {chipParent && chipList.length > 0 && !dirKey && !circleDept && (
+            {chipParent && chipList.length > 0 && !dirKey && !circleDept && !isGenderPage && preset !== 'bags' && (
               <div className="flex flex-wrap items-center gap-1.5 py-1">
                 {/* "All" chip: the parent itself, selected when no subcategory is chosen. */}
                 <Link

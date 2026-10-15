@@ -36,10 +36,10 @@ export const CLOTHING_MEN_MENU = {
       name: 'Bags & Packs',
       slug: 'men-bags',
       icon: 'backpack',
-      img: '/uploads/seed/backpack-black.jpg',
+      img: '/uploads/seed/catalog/backpack-hudson.jpg',
       badge: 'BAGS',
       subcategories: [
-        { name: 'All Men Bags', slug: 'men-bags', icon: 'backpack', img: '/uploads/seed/backpack-black.jpg' },
+        { name: 'All Men Bags', slug: 'men-bags', icon: 'backpack', img: '/uploads/seed/catalog/backpack-hudson.jpg' },
         { name: 'Backpacks', slug: 'backpacks', icon: 'backpack', img: '/uploads/seed/backpack-terracotta.jpg', badge: 'POPULAR' },
         { name: 'Laptop Bags', slug: 'laptop-bags', icon: 'laptop_mac', img: '/uploads/seed/catalog/laptop-sterling.jpg' },
         { name: 'Briefcases', slug: 'office-bags', icon: 'business_center', img: '/uploads/seed/briefcase-oxford.jpg', badge: 'EXECUTIVE' },
@@ -223,7 +223,7 @@ export const CLOTHING_WOMEN_MENU = {
       badge: 'PACKS',
       subcategories: [
         { name: 'All Backpacks', slug: 'women-backpacks', icon: 'backpack', img: '/uploads/seed/backpack-terracotta.jpg' },
-        { name: 'Fashion Backpacks', slug: 'backpacks', icon: 'backpack', img: '/uploads/seed/backpack-black.jpg' },
+        { name: 'Fashion Backpacks', slug: 'backpacks', icon: 'backpack', img: '/uploads/seed/catalog/backpack-hudson.jpg' },
         { name: 'Laptop & Office Bags', slug: 'women-laptop-office-bags', icon: 'laptop_mac', img: '/uploads/seed/catalog/laptop-sterling.jpg', badge: 'TECH' },
         { name: 'Mini Backpacks', slug: 'backpacks', icon: 'backpack', img: '/uploads/seed/backpack-terracotta.jpg' },
       ],
@@ -322,10 +322,10 @@ export const CLOTHING_BAGS_MENU = {
       name: 'Backpacks & Packs',
       slug: 'backpacks',
       icon: 'backpack',
-      img: '/uploads/seed/backpack-black.jpg',
+      img: '/uploads/seed/catalog/backpack-hudson.jpg',
       badge: 'PACKS',
       subcategories: [
-        { name: 'All Backpacks', slug: 'backpacks', icon: 'backpack', img: '/uploads/seed/backpack-black.jpg' },
+        { name: 'All Backpacks', slug: 'backpacks', icon: 'backpack', img: '/uploads/seed/catalog/backpack-hudson.jpg' },
         { name: 'Laptop Backpacks', slug: 'laptop-bags', icon: 'laptop_mac', img: '/uploads/seed/catalog/laptop-sterling.jpg', badge: 'TECH' },
         { name: 'Everyday Backpacks', slug: 'backpacks', icon: 'backpack', img: '/uploads/seed/backpack-terracotta.jpg', badge: 'POPULAR' },
         { name: 'Travel Backpacks', slug: 'travel-bags', icon: 'flight_takeoff', img: '/uploads/seed/apex-navy.jpg' },
@@ -507,9 +507,61 @@ export const CLOTHING_UNIVERSAL_MENU = {
 };
 
 /**
+const DEPARTMENT_THEMES = {
+  men: {
+    accentGradient: 'from-amber-500 via-rose-500 to-indigo-600',
+    ringActive: 'from-amber-500 via-orange-500 to-rose-600',
+    headerBadge: 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30',
+    glowColor: 'bg-amber-500/15',
+    pulseColor: 'bg-amber-500',
+    activeCircleRing: 'ring-amber-500/80 dark:ring-amber-400',
+    activeSubBadge: 'bg-amber-500/20 text-amber-700 dark:text-amber-300',
+    labelAccent: 'text-amber-600 dark:text-amber-400',
+    titleGradient: 'from-amber-600 via-rose-600 to-indigo-600 dark:from-amber-400 dark:via-rose-400 dark:to-indigo-400',
+    categoryTag: "Men's Atelier",
+  },
+  women: {
+    accentGradient: 'from-rose-500 via-pink-500 to-purple-600',
+    ringActive: 'from-rose-500 via-pink-400 to-purple-500',
+    headerBadge: 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30',
+    glowColor: 'bg-rose-500/15',
+    pulseColor: 'bg-rose-500',
+    activeCircleRing: 'ring-rose-500/80 dark:ring-rose-400',
+    activeSubBadge: 'bg-rose-500/20 text-rose-700 dark:text-rose-300',
+    labelAccent: 'text-rose-600 dark:text-rose-400',
+    titleGradient: 'from-rose-600 via-pink-600 to-purple-600 dark:from-rose-400 dark:via-pink-400 dark:to-purple-300',
+    categoryTag: "Women's Atelier",
+  },
+  bags: {
+    accentGradient: 'from-amber-600 via-orange-500 to-rose-600',
+    ringActive: 'from-amber-600 via-orange-500 to-rose-500',
+    headerBadge: 'bg-amber-600/15 text-amber-700 dark:text-amber-300 border-amber-600/30',
+    glowColor: 'bg-amber-600/15',
+    pulseColor: 'bg-amber-600',
+    activeCircleRing: 'ring-amber-600/80 dark:ring-amber-400',
+    activeSubBadge: 'bg-amber-600/20 text-amber-800 dark:text-amber-200',
+    labelAccent: 'text-amber-700 dark:text-amber-300',
+    titleGradient: 'from-amber-700 via-orange-600 to-rose-600 dark:from-amber-400 dark:via-orange-400 dark:to-rose-300',
+    categoryTag: "Bag Atelier",
+  },
+  universal: {
+    accentGradient: 'from-emerald-500 via-teal-500 to-cyan-600',
+    ringActive: 'from-emerald-500 via-teal-400 to-cyan-500',
+    headerBadge: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30',
+    glowColor: 'bg-emerald-500/15',
+    pulseColor: 'bg-emerald-500',
+    activeCircleRing: 'ring-emerald-500/80 dark:ring-emerald-400',
+    activeSubBadge: 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-300',
+    labelAccent: 'text-emerald-600 dark:text-emerald-400',
+    titleGradient: 'from-emerald-600 via-teal-600 to-cyan-600 dark:from-emerald-400 dark:via-teal-400 dark:to-cyan-300',
+    categoryTag: "Universal Atelier",
+  },
+};
+
+/**
  * Top-of-page Category & Subcategory Navigation System for Bags, Men, and Women.
  * SPECIFICATION:
- * - IN CIRCLES: Categories ONLY.
+ * - UPPER PORTION IN CIRCLES: Categories ONLY.
  * - BELOW CIRCLES: Their Subcategories.
  */
 export default function ClothingCategoryMenu({
@@ -518,24 +570,27 @@ export default function ClothingCategoryMenu({
   onSelectCategory,
   totalProductsCount = null,
 }) {
+  const normalizedPreset = preset === 'unisex' ? 'universal' : preset;
   const menuConfig =
-    preset === 'women'
+    normalizedPreset === 'women'
       ? CLOTHING_WOMEN_MENU
-      : preset === 'bags'
+      : normalizedPreset === 'bags'
       ? CLOTHING_BAGS_MENU
-      : preset === 'universal' || preset === 'unisex'
+      : normalizedPreset === 'universal'
       ? CLOTHING_UNIVERSAL_MENU
       : CLOTHING_MEN_MENU;
-  const scrollRef = useRef(null);
 
-  // Active Category: match exact category slug or any child subcategory slug (specific categories take precedence over 'all')
+  const theme = DEPARTMENT_THEMES[normalizedPreset] || DEPARTMENT_THEMES.men;
+
+  const circlesRef = useRef(null);
+  const subcatsRef = useRef(null);
+
+  // Active Category: match exact category slug or any child subcategory slug
   const [activeCatId, setActiveCatId] = useState(() => {
     if (!selectedCategory) return 'all';
-    // 1. Check specific categories by slug
     for (const cat of menuConfig.categories) {
       if (cat.id !== 'all' && cat.slug && cat.slug === selectedCategory) return cat.id;
     }
-    // 2. Check specific categories by their child subcategories
     for (const cat of menuConfig.categories) {
       if (cat.id !== 'all' && cat.subcategories?.some((s) => s.slug === selectedCategory)) return cat.id;
     }
@@ -590,194 +645,289 @@ export default function ClothingCategoryMenu({
     }
   };
 
+  const scrollCircles = (dir) => {
+    circlesRef.current?.scrollBy({ left: dir * 300, behavior: 'smooth' });
+  };
+
+  const scrollSubcats = (dir) => {
+    subcatsRef.current?.scrollBy({ left: dir * 260, behavior: 'smooth' });
+  };
+
   return (
-    <div className="w-full bg-surface-container-lowest border-b border-surface-container-high shadow-xs">
-      {/* ── 1. DEPARTMENT HEADER BANNER ── */}
-      <div className="container-x py-2.5 border-b border-surface-container-high/60 flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2.5 min-w-0">
-          <span className="w-2.5 h-2.5 rounded-full bg-rose-600 animate-pulse shrink-0" />
-          <h2 className="text-[13px] sm:text-[14px] font-black uppercase tracking-widest text-on-surface truncate">
-            {menuConfig.title} &bull; {menuConfig.subtitle}
+    <div className="w-full bg-surface-container-lowest border-b border-surface-container-high/70 shadow-xs relative overflow-hidden">
+      {/* Subtle Ambient Background Tint */}
+      <div
+        aria-hidden="true"
+        className={cn(
+          'absolute -top-24 right-1/4 w-96 h-48 rounded-full blur-3xl pointer-events-none opacity-40',
+          theme.glowColor
+        )}
+      />
+
+      {/* ── 1. LUXURY DEPARTMENT HEADER BANNER ── */}
+      <div className="container-x py-3 border-b border-surface-container-high/60 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="flex items-center gap-2 shrink-0">
+            <span className={cn('w-2.5 h-2.5 rounded-full animate-pulse', theme.pulseColor)} />
+            <span className={cn('px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider border', theme.headerBadge)}>
+              {theme.categoryTag}
+            </span>
+          </div>
+
+          <h2 className="text-[14px] sm:text-[15px] font-extrabold uppercase tracking-wide text-on-surface truncate">
+            <span className={cn('bg-gradient-to-r bg-clip-text text-transparent font-black', theme.titleGradient)}>
+              {menuConfig.title}
+            </span>
+            <span className="hidden sm:inline text-on-surface-variant font-normal"> &bull; {menuConfig.subtitle}</span>
           </h2>
-          <span className="hidden md:inline-block w-px h-3.5 bg-outline-variant/60 shrink-0" />
-          <span className="hidden md:inline-block text-[11.5px] font-medium text-on-surface-variant truncate">
+
+          <span className="hidden lg:inline-block w-px h-3.5 bg-outline-variant/60 shrink-0" />
+          <span className="hidden lg:inline-block text-[11.5px] font-medium text-on-surface-variant truncate">
             {menuConfig.tag}
           </span>
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
           {totalProductsCount != null && (
-            <span className="text-[11px] font-mono px-2.5 py-0.5 rounded-full bg-surface-container text-on-surface-variant font-bold border border-outline-variant/30">
-              {totalProductsCount} items
+            <span className="text-[11px] font-mono px-3 py-1 rounded-full bg-surface-container text-on-surface-variant font-bold border border-outline-variant/30">
+              {totalProductsCount} pieces
             </span>
           )}
           {selectedCategory && (
             <button
               type="button"
               onClick={() => onSelectCategory?.('')}
-              className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-rose-500/10 text-rose-600 dark:text-rose-400 text-[11px] font-bold border border-rose-500/30 hover:bg-rose-500/20 active:scale-95 transition-all cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-500/10 text-rose-600 dark:text-rose-400 text-[11.5px] font-bold border border-rose-500/30 hover:bg-rose-500/20 active:scale-95 transition-all cursor-pointer shadow-xs"
             >
               <span>Clear Filter</span>
-              <Icon name="close" className="text-[12px]" />
+              <Icon name="close" className="text-[13px]" />
             </button>
           )}
         </div>
       </div>
 
-      {/* ── 2. IN CIRCLES: MEN / WOMEN CATEGORIES ONLY ── */}
-      <div className="container-x pt-3.5 pb-2.5 select-none">
-        <div className="flex items-baseline justify-between pb-2 mb-1 px-0.5">
+      {/* ── 2. UPPER PORTION: CATEGORIES IN CIRCLES ── */}
+      <div className="container-x pt-4 pb-3 select-none">
+        <div className="flex items-center justify-between pb-2.5 mb-1 px-1">
           <div className="flex items-center gap-2">
-            <span className="text-[11px] sm:text-[11.5px] font-black uppercase tracking-[0.16em] text-on-surface">
-              {preset === 'men' ? "Men's Categories" : preset === 'women' ? "Women's Categories" : preset === 'bags' ? "Bag Categories" : "Universal Categories"}
+            <span className="text-[11.5px] sm:text-[12px] font-black uppercase tracking-[0.18em] text-on-surface">
+              {preset === 'men' ? "Men's Collections" : preset === 'women' ? "Women's Collections" : preset === 'bags' ? "Bag Collections" : "Universal Collections"}
             </span>
-            <span className="text-[10px] uppercase font-bold px-1.5 py-0.2 rounded bg-secondary/15 text-secondary">
-              Categories
+            <span className="text-[9.5px] uppercase font-bold px-2 py-0.5 rounded-full bg-surface-container text-on-surface-variant border border-outline-variant/30">
+              Tap to browse
             </span>
           </div>
-          <span className="text-[10.5px] text-outline hidden xs:inline">
-            Tap a category circle to view its subcategories below
+          <span className="text-[11px] text-outline hidden sm:inline">
+            Tap a category circle to explore its subcategories below
           </span>
         </div>
 
-        {/* Category Circles Carousel */}
-        <div className="flex items-center gap-3 sm:gap-4 md:gap-5 overflow-x-auto scrollbar-none py-1.5 px-0.5 snap-x snap-mandatory touch-pan-x overscroll-x-contain">
-          {menuConfig.categories.map((cat) => {
-            const isCircleActive = activeCatId === cat.id;
-            return (
-              <button
-                key={cat.id}
-                type="button"
-                onClick={() => handleCategoryCircleClick(cat)}
-                className="group snap-start flex flex-col items-center gap-1.5 shrink-0 w-[68px] sm:w-[76px] md:w-[84px] active:scale-95 transition-all text-center cursor-pointer"
-                title={`View ${cat.name}`}
-              >
-                {/* The Category Circle */}
-                <div
-                  className={cn(
-                    'relative p-[2.5px] rounded-full transition-all duration-300 shadow-sm',
-                    isCircleActive
-                      ? 'bg-gradient-to-tr from-rose-600 via-rose-500 to-indigo-600 scale-108 ring-2 ring-secondary ring-offset-2 ring-offset-surface shadow-md'
-                      : 'bg-gradient-to-tr from-outline-variant/40 via-surface-container-high to-outline-variant/40 group-hover:from-rose-400 group-hover:to-indigo-500 group-hover:scale-105 opacity-90 group-hover:opacity-100'
-                  )}
+        {/* Carousel Container with Smooth Scroll Chevrons */}
+        <div className="relative group/circles">
+          {/* Left Arrow on Desktop */}
+          <button
+            type="button"
+            onClick={() => scrollCircles(-1)}
+            className="hidden md:flex absolute -left-3 top-1/2 -translate-y-1/2 z-30 w-8 h-8 rounded-full bg-surface-container-lowest/95 backdrop-blur-md shadow-md border border-outline-variant/40 items-center justify-center text-on-surface hover:text-secondary hover:scale-110 active:scale-95 transition-all cursor-pointer opacity-0 group-hover/circles:opacity-100"
+            aria-label="Scroll categories left"
+          >
+            <Icon name="chevron_left" className="text-[20px]" />
+          </button>
+
+          {/* Right Arrow on Desktop */}
+          <button
+            type="button"
+            onClick={() => scrollCircles(1)}
+            className="hidden md:flex absolute -right-3 top-1/2 -translate-y-1/2 z-30 w-8 h-8 rounded-full bg-surface-container-lowest/95 backdrop-blur-md shadow-md border border-outline-variant/40 items-center justify-center text-on-surface hover:text-secondary hover:scale-110 active:scale-95 transition-all cursor-pointer opacity-0 group-hover/circles:opacity-100"
+            aria-label="Scroll categories right"
+          >
+            <Icon name="chevron_right" className="text-[20px]" />
+          </button>
+
+          {/* Category Circles Carousel */}
+          <div
+            ref={circlesRef}
+            className="flex items-start gap-3.5 sm:gap-5 md:gap-6 overflow-x-auto scrollbar-none py-2 px-1 snap-x snap-mandatory touch-pan-x overscroll-x-contain"
+          >
+            {menuConfig.categories.map((cat) => {
+              const isCircleActive = activeCatId === cat.id;
+              return (
+                <button
+                  key={cat.id}
+                  type="button"
+                  onClick={() => handleCategoryCircleClick(cat)}
+                  className="group snap-start flex flex-col items-center gap-2 shrink-0 w-[72px] sm:w-[84px] md:w-[94px] active:scale-95 transition-all text-center cursor-pointer relative"
+                  title={`View ${cat.name}`}
                 >
-                  <div className="w-14 h-14 sm:w-16 sm:h-16 md:w-[68px] md:h-[68px] rounded-full overflow-hidden bg-surface-container-lowest p-[2px] flex items-center justify-center">
-                    {cat.img ? (
-                      <img
-                        src={imgUrl(cat.img, 140)}
-                        alt={cat.name}
-                        loading="lazy"
-                        className="w-full h-full rounded-full object-cover group-hover:scale-110 transition-transform duration-300"
-                      />
-                    ) : (
-                      <span className="w-full h-full rounded-full bg-surface-container flex items-center justify-center text-rose-600">
-                        <Icon name={cat.icon} className="text-[22px]" />
+                  {/* The Category Circle Frame */}
+                  <div
+                    className={cn(
+                      'relative p-[3px] rounded-full transition-all duration-300 shadow-sm',
+                      isCircleActive
+                        ? cn('bg-gradient-to-tr scale-106 ring-2 ring-offset-2 ring-offset-surface shadow-md', theme.ringActive, theme.activeCircleRing)
+                        : 'bg-gradient-to-tr from-outline-variant/40 via-surface-container-high to-outline-variant/40 group-hover:from-rose-400 group-hover:to-indigo-500 group-hover:scale-105 opacity-90 group-hover:opacity-100 ring-1 ring-outline-variant/30'
+                    )}
+                  >
+                    {/* Glowing Backdrop on Active */}
+                    {isCircleActive && (
+                      <span className="absolute inset-0 rounded-full bg-secondary/25 blur-md -z-10 animate-pulse" />
+                    )}
+
+                    {/* Inner Circular Photo */}
+                    <div className="w-[62px] h-[62px] sm:w-[74px] sm:h-[74px] md:w-[82px] md:h-[82px] rounded-full overflow-hidden bg-surface-container-lowest p-[2px] flex items-center justify-center relative shadow-inner">
+                      {cat.img ? (
+                        <img
+                          src={imgUrl(cat.img, 180)}
+                          alt={cat.name}
+                          loading="lazy"
+                          className="w-full h-full rounded-full object-cover group-hover:scale-112 transition-transform duration-500 ease-out"
+                        />
+                      ) : (
+                        <span className="w-full h-full rounded-full bg-surface-container flex items-center justify-center text-secondary">
+                          <Icon name={cat.icon} className="text-[26px]" />
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Micro-Badge Pill */}
+                    {cat.badge && (
+                      <span
+                        className={cn(
+                          'absolute -bottom-1 -right-0.5 px-1.5 py-0.5 rounded-full text-[8px] sm:text-[8.5px] font-black uppercase tracking-wider shadow-sm ring-1 ring-surface',
+                          isCircleActive
+                            ? 'bg-secondary text-on-secondary'
+                            : 'bg-surface-container-highest text-on-surface'
+                        )}
+                      >
+                        {cat.badge}
                       </span>
                     )}
                   </div>
 
-                  {cat.badge && (
+                  {/* Category Circle Label & Indicator */}
+                  <div className="flex flex-col items-center gap-0.5 min-h-[34px]">
                     <span
                       className={cn(
-                        'absolute -bottom-0.5 -right-0.5 px-1.5 py-0.2 rounded-full text-[8px] sm:text-[8.5px] font-black uppercase tracking-wider shadow-sm ring-1 ring-surface',
-                        isCircleActive ? 'bg-secondary text-on-secondary' : 'bg-surface-container-highest text-on-surface'
+                        'text-[11.5px] sm:text-[12px] leading-tight transition-colors line-clamp-2 px-0.5',
+                        isCircleActive
+                          ? cn('font-black', theme.labelAccent)
+                          : 'font-semibold text-on-surface-variant group-hover:text-on-surface'
                       )}
                     >
-                      {cat.badge}
+                      {cat.name}
                     </span>
-                  )}
-                </div>
 
-                {/* Category Circle Label */}
-                <span
-                  className={cn(
-                    'text-[11px] sm:text-[11.5px] leading-tight transition-colors line-clamp-2 px-0.5',
-                    isCircleActive ? 'font-black text-secondary' : 'font-semibold text-on-surface-variant group-hover:text-on-surface'
-                  )}
-                >
-                  {cat.name}
-                </span>
-              </button>
-            );
-          })}
+                    {/* Animated Active Indicator Pill */}
+                    {isCircleActive && (
+                      <span className={cn('w-4 h-1 rounded-full bg-secondary mt-0.5 shadow-xs transition-all')} />
+                    )}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
 
-      {/* ── 3. REST BELOW: SUBCATEGORIES FOR THE ACTIVE CATEGORY ── */}
+      {/* ── 3. BELOW PORTION: SUBCATEGORIES FOR THE ACTIVE CATEGORY ── */}
       {subcategoriesBelow.length > 0 && (
-        <div className="bg-surface-container-low/55 border-t border-surface-container-high/70 py-2.5">
+        <div className="bg-surface-container-low/60 border-t border-surface-container-high/70 py-3 relative">
           <div className="container-x">
-            <div className="flex items-center justify-between mb-2 px-0.5">
-              <span className="text-[11px] font-extrabold uppercase tracking-wider text-secondary flex items-center gap-1.5">
-                <Icon name="subdirectory_arrow_right" className="text-[14px]" />
-                {activeCategory.name} &bull; Subcategories
+            <div className="flex items-center justify-between mb-2.5 px-1">
+              <span className="text-[11.5px] font-extrabold uppercase tracking-wider text-secondary flex items-center gap-1.5">
+                <Icon name="subdirectory_arrow_right" className="text-[15px]" />
+                <span className="text-on-surface font-black">{activeCategory.name}</span>
+                <span className="text-outline font-medium">&bull; Subcategories</span>
               </span>
-              <span className="text-[10.5px] text-outline hidden xs:inline">
-                {subcategoriesBelow.length} subcategories &bull; Tap to filter
+              <span className="text-[11px] text-outline hidden xs:inline">
+                {subcategoriesBelow.length} styles available &bull; 1-tap filter
               </span>
             </div>
 
-            {/* Horizontal Subcategory Ribbon */}
-            <div
-              ref={scrollRef}
-              className="flex items-center gap-2 sm:gap-2.5 overflow-x-auto scrollbar-none pb-1 pt-0.5 -mx-1 px-1 snap-x snap-mandatory overscroll-x-contain"
-            >
-              {/* "All [Category]" Quick Action */}
+            {/* Horizontal Subcategory Ribbon with Desktop Chevrons */}
+            <div className="relative group/subcats">
+              {/* Left Arrow on Desktop */}
               <button
                 type="button"
-                onClick={() => {
-                  if (activeCategory.slug) onSelectCategory?.(activeCategory.slug);
-                  else onSelectCategory?.('');
-                }}
-                className={cn(
-                  'snap-start px-3 py-1.5 rounded-full text-[11.5px] font-bold shrink-0 border transition-all cursor-pointer flex items-center gap-1.5',
-                  selectedCategory === activeCategory.slug || (!selectedCategory && activeCategory.id === 'all')
-                    ? 'bg-secondary text-on-secondary border-secondary shadow-xs scale-102 ring-1 ring-secondary'
-                    : 'bg-surface-container-lowest hover:bg-surface-container border-outline-variant/35 text-on-surface'
-                )}
+                onClick={() => scrollSubcats(-1)}
+                className="hidden md:flex absolute -left-2.5 top-1/2 -translate-y-1/2 z-30 w-7 h-7 rounded-full bg-surface-container-lowest/95 backdrop-blur-md shadow-md border border-outline-variant/40 items-center justify-center text-on-surface hover:text-secondary hover:scale-110 active:scale-95 transition-all cursor-pointer opacity-0 group-hover/subcats:opacity-100"
+                aria-label="Scroll subcategories left"
               >
-                <Icon name="grid_view" className="text-[13px]" />
-                <span>All {activeCategory.name}</span>
+                <Icon name="chevron_left" className="text-[16px]" />
               </button>
 
-              {/* Subcategories list */}
-              {subcategoriesBelow.map((sub, idx) => {
-                const isSelected = selectedCategory === sub.slug;
-                return (
-                  <button
-                    key={`${sub.slug}-${idx}`}
-                    type="button"
-                    onClick={() => handleSubcategoryClick(sub.slug)}
-                    className={cn(
-                      'group snap-start flex items-center gap-2 pl-1 pr-3 py-1 rounded-full border transition-all duration-200 shrink-0 text-left active:scale-95 cursor-pointer',
-                      isSelected
-                        ? 'bg-secondary text-on-secondary border-secondary shadow-xs scale-102 ring-1 ring-secondary'
-                        : 'bg-surface-container-lowest hover:bg-surface-container border-outline-variant/35 text-on-surface hover:border-secondary/50'
-                    )}
-                  >
-                    {/* Small Subcategory Thumb */}
-                    <div className="w-5.5 h-5.5 rounded-full overflow-hidden shrink-0 bg-surface-container-high flex items-center justify-center">
-                      {sub.img ? (
-                        <img src={imgUrl(sub.img, 48)} alt={sub.name} className="w-full h-full object-cover" />
-                      ) : (
-                        <Icon name={sub.icon || 'category'} className="text-[13px] text-on-surface-variant" />
+              {/* Right Arrow on Desktop */}
+              <button
+                type="button"
+                onClick={() => scrollSubcats(1)}
+                className="hidden md:flex absolute -right-2.5 top-1/2 -translate-y-1/2 z-30 w-7 h-7 rounded-full bg-surface-container-lowest/95 backdrop-blur-md shadow-md border border-outline-variant/40 items-center justify-center text-on-surface hover:text-secondary hover:scale-110 active:scale-95 transition-all cursor-pointer opacity-0 group-hover/subcats:opacity-100"
+                aria-label="Scroll subcategories right"
+              >
+                <Icon name="chevron_right" className="text-[16px]" />
+              </button>
+
+              {/* Scrollable Subcategories Track */}
+              <div
+                ref={subcatsRef}
+                className="flex items-center gap-2.5 sm:gap-3 overflow-x-auto scrollbar-none pb-1 pt-0.5 px-0.5 snap-x snap-mandatory overscroll-x-contain touch-pan-x"
+              >
+                {/* "All [Category]" Quick Action Pill */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (activeCategory.slug) onSelectCategory?.(activeCategory.slug);
+                    else onSelectCategory?.('');
+                  }}
+                  className={cn(
+                    'snap-start px-3.5 py-1.5 rounded-full text-[12px] font-bold shrink-0 border transition-all cursor-pointer flex items-center gap-1.5 shadow-xs',
+                    selectedCategory === activeCategory.slug || (!selectedCategory && activeCategory.id === 'all')
+                      ? 'bg-secondary text-on-secondary border-secondary shadow-sm scale-102 ring-2 ring-secondary/30'
+                      : 'bg-surface-container-lowest hover:bg-surface-container border-outline-variant/35 text-on-surface'
+                  )}
+                >
+                  <Icon name="grid_view" className="text-[14px]" />
+                  <span>All {activeCategory.name}</span>
+                </button>
+
+                {/* Individual Subcategory Pills */}
+                {subcategoriesBelow.map((sub, idx) => {
+                  const isSelected = selectedCategory === sub.slug;
+                  return (
+                    <button
+                      key={`${sub.slug}-${idx}`}
+                      type="button"
+                      onClick={() => handleSubcategoryClick(sub.slug)}
+                      className={cn(
+                        'group snap-start flex items-center gap-2 pl-1.5 pr-3.5 py-1.5 rounded-full border transition-all duration-200 shrink-0 text-left active:scale-95 cursor-pointer shadow-xs',
+                        isSelected
+                          ? 'bg-secondary text-on-secondary border-secondary shadow-md scale-102 ring-2 ring-secondary/30'
+                          : 'bg-surface-container-lowest hover:bg-surface-container border-outline-variant/35 text-on-surface hover:border-secondary/50'
                       )}
-                    </div>
+                    >
+                      {/* Round Subcategory Avatar Thumb */}
+                      <div className="w-6 h-6 rounded-full overflow-hidden shrink-0 bg-surface-container-high flex items-center justify-center ring-1 ring-surface shadow-xs">
+                        {sub.img ? (
+                          <img src={imgUrl(sub.img, 64)} alt={sub.name} className="w-full h-full object-cover" />
+                        ) : (
+                          <Icon name={sub.icon || 'category'} className="text-[14px] text-on-surface-variant" />
+                        )}
+                      </div>
 
-                    <span className={cn('text-[11.5px] font-semibold truncate', isSelected ? 'text-on-secondary font-bold' : 'text-on-surface')}>
-                      {sub.name}
-                    </span>
-
-                    {sub.badge && (
-                      <span className={cn('px-1 py-0.2 rounded text-[8px] font-black uppercase tracking-wider', isSelected ? 'bg-on-secondary text-secondary' : 'bg-rose-500/15 text-rose-600 dark:text-rose-400')}>
-                        {sub.badge}
+                      <span className={cn('text-[12px] font-semibold truncate', isSelected ? 'text-on-secondary font-bold' : 'text-on-surface')}>
+                        {sub.name}
                       </span>
-                    )}
 
-                    {isSelected && <Icon name="check" className="text-[12px] text-on-secondary shrink-0" />}
-                  </button>
-                );
-              })}
+                      {sub.badge && (
+                        <span className={cn('px-1.5 py-0.2 rounded text-[8.5px] font-black uppercase tracking-wider', isSelected ? 'bg-on-secondary text-secondary' : 'bg-rose-500/15 text-rose-600 dark:text-rose-400')}>
+                          {sub.badge}
+                        </span>
+                      )}
+
+                      {isSelected && <Icon name="check" className="text-[13px] text-on-secondary shrink-0" />}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
         </div>
@@ -785,3 +935,4 @@ export default function ClothingCategoryMenu({
     </div>
   );
 }
+
