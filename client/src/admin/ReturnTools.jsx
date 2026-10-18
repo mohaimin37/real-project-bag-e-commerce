@@ -9,6 +9,7 @@ import { PayoutDetails } from './Payments';
 export const REFUND_METHODS = [
   ['Original Payment Method', 'Original payment (card / UPI / net banking used to pay)'],
   ['UPI', 'UPI ID'],
+  ['UPI QR Scanner', 'UPI QR Scanner / Code image'],
   ['Bank Transfer', 'Bank account (NEFT / IMPS)'],
   ['Store Coins Wallet', 'WILDTANE Wallet (instant)'],
 ];
@@ -25,6 +26,17 @@ const REASONS = [
 export function RefundDestinationFields({ value, onChange, allowAsk }) {
   const d = value.refundDetails || {};
   const setD = (patch) => onChange({ ...value, refundDetails: { ...d, ...patch } });
+
+  const handleQrUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) return toast.error('Please upload an image file (PNG/JPG)');
+    if (file.size > 5 * 1024 * 1024) return toast.error('Image must be under 5MB');
+    const reader = new FileReader();
+    reader.onload = () => setD({ qrCodeImage: reader.result });
+    reader.readAsDataURL(file);
+  };
+
   return (
     <div className="flex flex-col gap-3">
       <Field label="Refund to" hint={allowAsk && !value.refundMethod ? 'After you approve, the customer picks UPI / bank / wallet on their refund page' : undefined}>
@@ -33,8 +45,23 @@ export function RefundDestinationFields({ value, onChange, allowAsk }) {
           {REFUND_METHODS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
         </select>
       </Field>
-      {value.refundMethod === 'UPI' && (
-        <Field label="UPI ID" required><Input value={d.upiId || ''} onChange={(e) => setD({ upiId: e.target.value })} placeholder="name@okhdfcbank" /></Field>
+      {(value.refundMethod === 'UPI' || value.refundMethod === 'UPI QR Scanner') && (
+        <div className="flex flex-col gap-3">
+          <Field label="UPI ID"><Input value={d.upiId || ''} onChange={(e) => setD({ upiId: e.target.value })} placeholder="name@okhdfcbank" /></Field>
+          <Field label="UPI QR Scanner Image">
+            <div className="flex items-center gap-3">
+              <input type="file" accept="image/*" onChange={handleQrUpload} className="text-body-sm file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-[12px] file:font-semibold file:bg-secondary/10 file:text-secondary hover:file:bg-secondary/20 cursor-pointer" />
+              {d.qrCodeImage && (
+                <button type="button" onClick={() => setD({ qrCodeImage: '' })} className="text-[12px] text-error hover:underline">
+                  Remove QR
+                </button>
+              )}
+            </div>
+            {d.qrCodeImage && (
+              <img src={d.qrCodeImage} alt="QR Scanner preview" className="w-24 h-24 object-contain rounded-lg border border-secondary/30 bg-white p-1 mt-1.5" />
+            )}
+          </Field>
+        </div>
       )}
       {value.refundMethod === 'Bank Transfer' && (
         <div className="grid sm:grid-cols-2 gap-3">

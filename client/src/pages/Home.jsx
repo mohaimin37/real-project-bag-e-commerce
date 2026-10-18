@@ -58,7 +58,7 @@ function CategoryStrip() {
   return (
     <nav aria-label="Shop by category" className="bg-surface-container-lowest/90 backdrop-blur-md border-b border-surface-container-high/80 shadow-xs relative z-20">
       <div className="container-x">
-        <ul className="py-3 sm:py-4 flex items-center flex-nowrap gap-2.5 sm:gap-4 md:gap-6 overflow-x-auto scrollbar-none snap-x snap-mandatory touch-pan-x">
+        <ul className="py-3 sm:py-4 flex items-center flex-nowrap gap-2.5 sm:gap-4 md:gap-6 overflow-x-auto scrollbar-none snap-x snap-mandatory touch-pan-x md:justify-center md:[justify-content:safe_center]">
           {[
             ['/offers', 'sell', 'Offers', 'from-rose-600 via-pink-600 to-rose-500'],
             ['/shop?newArrival=true&sort=newest', 'new_releases', 'New In', 'from-violet-600 via-purple-600 to-indigo-500'],
@@ -294,22 +294,27 @@ const RAIL_TONES = {
 
 function SectionHead({ eyebrow, icon, title, link, linkLabel = 'View all', tone = RAIL_TONES.indigo }) {
   return (
-    <div className="flex items-end justify-between gap-3 mb-3 md:mb-4">
-      <div className="flex flex-col items-start gap-1.5">
+    <div className="relative flex items-end justify-between md:flex-col md:items-center md:justify-center md:text-center gap-2 md:gap-2.5 mb-4 md:mb-6">
+      <div className="flex flex-col items-start md:items-center gap-1.5">
         {eyebrow && (
-          <span className={cn('inline-flex items-center gap-1 h-6 pl-1.5 pr-2.5 rounded-full bg-gradient-to-r text-white text-[11px] font-bold uppercase tracking-wider shadow-sm', tone.pill)}>
+          <span className={cn('inline-flex items-center gap-1 h-6 pl-2 pr-3 rounded-full bg-gradient-to-r text-white text-[11px] font-bold uppercase tracking-wider shadow-sm', tone.pill)}>
             {icon && <Icon name={icon} fill className="text-[14px]" />} {eyebrow}
           </span>
         )}
-        <h2 className="relative font-display text-[22px] md:text-[30px] leading-tight pb-1.5">
+        <h2 className="relative font-display text-[22px] md:text-[32px] leading-tight pb-2 md:pb-2.5 text-left md:text-center">
           {title}
-          <span aria-hidden="true" className={cn('absolute left-0 bottom-0 h-[3px] w-12 rounded-full bg-gradient-to-r', tone.pill)} />
+          <span aria-hidden="true" className={cn('absolute left-0 md:left-1/2 md:-translate-x-1/2 bottom-0 h-[3px] w-14 rounded-full bg-gradient-to-r', tone.pill)} />
         </h2>
       </div>
       {link && (
-        <Link to={link} className={cn('shrink-0 inline-flex items-center gap-1 h-8 px-3 rounded-full text-[13px] font-semibold transition-colors', tone.link)}>
-          {linkLabel} <Icon name="arrow_forward" className="text-[16px]" />
-        </Link>
+        <>
+          <Link to={link} className={cn('shrink-0 md:hidden inline-flex items-center gap-1 h-8 px-3 rounded-full text-[13px] font-semibold transition-colors', tone.link)}>
+            {linkLabel} <Icon name="arrow_forward" className="text-[16px]" />
+          </Link>
+          <Link to={link} className={cn('hidden md:inline-flex items-center gap-1.5 h-8 px-4 rounded-full text-[13px] font-semibold transition-all hover:scale-105 active:scale-95 shadow-xs md:absolute md:right-0 md:bottom-2', tone.link)}>
+            {linkLabel} <Icon name="arrow_forward" className="text-[16px]" />
+          </Link>
+        </>
       )}
     </div>
   );
@@ -323,7 +328,7 @@ function ProductRail({ eyebrow, icon, title, link, products, loading, tone: rail
     <section className={cn('mt-6 md:mt-10 py-4 md:py-6 bg-gradient-to-br to-transparent', t.band)} aria-label={title}>
       <div className="container-x">
       <SectionHead eyebrow={eyebrow} icon={icon} title={title} link={link} tone={t} />
-      <div className="grid grid-flow-col auto-cols-[75%] sm:auto-cols-[45%] md:auto-cols-[32%] lg:auto-cols-[calc(25%-18px)] gap-4 sm:gap-5 md:gap-6 overflow-x-auto snap-x snap-mandatory scrollbar-none -mx-3 px-3 md:mx-0 md:px-0 pb-2">
+      <div className="grid grid-flow-col auto-cols-[75%] sm:auto-cols-[45%] md:auto-cols-[32%] lg:auto-cols-[calc(25%-18px)] gap-4 sm:gap-5 md:gap-6 overflow-x-auto snap-x snap-mandatory scrollbar-none -mx-3 px-3 md:mx-0 md:px-0 pb-2 md:justify-center md:[justify-content:safe_center]">
         {loading
           ? Array.from({ length: 4 }, (_, i) => <div key={i} className="snap-start"><ProductCardSkeleton /></div>)
           : products.map((p) => (
@@ -1042,7 +1047,7 @@ export default function Home() {
 
       {/* ── MOBILE VIEW: Dedicated Flipkart-style App Experience (Phones / Touch screens) ── */}
       {isMobile ? (
-        <div className="w-full max-w-full overflow-x-clip">
+        <div className="w-full max-w-full">
           <MobileFlipkartHome />
         </div>
       ) : (

@@ -189,9 +189,24 @@ const uiSlice = createSlice({
     // Text size, readable font, link underlines, reduced motion (public/theme.js applies them before first paint).
     vision: { ...VISION_DEFAULTS, ...read(STORAGE.vision, {}) },
     themeOpen: false,
+    chatOpen: false,
+    chatContext: null,
   },
   reducers: {
     setCartOpen: (s, { payload }) => void (s.cartOpen = payload),
+    setChatOpen: (s, { payload }) => {
+      if (typeof payload === 'object' && payload !== null) {
+        s.chatOpen = Boolean(payload.open);
+        if (payload.orderId || payload.topic || payload.context) {
+          s.chatContext = payload.context || { orderId: payload.orderId, topic: payload.topic, cancellationReason: payload.cancellationReason };
+        } else if (!payload.open) {
+          s.chatContext = null;
+        }
+      } else {
+        s.chatOpen = Boolean(payload);
+        if (!payload) s.chatContext = null;
+      }
+    },
     setSearchOpen: (s, { payload }) => {
       if (typeof payload === 'object' && payload !== null) {
         s.searchOpen = Boolean(payload.open);
@@ -261,6 +276,7 @@ export const { addGuestItem, setGuestQty, changeGuestVariant, removeGuestItem, s
 export const { toggleGuestWishlist, clearGuestWishlist, pushRecent } = guestListsSlice.actions;
 export const {
   setCartOpen,
+  setChatOpen,
   setSearchOpen,
   setSearchVoice,
   setMobileNavOpen,

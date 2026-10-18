@@ -43,28 +43,28 @@ function CheckoutHeader() {
   return (
     <div className="w-full bg-surface-container-lowest shadow-sm">
       <Seo title="Secure Checkout" noindex />
-      <div className="container-x py-4 flex flex-col sm:flex-row items-center justify-between gap-3">
-        <div className="flex items-center gap-space-md">
-          <Link to="/" className="flex items-center gap-2.5" aria-label="WILDTANE home">
-            <LogoMark className="w-8 h-8 md:w-9 md:h-9 shrink-0" />
-            <h1 className="font-serif tracking-widest font-black text-xl md:text-2xl text-on-surface uppercase select-none">
+      <div className="container-x py-3 sm:py-4 flex flex-col sm:flex-row items-center justify-between gap-2.5 sm:gap-3">
+        <div className="flex items-center gap-2 sm:gap-space-md">
+          <Link to="/" className="flex items-center gap-2" aria-label="WILDTANE home">
+            <LogoMark className="w-7 h-7 sm:w-8 sm:h-8 md:w-9 md:h-9 shrink-0" />
+            <h1 className="font-serif tracking-widest font-black text-lg sm:text-xl md:text-2xl text-on-surface uppercase select-none">
               WILDTANE
             </h1>
           </Link>
           <span className="h-4 w-px bg-surface-container-highest" />
-          <span className="flex items-center gap-1.5 text-secondary text-label-sm uppercase tracking-wider bg-secondary/10 px-2.5 py-1 rounded-full">
-            <Icon name="lock" className="text-[16px]" /> SSL encrypted
+          <span className="flex items-center gap-1 text-secondary text-[11px] sm:text-label-sm uppercase tracking-wider bg-secondary/10 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full">
+            <Icon name="lock" className="text-[14px] sm:text-[16px]" /> SSL encrypted
           </span>
         </div>
-        <div className="flex items-center gap-4 text-on-surface-variant text-label-md">
-          <span className="flex items-center gap-2">
-            <Icon name="support_agent" className="text-secondary text-[18px]" /> Need help?
+        <div className="flex flex-wrap items-center justify-center sm:justify-end gap-2.5 sm:gap-4 text-on-surface-variant text-[12px] sm:text-label-md">
+          <span className="flex items-center gap-1.5">
+            <Icon name="support_agent" className="text-secondary text-[16px] sm:text-[18px]" /> Need help?
             <a href={`tel:${(config?.supportPhone || '8920550465').replace(/\s/g, '')}`} className="text-on-surface hover:text-secondary font-medium">
               {config?.supportPhone || '8920550465'}
             </a>
           </span>
-          <Link to="/cart" className="inline-flex items-center gap-1 hover:text-secondary text-label-md font-medium"><Icon name="arrow_back" className="text-[16px]" /> Back to bag</Link>
-          <Link to="/" className="inline-flex items-center gap-1 h-8 px-3 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface"><Icon name="home" className="text-[16px]" /> Home</Link>
+          <Link to="/cart" className="inline-flex items-center gap-1 hover:text-secondary font-medium"><Icon name="arrow_back" className="text-[15px] sm:text-[16px]" /> Back to bag</Link>
+          <Link to="/" className="inline-flex items-center gap-1 h-7 sm:h-8 px-2.5 sm:px-3 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface"><Icon name="home" className="text-[15px] sm:text-[16px]" /> Home</Link>
         </div>
       </div>
     </div>
@@ -73,20 +73,26 @@ function CheckoutHeader() {
 
 function Stepper({ step, setStep }) {
   return (
-    <section className="w-full bg-surface-container-low py-5 shadow-sm">
-      <ol className="container-x grid grid-cols-2 md:grid-cols-4 gap-4">
+    <section className="w-full bg-surface-container-low py-3 sm:py-5 shadow-sm">
+      <ol className="container-x grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4">
         {STEPS.map((label, i) => {
           const done = i < step;
           const current = i === step;
           return (
             <li key={label}>
-              <button type="button" disabled={!done} onClick={() => setStep(i)} className={cn('flex items-center gap-3 text-left w-full', !done && !current && 'opacity-60', done && 'hover:opacity-80')} aria-current={current ? 'step' : undefined}>
-                <span className={cn('w-8 h-8 rounded-full flex items-center justify-center text-label-md shrink-0 shadow-sm', done ? 'bg-secondary text-on-secondary' : current ? 'bg-primary text-on-primary' : 'bg-surface-container-highest text-on-surface-variant')}>
-                  {done ? <Icon name="check" className="text-[18px]" /> : i + 1}
+              <button
+                type="button"
+                disabled={!done}
+                onClick={() => setStep(i)}
+                className={cn('flex items-center gap-2 sm:gap-3 text-left w-full p-1 sm:p-0 rounded-xl transition-all', !done && !current && 'opacity-60', done && 'hover:opacity-80')}
+                aria-current={current ? 'step' : undefined}
+              >
+                <span className={cn('w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-[12px] sm:text-label-md shrink-0 shadow-sm', done ? 'bg-secondary text-on-secondary' : current ? 'bg-primary text-on-primary' : 'bg-surface-container-highest text-on-surface-variant')}>
+                  {done ? <Icon name="check" className="text-[15px] sm:text-[18px]" /> : i + 1}
                 </span>
                 <span className="flex flex-col min-w-0">
-                  <span className={cn('text-label-sm uppercase tracking-wider', current || done ? 'text-secondary' : 'text-outline')}>{current ? 'Current' : `Step 0${i + 1}`}</span>
-                  <span className="text-label-lg md:text-headline-sm truncate">{label}</span>
+                  <span className={cn('text-[10px] sm:text-label-sm uppercase tracking-wider', current || done ? 'text-secondary' : 'text-outline')}>{current ? 'Current' : `Step 0${i + 1}`}</span>
+                  <span className="text-[12px] sm:text-label-lg md:text-headline-sm truncate font-semibold">{label}</span>
                 </span>
               </button>
             </li>
@@ -181,10 +187,11 @@ export default function Checkout() {
   }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    if (methods.data?.length) {
-      const currentMethod = methods.data.find((m) => m.code === payment);
+    const valid = methods.data?.filter((m) => ['razorpay', 'cod'].includes(m.code)) || [];
+    if (valid.length) {
+      const currentMethod = valid.find((m) => m.code === payment);
       if (!currentMethod || !currentMethod.available) {
-        const firstAvail = methods.data.find((m) => m.available);
+        const firstAvail = valid.find((m) => m.available) || valid[0];
         if (firstAvail) setPayment(firstAvail.code);
       }
     }
@@ -363,19 +370,19 @@ export default function Checkout() {
     <div className="min-h-screen bg-surface">
       <CheckoutHeader />
       <Stepper step={step} setStep={setStep} />
-      <div className="container-x py-space-xl">
+      <div className="container-x py-space-md sm:py-space-xl">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-gutter-lg items-start">
-          <div className="lg:col-span-7 flex flex-col gap-space-xl">
-            <div className="card p-space-lg flex items-center justify-between gap-4">
+          <div className="lg:col-span-7 flex flex-col gap-space-md sm:gap-space-xl">
+            <div className="card p-3 sm:p-space-lg flex items-center justify-between gap-3">
               <div className="flex items-center gap-3 min-w-0">
-                <div className="w-10 h-10 rounded-full bg-secondary-container text-on-secondary-fixed flex items-center justify-center shrink-0"><Icon name="verified_user" /></div>
+                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-secondary-container text-on-secondary-fixed flex items-center justify-center shrink-0"><Icon name="verified_user" /></div>
                 <p className="text-body-sm text-on-surface-variant truncate">Signed in as <strong className="text-on-surface">{user?.email}</strong></p>
               </div>
             </div>
 
             {/* Step 1: customer */}
             {step === 0 && (
-              <section className="card p-space-lg md:p-space-xl flex flex-col gap-space-lg">
+              <section className="card p-3.5 sm:p-space-lg md:p-space-xl flex flex-col gap-space-md sm:gap-space-lg">
                 <SectionTitle>Customer information</SectionTitle>
                 <form
                   className="grid grid-cols-1 md:grid-cols-2 gap-space-md"
@@ -486,35 +493,37 @@ export default function Checkout() {
             {step === 2 && (
               <section className="flex flex-col gap-space-md">
                 <SectionTitle>Payment method</SectionTitle>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-space-md">
-                  {methods.data?.map((m) => (
-                    <label key={m.code} className={cn('flex flex-col gap-2 p-space-md rounded-2xl transition-all', m.available ? 'cursor-pointer' : 'cursor-not-allowed opacity-60', payment === m.code ? 'bg-surface-container-lowest shadow-lift ring-2 ring-secondary' : 'bg-surface-container-low')}>
-                      <span className="flex items-center justify-between">
-                        <span className="flex items-center gap-2">
-                          <input type="radio" name="payment" className="accent-primary" disabled={!m.available} checked={payment === m.code} onChange={() => setPayment(m.code)} />
-                          <Icon name={m.icon} className="text-secondary" />
-                          <span className="text-label-lg">{m.label}</span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-space-md">
+                  {methods.data
+                    ?.filter((m) => ['razorpay', 'cod'].includes(m.code))
+                    .map((m) => (
+                      <label key={m.code} className={cn('flex flex-col gap-2 p-3.5 sm:p-space-md rounded-2xl transition-all', m.available ? 'cursor-pointer active:scale-[0.99]' : 'cursor-not-allowed opacity-60', payment === m.code ? 'bg-surface-container-lowest shadow-lift ring-2 ring-secondary' : 'bg-surface-container-low')}>
+                        <span className="flex items-center justify-between">
+                          <span className="flex items-center gap-2">
+                            <input type="radio" name="payment" className="accent-primary" disabled={!m.available} checked={payment === m.code} onChange={() => setPayment(m.code)} />
+                            <Icon name={m.icon} className="text-secondary" />
+                            <span className="text-label-lg">{m.label}</span>
+                          </span>
+                          {!m.available && <span className="text-label-sm px-2 py-0.5 rounded bg-surface-container-highest">N/A</span>}
                         </span>
-                        {!m.available && <span className="text-label-sm px-2 py-0.5 rounded bg-surface-container-highest">{m.reason === 'Coming soon' ? 'Soon' : 'N/A'}</span>}
-                      </span>
-                      <span className="text-body-sm text-on-surface-variant">{m.available ? m.description : m.reason}</span>
-                    </label>
-                  ))}
+                        <span className="text-body-sm text-on-surface-variant">{m.available ? m.description : m.reason}</span>
+                      </label>
+                    ))}
                 </div>
                 {selectedPayment?.code === 'cod' && (
-                  <div className="p-space-md rounded-2xl bg-secondary-container/30 flex items-start gap-3 text-body-sm">
-                    <Icon name="info" className="text-secondary" />
+                  <div className="p-3 sm:p-space-md rounded-2xl bg-secondary-container/30 flex items-start gap-2.5 sm:gap-3 text-body-sm">
+                    <Icon name="info" className="text-secondary shrink-0" />
                     <p>Pay {money.inr(due)} in cash or by UPI to the courier at delivery. No card details are collected or stored.</p>
                   </div>
                 )}
                 {selectedPayment?.code === 'razorpay' && (
-                  <div className="p-space-md rounded-2xl bg-secondary-container/30 flex items-start gap-3 text-body-sm">
-                    <Icon name="verified_user" className="text-secondary" />
+                  <div className="p-3 sm:p-space-md rounded-2xl bg-secondary-container/30 flex items-start gap-2.5 sm:gap-3 text-body-sm">
+                    <Icon name="verified_user" className="text-secondary shrink-0" />
                     <p>Pay securely via UPI (Google Pay, PhonePe, Paytm), Credit / Debit Cards, Net Banking or Wallets through Razorpay with 256-bit encryption.</p>
                   </div>
                 )}
                 {/* Gift card and WILDTANE Wallet: applied first, the chosen method pays what is left. */}
-                <div className="card p-space-md flex flex-col gap-3">
+                <div className="card p-3.5 sm:p-space-md flex flex-col gap-3">
                   <h3 className="text-headline-sm flex items-center gap-2"><Icon name="card_giftcard" className="text-secondary" /> Gift card & WILDTANE Wallet</h3>
                   {config?.giftCardsEnabled !== false && (
                     <div className="flex flex-col gap-2">
@@ -673,7 +682,7 @@ export default function Checkout() {
           </div>
 
           {/* Order summary */}
-          <aside className="lg:col-span-5 lg:sticky lg:top-6 card p-space-lg flex flex-col gap-space-md">
+          <aside className="lg:col-span-5 lg:sticky lg:top-6 card p-3.5 sm:p-space-lg flex flex-col gap-space-md">
             <div className="flex items-center justify-between">
               <h2 className="text-headline-sm">Order summary</h2>
               <Link to="/cart" className="text-label-md text-secondary hover:underline">Edit bag</Link>
@@ -705,15 +714,18 @@ export default function Checkout() {
               </div>
             )}
             {step === 3 ? (
-              <Button variant="secondary" className="w-full h-12" icon="lock" loading={submitting} disabled={hasIssues || submitting || (!coveredByStoredValue && selectedPayment && !selectedPayment.available)} onClick={handlePlaceOrder}>
+              <Button variant="secondary" className="w-full h-12 text-[14px] sm:text-[15px] font-bold" icon="lock" loading={submitting} disabled={hasIssues || submitting || (!coveredByStoredValue && selectedPayment && !selectedPayment.available)} onClick={handlePlaceOrder}>
                 {payment === 'razorpay' && !coveredByStoredValue ? 'Pay now' : 'Place order'}
               </Button>
             ) : (
               <p className="text-label-sm font-normal text-outline text-center">Complete the steps to place your order.</p>
             )}
-            <div className="grid grid-cols-3 gap-2 text-center text-label-sm font-normal text-on-surface-variant">
+            <div className="grid grid-cols-3 gap-1.5 sm:gap-2 text-center text-[10.5px] sm:text-label-sm font-normal text-on-surface-variant">
               {[['lock', 'Secure checkout'], ['published_with_changes', '7-day returns'], ['local_shipping', 'Tracked delivery']].map(([icon, label]) => (
-                <div key={label} className="p-2 rounded-lg bg-surface-container-low flex flex-col items-center gap-1"><Icon name={icon} className="text-secondary text-[18px]" />{label}</div>
+                <div key={label} className="p-1.5 sm:p-2 rounded-lg bg-surface-container-low flex flex-col items-center gap-0.5 sm:gap-1">
+                  <Icon name={icon} className="text-secondary text-[16px] sm:text-[18px]" />
+                  <span className="leading-tight">{label}</span>
+                </div>
               ))}
             </div>
           </aside>

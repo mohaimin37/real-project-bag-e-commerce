@@ -100,6 +100,14 @@ const orderSchema = new mongoose.Schema(
       type: { type: String },
       value: Number,
     },
+    coupons: [
+      {
+        code: String,
+        type: { type: String },
+        value: Number,
+        discount: Number,
+      },
+    ],
     // Loyalty coins: spent on this order (and the ₹ they took off) and earned by it.
     coinsRedeemed: { type: Number, default: 0, min: 0 },
     coinDiscount: { type: Number, default: 0, min: 0 },

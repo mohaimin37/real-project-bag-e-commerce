@@ -110,7 +110,7 @@ export function useCart() {
   });
 
   const removeCoupon = useMutation({
-    mutationFn: async () => setServerCart(await api.removeCoupon()),
+    mutationFn: async (code) => setServerCart(await api.removeCoupon(code)),
     onError,
   });
 

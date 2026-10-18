@@ -7,7 +7,7 @@ import { formatDate, formatDateTime, formatINR, initials } from '../lib/format';
 import { countryName } from '../lib/countries';
 import { useUser } from '../hooks/useStore';
 import { AddressCard } from '../components/AddressForm';
-import { Badge, Button, ErrorState, Icon, Input, PageLoader, Stars, StatusBadge, useConfirm } from '../components/ui';
+import { Badge, Button, ErrorState, Icon, Input, Modal, PageLoader, Stars, StatusBadge, Textarea, useConfirm } from '../components/ui';
 import { CoinIcon } from '../components/coins';
 import { Panel } from './kit';
 
@@ -25,9 +25,22 @@ export default function CustomerDetail() {
     },
     onError: (e) => toast.error(e.message),
   });
+
+  const [emailModalOpen, setEmailModalOpen] = useState(false);
+  const [emailForm, setEmailForm] = useState({ to: '', subject: 'Message from WILDTANE Customer Care', message: '' });
+  const sendEmail = useMutation({
+    mutationFn: (body) => adminApi.sendCustomerEmail(id, body),
+    onSuccess: (res) => {
+      toast.success(res.message || 'Email sent successfully from info@wildtane.com');
+      setEmailModalOpen(false);
+      setEmailForm((prev) => ({ ...prev, message: '' }));
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
   if (isLoading) return <PageLoader />;
   if (isError) return <ErrorState error={error} onRetry={refetch} />;
-  const { customer: c, orders, reviews, stats, coinHistory = [] } = data;
+  const { customer: c, orders = [], reviews = [], stats = {}, coinHistory = [], payments = [] } = data;
   const self = me?._id === c._id;
 
   return (
@@ -39,32 +52,52 @@ export default function CustomerDetail() {
           <h1 className="text-headline-md sm:text-headline-lg flex items-center gap-2 flex-wrap break-words">{c.name} {c.role === 'admin' && <Badge tone="dark">Admin</Badge>} {!c.isActive && <Badge tone="danger">Blocked</Badge>}</h1>
           <p className="text-body-sm text-on-surface-variant break-all">{c.email} · joined {formatDate(c.createdAt)}</p>
         </div>
-        {!self && (
-          <div className="flex gap-2 w-full sm:w-auto [&>*]:flex-1 sm:[&>*]:flex-none">
-            <Button
-              variant="tonal"
-              size="sm"
-              icon={c.isActive ? 'block' : 'check_circle'}
-              loading={update.isPending}
-              onClick={async () => {
-                if (!c.isActive || (await confirm({ title: `Block ${c.name}?`, message: 'They will be signed out and unable to log in.', confirmLabel: 'Block' }))) update.mutate({ isActive: !c.isActive });
-              }}
-            >
-              {c.isActive ? 'Block' : 'Unblock'}
-            </Button>
-            <Button
-              variant="tonal"
-              size="sm"
-              icon="admin_panel_settings"
-              onClick={async () => {
-                const toAdmin = c.role !== 'admin';
-                if (await confirm({ title: toAdmin ? `Make ${c.name} an admin?` : 'Remove admin access?', message: toAdmin ? 'They will get full access to this dashboard.' : '', confirmLabel: 'Confirm', tone: toAdmin ? 'danger' : 'neutral' })) update.mutate({ role: toAdmin ? 'admin' : 'customer' });
-              }}
-            >
-              {c.role === 'admin' ? 'Revoke admin' : 'Make admin'}
-            </Button>
-          </div>
-        )}
+        <div className="flex gap-2 w-full sm:w-auto [&>*]:flex-1 sm:[&>*]:flex-none flex-wrap">
+          <Button
+            variant="tonal"
+            size="sm"
+            icon="mail"
+            className="h-9 gap-1.5"
+            onClick={() => {
+              setEmailForm({ to: c.email || '', subject: 'Message from WILDTANE Customer Care', message: '' });
+              setEmailModalOpen(true);
+            }}
+          >
+            Send Email
+          </Button>
+          <Link
+            to={`/admin/chat?q=${encodeURIComponent(c.email || c.name)}`}
+            className="btn-tonal btn-sm gap-1.5 h-9"
+          >
+            <Icon name="chat" className="text-[17px] text-secondary" /> Customer Chat
+          </Link>
+          {!self && (
+            <>
+              <Button
+                variant="tonal"
+                size="sm"
+                icon={c.isActive ? 'block' : 'check_circle'}
+                loading={update.isPending}
+                onClick={async () => {
+                  if (!c.isActive || (await confirm({ title: `Block ${c.name}?`, message: 'They will be signed out and unable to log in.', confirmLabel: 'Block' }))) update.mutate({ isActive: !c.isActive });
+                }}
+              >
+                {c.isActive ? 'Block' : 'Unblock'}
+              </Button>
+              <Button
+                variant="tonal"
+                size="sm"
+                icon="admin_panel_settings"
+                onClick={async () => {
+                  const toAdmin = c.role !== 'admin';
+                  if (await confirm({ title: toAdmin ? `Make ${c.name} an admin?` : 'Remove admin access?', message: toAdmin ? 'They will get full access to this dashboard.' : '', confirmLabel: 'Confirm', tone: toAdmin ? 'danger' : 'neutral' })) update.mutate({ role: toAdmin ? 'admin' : 'customer' });
+                }}
+              >
+                {c.role === 'admin' ? 'Revoke admin' : 'Make admin'}
+              </Button>
+            </>
+          )}
+        </div>
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-space-md">
@@ -112,6 +145,7 @@ export default function CustomerDetail() {
         </Panel>
       </div>
 
+      <PaymentHistoryPanel payments={payments} stats={stats} />
       <CoinsPanel customer={c} history={coinHistory} />
       <WalletPanel customer={c} />
       {c.addresses?.length > 0 && (
@@ -132,6 +166,57 @@ export default function CustomerDetail() {
           </div>
         </Panel>
       )}
+
+      <Modal open={emailModalOpen} onClose={() => setEmailModalOpen(false)} title={`Send Email to ${c.name}`}>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            sendEmail.mutate(emailForm);
+          }}
+          className="flex flex-col gap-4 p-space-md"
+        >
+          <div className="flex items-center gap-2 p-2.5 rounded-lg bg-surface-container-low text-label-sm text-outline">
+            <Icon name="verified_user" className="text-secondary text-[18px]" />
+            <span>Sending directly from authenticated mailbox <b>info@wildtane.com</b></span>
+          </div>
+          <div>
+            <label className="block text-label-sm uppercase tracking-wider text-outline mb-1">To Email</label>
+            <Input
+              type="email"
+              required
+              value={emailForm.to}
+              onChange={(e) => setEmailForm({ ...emailForm, to: e.target.value })}
+              placeholder="customer@example.com"
+            />
+          </div>
+          <div>
+            <label className="block text-label-sm uppercase tracking-wider text-outline mb-1">Subject</label>
+            <Input
+              type="text"
+              required
+              value={emailForm.subject}
+              onChange={(e) => setEmailForm({ ...emailForm, subject: e.target.value })}
+              placeholder="Email subject line"
+            />
+          </div>
+          <div>
+            <label className="block text-label-sm uppercase tracking-wider text-outline mb-1">Message</label>
+            <Textarea
+              rows={5}
+              required
+              value={emailForm.message}
+              onChange={(e) => setEmailForm({ ...emailForm, message: e.target.value })}
+              placeholder="Write your email to the customer…"
+            />
+          </div>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button variant="tonal" type="button" onClick={() => setEmailModalOpen(false)}>Cancel</Button>
+            <Button variant="filled" type="submit" icon="send" loading={sendEmail.isPending} disabled={!emailForm.to || !emailForm.message.trim()}>
+              Send Email
+            </Button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 }
@@ -249,3 +334,84 @@ function CoinsPanel({ customer, history }) {
     </Panel>
   );
 }
+
+/** Individual user payment history: payments, methods (UPI/Razorpay/COD/Wallet), amounts and refunds. */
+function PaymentHistoryPanel({ payments = [], stats = {} }) {
+  return (
+    <Panel
+      title={
+        <div className="flex flex-wrap items-center justify-between gap-2 w-full">
+          <span className="flex items-center gap-2">
+            <Icon name="paid" className="text-[20px] text-secondary" /> Payment History ({payments.length})
+          </span>
+          <span className="text-[12px] font-normal text-on-surface-variant flex items-center gap-2">
+            <span>
+              Total Collected: <b className="text-on-surface font-semibold">{formatINR(stats.totalPaid || stats.spent || 0)}</b>
+            </span>
+            {stats.totalRefunded > 0 && (
+              <span className="text-error font-medium">({formatINR(stats.totalRefunded)} refunded)</span>
+            )}
+          </span>
+        </div>
+      }
+      bodyClassName="px-0"
+    >
+      {payments.length === 0 ? (
+        <p className="px-space-lg text-body-sm text-on-surface-variant">No payments recorded for this customer yet.</p>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-body-sm text-left">
+            <thead>
+              <tr className="border-b border-surface-container-high text-[11px] font-bold text-outline uppercase tracking-wider">
+                <th className="px-3 sm:px-space-lg py-2.5">Date & Order</th>
+                <th className="py-2.5">Method / Gateway</th>
+                <th className="py-2.5">Payment Ref / UPI</th>
+                <th className="py-2.5">Status</th>
+                <th className="px-3 sm:px-space-lg py-2.5 text-right">Amount</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-surface-container-high">
+              {payments.map((p) => (
+                <tr key={p._id || p.orderId} className="hover:bg-surface-container-low/50 transition-colors">
+                  <td className="px-3 sm:px-space-lg py-3">
+                    <Link to={`/admin/orders/${p.orderId}`} className="font-semibold text-secondary hover:underline">
+                      {p.orderId}
+                    </Link>
+                    <span className="block text-[11px] text-outline">{formatDateTime(p.paidAt || p.date)}</span>
+                  </td>
+                  <td className="py-3">
+                    <span className="font-medium text-on-surface">{p.gateway}</span>
+                    <span className="block text-[10.5px] text-outline font-mono uppercase">{p.paymentMethod}</span>
+                  </td>
+                  <td className="py-3">
+                    {p.reference ? (
+                      <span className="font-mono text-[11.5px] px-2 py-0.5 rounded bg-surface-container text-on-surface-variant select-all">
+                        {p.reference}
+                      </span>
+                    ) : (
+                      <span className="text-[12px] text-outline">—</span>
+                    )}
+                  </td>
+                  <td className="py-3">
+                    <StatusBadge status={p.paymentStatus} />
+                    {p.refundedAmount > 0 && (
+                      <span className="block text-[10.5px] text-error mt-0.5">
+                        Refunded: {formatINR(p.refundedAmount)}
+                      </span>
+                    )}
+                  </td>
+                  <td className="px-3 sm:px-space-lg py-3 text-right">
+                    <span className="font-bold tabular-nums text-label-lg">
+                      {formatINR(p.amount)}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </Panel>
+  );
+}
+

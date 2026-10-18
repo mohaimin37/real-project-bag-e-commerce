@@ -338,9 +338,9 @@ export default function SearchModal() {
   return (
     <>
       {/* ── MOBILE FULL-SCREEN SEARCH APP EXPERIENCE (< md) ── */}
-      <div className="md:hidden fixed inset-0 z-[100] bg-surface flex flex-col animate-fade-in text-on-surface">
+      <div className="md:hidden fixed inset-0 z-[100] bg-surface flex flex-col w-full max-w-full h-[100dvh] overflow-x-hidden animate-fade-in text-on-surface">
         {/* Mobile Top App Bar */}
-        <div className="px-3 py-2.5 bg-surface-container-lowest border-b border-outline-variant/30 flex items-center gap-2 shadow-xs">
+        <div className="px-3 py-2.5 bg-surface-container-lowest border-b border-outline-variant/30 flex items-center gap-2 shadow-xs shrink-0">
           <button
             type="button"
             onClick={close}
@@ -767,7 +767,7 @@ export default function SearchModal() {
 
         {/* Sticky Mobile Search Action Pill */}
         {q.trim() && (
-          <div className="p-2.5 bg-surface-container-lowest border-t border-outline-variant/30">
+          <div className="p-2.5 pb-[calc(0.625rem+env(safe-area-inset-bottom))] bg-surface-container-lowest border-t border-outline-variant/30 shrink-0">
             <button
               type="button"
               onClick={() => handleSearchSubmit(q.trim())}

@@ -18,6 +18,7 @@ import { prefersReducedMotion } from '../theme/engine';
 import GroupedProducts from '../components/GroupedProducts';
 import ClothingCategoryMenu from '../components/layout/ClothingCategoryMenu';
 import { OffersCarousel, YourOffersStrip } from '../components/offers';
+import { LogoMark } from '../components/Brand';
 
 
 const PAGE_SIZE = 24;
@@ -1239,12 +1240,10 @@ export default function Shop({ preset, categoryList, pageTitle, pageDescription,
         <div className="px-2.5 py-2 flex items-center gap-2">
           <Link
             to="/"
-            className="flex items-center gap-1.5 shrink-0 group active:scale-95 transition-transform mr-0.5"
+            className="flex items-center shrink-0 active:scale-95 transition-transform mr-0.5"
             aria-label="WILDTANE home"
           >
-            <span className="font-serif tracking-[0.14em] font-black text-[14.5px] text-on-surface uppercase leading-none hover:text-secondary transition-colors">
-              WILDTANE
-            </span>
+            <LogoMark className="w-7 h-7 drop-shadow-2xs" />
           </Link>
           <button
             type="button"

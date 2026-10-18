@@ -12,6 +12,7 @@ const cartSchema = new mongoose.Schema(
       },
     ],
     couponCode: { type: String, uppercase: true, trim: true, default: null },
+    couponCodes: [{ type: String, uppercase: true, trim: true }],
     shippingMethod: { type: String, default: 'standard' },
     useCoins: { type: Boolean, default: false }, // shopper ticked "use my coins" at checkout
   },

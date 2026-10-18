@@ -76,9 +76,9 @@ export default function Footer() {
     ['linkedin', 'LinkedIn', 'work'],
   ].filter(([k]) => /^https:\/\//.test(config?.social?.[k] || ''));
   return (
-    // Deep shade of the theme's brand colour (dark, so the gold logo, telephone and email stand out).
-    <footer className="mt-6 text-on-band pb-16 md:pb-0" style={{ background: 'linear-gradient(180deg, color-mix(in srgb, rgb(var(--c-secondary)) 30%, rgb(var(--c-band))), color-mix(in srgb, rgb(var(--c-secondary)) 14%, rgb(var(--c-band))))' }}>
-      <div className="container-x py-8 md:py-10 grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-[repeat(4,minmax(0,1fr))_1px_minmax(0,1.3fr)_minmax(0,1.3fr)] gap-x-6 gap-y-8">
+    <footer className="mt-6 text-on-band pb-20 md:pb-0" style={{ background: 'linear-gradient(180deg, color-mix(in srgb, rgb(var(--c-secondary)) 30%, rgb(var(--c-band))), color-mix(in srgb, rgb(var(--c-secondary)) 14%, rgb(var(--c-band))))' }}>
+      {/* ── DESKTOP FOOTER (UNTOUCHED, IDENTICAL ON LAPTOPS) ── */}
+      <div className="hidden md:grid container-x py-8 md:py-10 grid-cols-2 sm:grid-cols-4 lg:grid-cols-[repeat(4,minmax(0,1fr))_1px_minmax(0,1.3fr)_minmax(0,1.3fr)] gap-x-6 gap-y-8">
         {columns.slice(0, 4).map((col, i) => (
           <nav key={`${i}-${col.title}`} aria-label={col.title} className="flex flex-col gap-2">
             <h3 className={heading}>{col.title}</h3>
@@ -125,7 +125,84 @@ export default function Footer() {
           </Link>
         </div>
       </div>
-      <div className="border-t border-on-band/15">
+
+      {/* ── MOBILE FOOTER (FLIPKART STYLE: CLEAN, COMPACT, USER ATTRACTIVE) ── */}
+      <div className="md:hidden px-3 pt-6 pb-4 flex flex-col gap-4">
+        {/* Flipkart 4 Trust Badges */}
+        <div className="grid grid-cols-2 gap-2">
+          <div className="p-2.5 rounded-xl bg-on-band/5 border border-on-band/15 flex items-center gap-2">
+            <Icon name="verified" className="text-[20px] text-amber-400 shrink-0" />
+            <div className="flex flex-col leading-tight">
+              <span className="text-[11px] font-bold text-on-band">100% Original</span>
+              <span className="text-[9.5px] text-on-band/75">Direct from Maker</span>
+            </div>
+          </div>
+          <div className="p-2.5 rounded-xl bg-on-band/5 border border-on-band/15 flex items-center gap-2">
+            <Icon name="assignment_return" className="text-[20px] text-emerald-400 shrink-0" />
+            <div className="flex flex-col leading-tight">
+              <span className="text-[11px] font-bold text-on-band">7 Days Returns</span>
+              <span className="text-[9.5px] text-on-band/75">Hassle-Free Exchange</span>
+            </div>
+          </div>
+          <div className="p-2.5 rounded-xl bg-on-band/5 border border-on-band/15 flex items-center gap-2">
+            <Icon name="local_shipping" className="text-[20px] text-sky-400 shrink-0" />
+            <div className="flex flex-col leading-tight">
+              <span className="text-[11px] font-bold text-on-band">Fast Delivery</span>
+              <span className="text-[9.5px] text-on-band/75">Tracked Across India</span>
+            </div>
+          </div>
+          <div className="p-2.5 rounded-xl bg-on-band/5 border border-on-band/15 flex items-center gap-2">
+            <Icon name="lock" className="text-[20px] text-rose-400 shrink-0" />
+            <div className="flex flex-col leading-tight">
+              <span className="text-[11px] font-bold text-on-band">Secure Checkout</span>
+              <span className="text-[9.5px] text-on-band/75">UPI & Cards</span>
+            </div>
+          </div>
+        </div>
+
+        {/* 1-Tap WhatsApp & Call Support */}
+        <div className="grid grid-cols-2 gap-2">
+          <a
+            href="https://wa.me/918920550465"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="h-10 px-3 rounded-xl bg-emerald-600 text-white font-bold text-[11.5px] flex items-center justify-center gap-1.5 shadow-2xs active:scale-95 transition-transform"
+          >
+            <Icon name="chat" className="text-[16px]" /> WhatsApp Help
+          </a>
+          <a
+            href={`tel:${phone.replace(/\s/g, '')}`}
+            className="h-10 px-3 rounded-xl bg-on-band/10 border border-on-band/20 text-on-band font-bold text-[11.5px] flex items-center justify-center gap-1.5 shadow-2xs active:scale-95 transition-transform"
+          >
+            <Icon name="call" className="text-[16px] text-amber-400" /> Call Support
+          </a>
+        </div>
+
+        {/* Quick Links Pills */}
+        <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-[11.5px] text-on-band/85 font-medium pt-2 border-t border-on-band/15">
+          <Link to="/track" className="hover:underline">Track Order</Link>
+          <Link to="/returns-exchange" className="hover:underline">Returns</Link>
+          <Link to="/shipping-policy" className="hover:underline">Shipping</Link>
+          <Link to="/privacy-policy" className="hover:underline">Privacy</Link>
+          <Link to="/terms" className="hover:underline">Terms</Link>
+          <Link to="/about" className="hover:underline">About</Link>
+        </div>
+
+        {/* Brand & Copyright */}
+        <div className="text-center pt-2">
+          <div className="inline-flex items-center gap-1.5 mb-1">
+            <LogoMark className="w-5 h-5 shrink-0" tone="gold" />
+            <span className="font-serif tracking-widest font-bold text-[13px] text-on-band uppercase">
+              WILDTANE
+            </span>
+          </div>
+          <p className="text-[10px] text-on-band/70">© {new Date().getFullYear()} {company}</p>
+          <p className="text-[9px] text-on-band/60">Paharganj, New Delhi 110055 • GSTIN: {config?.gstin || '07AAECW3767F1Z4'}</p>
+        </div>
+      </div>
+
+      {/* Desktop Bottom Strip */}
+      <div className="hidden md:block border-t border-on-band/15">
         <div className="container-x py-4 flex flex-col lg:flex-row items-center justify-between gap-3 text-[13px]">
           <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
             {[
@@ -140,7 +217,6 @@ export default function Footer() {
             <span className="text-on-band/70">© {new Date().getFullYear()} {company}</span>
           </div>
           <div className="flex flex-wrap items-center justify-center gap-3">
-            {/* Only the payment methods checkout offers right now (Admin → Settings → Payments). */}
             {payments.length > 0 && (
               <span className="flex flex-wrap items-center gap-1.5">
                 <span className="text-on-band/70">We accept</span>

@@ -69,36 +69,63 @@ export function EarnLine({ summary, className }) {
  * summary.coins comes from the server, so the total shown always matches what is charged.
  */
 export function UseCoinsCard({ summary, onToggle, busy }) {
+  const user = useUser();
   const c = summary?.coins;
   if (!c?.enabled) return null;
   const value = (n) => `₹${(n * c.rupeesPerCoin).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
   const has = c.balance > 0;
+
+  if (!user) {
+    return (
+      <div className="rounded-2xl p-3 sm:p-3.5 flex flex-wrap sm:flex-nowrap items-center justify-between gap-2.5 sm:gap-3 border border-surface-container-high bg-surface-container-lowest">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <span className="w-8 h-8 rounded-full bg-[#c08a2e]/15 flex items-center justify-center shrink-0"><CoinIcon className="w-5 h-5" /></span>
+          <div className="min-w-0">
+            <p className="text-[13px] font-semibold text-on-surface">WILDTANE Coins</p>
+            <p className="text-[11.5px] text-on-surface-variant leading-tight">Sign in to redeem coins alongside your flat discount.</p>
+          </div>
+        </div>
+        <Link to="/login?next=/cart" className="text-label-sm font-semibold text-secondary hover:underline shrink-0">Sign in</Link>
+      </div>
+    );
+  }
+
   return (
-    <div className={cn('rounded-2xl p-3.5 flex flex-col gap-2 border', c.used ? 'border-[#c08a2e]/60 bg-[#c08a2e]/10' : 'border-surface-container-high bg-surface-container-lowest')}>
-      <div className="flex items-center gap-3">
-        <span className="w-10 h-10 rounded-full bg-[#c08a2e]/15 flex items-center justify-center shrink-0"><CoinIcon className="w-6 h-6" /></span>
+    <div className={cn('rounded-2xl p-3 sm:p-3.5 flex flex-col gap-2.5 border transition-all', c.used ? 'border-[#c08a2e] bg-[#c08a2e]/10 shadow-sm' : 'border-surface-container-high bg-surface-container-lowest')}>
+      <div className="flex items-center gap-2.5 sm:gap-3">
+        <span className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#c08a2e]/20 flex items-center justify-center shrink-0"><CoinIcon className="w-5 h-5 sm:w-6 sm:h-6" /></span>
         <div className="flex-1 min-w-0">
-          <p className="text-[14px] font-semibold">WILDTANE Coins</p>
-          <p className="text-[12px] text-on-surface-variant">
-            {has ? <>Balance <b className="text-on-surface">{c.balance} coins</b> · worth {value(c.balance)}</> : 'You have no coins yet'}
+          <div className="flex flex-wrap items-center gap-1.5">
+            <p className="text-[13px] sm:text-[14px] font-semibold text-on-surface">WILDTANE Coins</p>
+            {c.used > 0 && <span className="text-[9.5px] sm:text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.2 rounded bg-[#c08a2e] text-white">Redeemed</span>}
+          </div>
+          <p className="text-[11.5px] sm:text-[12px] text-on-surface-variant truncate">
+            {has ? <>Balance <b className="text-on-surface">{c.balance} coins</b> · worth {value(c.balance)}</> : 'You have 0 coins in your wallet'}
           </p>
         </div>
         {has && c.usable > 0 && (
-          <Toggle checked={Boolean(c.used)} disabled={busy} onChange={onToggle} label={<span className="sr-only">Use coins</span>} />
+          <div className="shrink-0 ml-1">
+            <Toggle checked={Boolean(c.used)} disabled={busy} onChange={onToggle} label={<span className="sr-only">Use coins</span>} />
+          </div>
         )}
       </div>
       {has && c.usable > 0 && (
-        <p className={cn('text-[12px] flex items-center gap-1', c.used ? 'text-success font-semibold' : 'text-on-surface-variant')}>
-          <Icon name={c.used ? 'check_circle' : 'savings'} className="text-[16px]" />
-          {c.used ? `${c.used} coins applied — you save ${value(c.used)}` : `Use ${c.usable} coins to save ${value(c.usable)} on this order`}
+        <p className={cn('text-[11.5px] sm:text-[12px] flex items-center gap-1 leading-snug', c.used ? 'text-success font-semibold' : 'text-on-surface-variant')}>
+          <Icon name={c.used ? 'check_circle' : 'savings'} className="text-[16px] shrink-0" />
+          <span>{c.used ? `${c.used} coins applied — you save ${value(c.used)}` : `Redeem ${c.usable} coins to save ${value(c.usable)} on this order`}</span>
         </p>
       )}
       {has && c.usable < c.balance && (
-        <p className="text-[11px] text-outline">Coins can pay up to {c.maxRedeemPercent}% of the item total.</p>
+        <p className="text-[10.5px] sm:text-[11px] text-outline">Coins can pay up to {c.maxRedeemPercent}% of the item total.</p>
+      )}
+      {summary?.coupon && c.used > 0 && (
+        <div className="flex flex-wrap items-center gap-1.5 text-[11px] sm:text-[11.5px] font-semibold text-[#8b6118] dark:text-[#f3d489] bg-[#c08a2e]/15 px-2.5 py-1 rounded-md">
+          <Icon name="verified" className="text-[14px] shrink-0" /> Applied together with Flat Discount ({summary.coupon.code})
+        </div>
       )}
       {c.willEarn > 0 && (
-        <p className="text-[12px] text-on-surface-variant flex items-center gap-1">
-          <Icon name="add_circle" className="text-[16px] text-[#c08a2e]" /> This order earns <b className="text-on-surface">{c.willEarn} coins</b> ({c.coinsPer100} for every ₹100)
+        <p className="text-[11.5px] sm:text-[12px] text-on-surface-variant flex items-center gap-1">
+          <Icon name="add_circle" className="text-[16px] text-[#c08a2e] shrink-0" /> This order earns <b className="text-on-surface">{c.willEarn} coins</b> ({c.coinsPer100} for every ₹100)
         </p>
       )}
     </div>

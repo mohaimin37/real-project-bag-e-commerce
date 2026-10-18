@@ -851,16 +851,16 @@ export default function ClothingCategoryMenu({
 
       {/* ── 2. UPPER PORTION: CATEGORIES IN CIRCLES (Compact, Laptop-Friendly & Crisp) ── */}
       <div className="max-w-[1536px] mx-auto px-3 sm:px-6 pt-1.5 sm:pt-2 pb-1.5 select-none">
-        <div className="flex items-center justify-between pb-1 px-0.5">
-          <div className="flex items-center gap-1.5">
-            <span className="text-[11px] font-black uppercase tracking-[0.14em] text-on-surface">
+        <div className="relative flex items-center justify-between md:justify-center pb-1 px-0.5">
+          <div className="flex items-center gap-1.5 md:justify-center">
+            <span className="text-[11px] font-black uppercase tracking-[0.14em] text-on-surface text-center">
               {normalizedPreset === 'men' ? "Men's Collections" : normalizedPreset === 'women' ? "Women's Collections" : normalizedPreset === 'bags' ? "Bag Collections" : normalizedPreset === 'universal' ? "Universal Collections" : "All Collections"}
             </span>
             <span className="text-[8.5px] uppercase font-bold px-1.5 py-0.2 rounded-full bg-surface-container text-on-surface-variant border border-outline-variant/30">
               Categories
             </span>
           </div>
-          <span className="text-[10.5px] text-outline hidden md:inline">
+          <span className="text-[10.5px] text-outline hidden md:inline md:absolute md:right-0">
             Click any category circle to filter subcategories below
           </span>
         </div>
@@ -890,7 +890,7 @@ export default function ClothingCategoryMenu({
           {/* Category Circles Carousel */}
           <div
             ref={circlesRef}
-            className="flex items-start gap-2.5 sm:gap-3.5 md:gap-4 overflow-x-auto scrollbar-none py-1 px-0.5 snap-x snap-mandatory touch-pan-x overscroll-x-contain"
+            className="flex items-start gap-2.5 sm:gap-3.5 md:gap-4 overflow-x-auto scrollbar-none py-1 px-0.5 snap-x snap-mandatory touch-pan-x overscroll-x-contain md:justify-center md:[justify-content:safe_center]"
           >
             {menuConfig.categories.map((cat) => {
               const isCircleActive = activeCatId === cat.id;
@@ -971,13 +971,13 @@ export default function ClothingCategoryMenu({
       {subcategoriesBelow.length > 0 && (
         <div className="bg-surface-container-low/40 border-t border-surface-container-high/60 py-1.5 sm:py-2 relative">
           <div className="max-w-[1536px] mx-auto px-3 sm:px-6">
-            <div className="flex items-center justify-between mb-1.5 px-0.5">
-              <span className="text-[10.5px] sm:text-[11px] font-extrabold uppercase tracking-wide text-secondary flex items-center gap-1">
+            <div className="relative flex items-center justify-between md:justify-center mb-1.5 px-0.5">
+              <span className="text-[10.5px] sm:text-[11px] font-extrabold uppercase tracking-wide text-secondary flex items-center gap-1 md:justify-center">
                 <Icon name="subdirectory_arrow_right" className="text-[13px]" />
                 <span className="text-on-surface font-black">{activeCategory.name}</span>
                 <span className="text-outline font-medium">&bull; Subcategories</span>
               </span>
-              <span className="text-[10px] sm:text-[10.5px] text-outline hidden xs:inline">
+              <span className="text-[10px] sm:text-[10.5px] text-outline hidden xs:inline md:absolute md:right-0">
                 {subcategoriesBelow.length} styles available &bull; 1-click filter
               </span>
             </div>
@@ -1007,7 +1007,7 @@ export default function ClothingCategoryMenu({
               {/* Scrollable Subcategories Track */}
               <div
                 ref={subcatsRef}
-                className="flex items-center gap-2 overflow-x-auto scrollbar-none pb-0.5 pt-0.5 px-0.5 snap-x snap-mandatory overscroll-x-contain touch-pan-x"
+                className="flex items-center gap-2 overflow-x-auto scrollbar-none pb-0.5 pt-0.5 px-0.5 snap-x snap-mandatory overscroll-x-contain touch-pan-x md:justify-center md:[justify-content:safe_center]"
               >
                 {/* "All [Category]" Quick Action Pill */}
                 <button

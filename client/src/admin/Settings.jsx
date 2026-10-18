@@ -23,6 +23,7 @@ const TABS = [
   ['payments', 'payments', 'Payments'],
   ['loyalty', 'savings', 'Loyalty coins'],
   ['currencies', 'currency_exchange', 'Currencies'],
+  ['email', 'mail', 'Email & Mailbox'],
   ['integrations', 'hub', 'Integrations'],
 ];
 
@@ -147,12 +148,29 @@ export default function Settings() {
   const [tab, setTab] = useState('store');
   const [s, setS] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [testEmailTo, setTestEmailTo] = useState('anas@gmail.com');
+  const [testingEmail, setTestingEmail] = useState(false);
+
   const query = useQuery({ queryKey: ['admin', 'settings'], queryFn: adminApi.settings, select: (d) => d.settings });
   const dash = useQuery({ queryKey: ['admin', 'dashboard', 30], queryFn: () => adminApi.dashboard(30), select: (d) => d.alerts });
   const shipping = useQuery({ queryKey: ['admin', 'shipping-status'], queryFn: adminApi.shippingStatus });
   useEffect(() => {
     if (query.data) setS(structuredClone(query.data));
   }, [query.data]);
+
+  const handleSendTestEmail = async (e) => {
+    e?.preventDefault();
+    if (!testEmailTo.trim()) return;
+    setTestingEmail(true);
+    try {
+      const res = await adminApi.sendTestEmail({ to: testEmailTo.trim() });
+      toast.success(res.message || 'Test email delivered from info@wildtane.com');
+    } catch (err) {
+      toast.error(err.message || 'Failed to send test email');
+    } finally {
+      setTestingEmail(false);
+    }
+  };
 
   if (query.isLoading || !s) return query.isError ? <ErrorState error={query.error} onRetry={query.refetch} /> : <PageLoader />;
   const set = (k, v) => setS({ ...s, [k]: v });
@@ -309,12 +327,16 @@ export default function Settings() {
                   <Toggle checked={s.codEnabled} onChange={(v) => set('codEnabled', v)} />
                 </div>
                 <Field label="COD maximum order value (₹)" hint="0 = no limit" className="max-w-xs"><Input type="number" min={0} value={s.codMaxOrder} onChange={(e) => set('codMaxOrder', Number(e.target.value))} /></Field>
-                {[['credit_card', 'Cards'], ['account_balance', 'UPI / Net Banking'], ['contactless', 'Apple Pay / Google Pay']].map(([icon, label]) => (
-                  <div key={label} className="flex items-center justify-between gap-4 p-space-md rounded-xl border border-dashed border-outline-variant opacity-80">
-                    <div className="flex items-center gap-3"><Icon name={icon} className="text-outline" /><p className="text-label-lg">{label}</p></div>
-                    <span className="text-label-sm px-2 py-0.5 rounded bg-surface-container-highest">Gateway not connected</span>
+                <div className="flex items-center justify-between gap-4 p-space-md rounded-xl bg-surface-container-low">
+                  <div className="flex items-center gap-3">
+                    <Icon name="credit_card" className="text-secondary" />
+                    <div>
+                      <p className="text-label-lg">Pay Online (Razorpay)</p>
+                      <p className="text-body-sm text-on-surface-variant">Accept UPI (Google Pay, PhonePe, Paytm), Cards, Net Banking & Wallets.</p>
+                    </div>
                   </div>
-                ))}
+                  <span className="text-label-sm px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-semibold border border-emerald-500/20">Active</span>
+                </div>
                 <p className="text-body-sm text-on-surface-variant">Online gateways plug into <code>server/src/services/payment.service.js</code>. Card data is never stored on this server.</p>
               </div>
             </Panel>
@@ -417,6 +439,75 @@ export default function Settings() {
                     <button type="button" disabled={c.code === 'INR'} onClick={() => set('currencies', s.currencies.filter((_, x) => x !== i))} className="btn-icon hover:text-error md:col-span-1 justify-self-end" aria-label="Remove currency"><Icon name="delete" /></button>
                   </div>
                 ))}
+              </div>
+            </Panel>
+          )}
+
+          {tab === 'email' && (
+            <Panel title="Email & Mailbox Configuration">
+              <div className="flex flex-col gap-space-md">
+                <div className="flex items-start gap-3 p-space-md rounded-xl bg-surface-container-low border border-emerald-500/20">
+                  <span className="w-10 h-10 rounded-xl bg-emerald-500/15 text-emerald-600 flex items-center justify-center shrink-0">
+                    <Icon name="mark_email_read" className="text-[22px]" />
+                  </span>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="text-label-lg font-bold text-on-surface">Authenticated Mailbox: info@wildtane.com</p>
+                      <span className="text-label-sm px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-semibold border border-emerald-500/20">
+                        Active · Hostinger SMTP
+                      </span>
+                    </div>
+                    <p className="text-body-sm text-on-surface-variant mt-1">
+                      All customer invoices, order status updates, cancellation approvals, and admin support messages are sent directly from <b>info@wildtane.com</b> via <b>smtp.hostinger.com (Port 465 SSL)</b>.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div className="p-3 rounded-xl bg-surface-container-low border border-outline-variant/30">
+                    <span className="text-[11px] text-outline font-semibold uppercase tracking-wider block">Sender Address</span>
+                    <p className="text-label-md font-bold text-on-surface mt-0.5">info@wildtane.com</p>
+                  </div>
+                  <div className="p-3 rounded-xl bg-surface-container-low border border-outline-variant/30">
+                    <span className="text-[11px] text-outline font-semibold uppercase tracking-wider block">SMTP Server</span>
+                    <p className="text-label-md font-bold text-on-surface mt-0.5">smtp.hostinger.com:465</p>
+                  </div>
+                  <div className="p-3 rounded-xl bg-surface-container-low border border-outline-variant/30">
+                    <span className="text-[11px] text-outline font-semibold uppercase tracking-wider block">Security & Encryption</span>
+                    <p className="text-label-md font-bold text-emerald-600 dark:text-emerald-400 mt-0.5">SSL / TLS (High Priority)</p>
+                  </div>
+                </div>
+
+                {/* Test Email Form */}
+                <div className="p-space-md rounded-xl bg-surface-container-low border border-outline-variant/30 flex flex-col gap-3">
+                  <div>
+                    <p className="text-label-lg font-bold">Send Live Test Email</p>
+                    <p className="text-body-sm text-on-surface-variant">
+                      Send a live test message to verify delivery to your inbox from <code>info@wildtane.com</code>.
+                    </p>
+                  </div>
+                  <form onSubmit={handleSendTestEmail} className="flex flex-col sm:flex-row gap-2 items-end">
+                    <Field label="Recipient Email Address" className="flex-1 w-full">
+                      <Input
+                        type="email"
+                        required
+                        value={testEmailTo}
+                        onChange={(e) => setTestEmailTo(e.target.value)}
+                        placeholder="e.g. anas@gmail.com"
+                      />
+                    </Field>
+                    <Button
+                      type="submit"
+                      variant="filled"
+                      icon="send"
+                      loading={testingEmail}
+                      disabled={!testEmailTo.trim() || testingEmail}
+                      className="w-full sm:w-auto"
+                    >
+                      Send Test Email
+                    </Button>
+                  </form>
+                </div>
               </div>
             </Panel>
           )}

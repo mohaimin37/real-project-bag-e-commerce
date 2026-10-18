@@ -15,8 +15,8 @@ export const publicCoupons = asyncHandler(async (req, res) => {
     ],
   })
     .select('code description type value minOrder maxDiscount expiresAt')
-    .sort({ createdAt: -1 })
-    .limit(10);
+    .sort({ minOrder: 1, value: 1 })
+    .limit(30);
   res.json({ success: true, coupons });
 });
 
@@ -35,8 +35,8 @@ export const myCoupons = asyncHandler(async (req, res) => {
       $and: [{ $or: [{ startsAt: null }, { startsAt: { $lte: now } }] }, { $or: [{ expiresAt: null }, { expiresAt: { $gte: now } }] }],
     })
       .select(fields)
-      .sort({ createdAt: -1 })
-      .limit(10)
+      .sort({ minOrder: 1, value: 1 })
+      .limit(30)
       .lean(),
   ]);
   const view = (c) => {

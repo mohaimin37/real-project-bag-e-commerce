@@ -79,9 +79,10 @@ async function loadCheckout(userId, shippingCode) {
       problems.map((p) => ({ field: p.variantId, message: `${p.name || 'Item'}: ${p.issue}` }))
     );
   }
+  const codes = cart.couponCodes?.length ? cart.couponCodes : cart.couponCode ? [cart.couponCode] : [];
   const totals = await computeTotals(lines, {
     userId,
-    couponCode: cart.couponCode,
+    couponCodes: codes,
     shippingCode: shippingCode || cart.shippingMethod || 'standard',
     settings,
     strictCoupon: true,
@@ -246,7 +247,13 @@ export async function placeOrder(userId, payload) {
         }
       }
 
-      if (totals.coupon) await redeemCoupon(totals.coupon, userId, orderObjectId, session);
+      if (totals.coupons?.length) {
+        for (const c of totals.coupons) {
+          await redeemCoupon(c, userId, orderObjectId, session);
+        }
+      } else if (totals.coupon) {
+        await redeemCoupon(totals.coupon, userId, orderObjectId, session);
+      }
 
       const seq = await nextSequence('order', session);
       [order] = await Order.create(
@@ -289,6 +296,7 @@ export async function placeOrder(userId, payload) {
             grandTotal: totals.grandTotal,
             currency: totals.currency,
             coupon: totals.coupon ? { code: totals.coupon.code, type: totals.coupon.type, value: totals.coupon.value } : undefined,
+            coupons: totals.coupons?.map((c) => ({ code: c.code, type: c.type, value: c.value, discount: c.discount })),
             coinsRedeemed: totals.coins.used,
             coinDiscount: totals.coins.discount,
             coinsEarned: totals.coins.willEarn,
@@ -327,7 +335,7 @@ export async function placeOrder(userId, payload) {
       // after 1 week of delivery once the 7-day return policy expires.
       if (totals.coins.used > 0) await moveCoins(userId, -totals.coins.used, { type: 'redeemed', order, session, note: `Used on order ${order.orderId}` });
 
-      await Cart.updateOne({ user: userId }, { $set: { items: [], couponCode: null, useCoins: false } }, { session });
+      await Cart.updateOne({ user: userId }, { $set: { items: [], couponCode: null, couponCodes: [], useCoins: false } }, { session });
     });
   } catch (err) {
     // The customer has paid but the order could not be saved (e.g. the last unit sold a moment ago):
@@ -375,7 +383,13 @@ async function restoreInventory(order) {
     );
   }
   order.inventoryRestored = true;
-  if (order.coupon?.code) await releaseCoupon(order.coupon.code, order._id);
+  if (order.coupons?.length) {
+    for (const c of order.coupons) {
+      if (c.code) await releaseCoupon(c.code, order._id);
+    }
+  } else if (order.coupon?.code) {
+    await releaseCoupon(order.coupon.code, order._id);
+  }
   await reverseOrderCoins(order);
   // Rule: If order gets cancelled, coins will not come
   order.coinsEarned = 0;
@@ -615,26 +629,36 @@ const STATUS_MESSAGES = {
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 
 /** A message from the team about an order, by email (also listed on the customer's order page). */
-export async function sendOrderMessageEmail(order, message) {
-  if (!order.email) return;
+export async function sendOrderMessageEmail(order, message, targetEmail) {
+  const recipient = (targetEmail || order.email || '').trim();
+  if (!recipient) return { delivered: false, reason: 'No recipient email' };
   const link = `${env.siteUrl}/account/orders/${order.orderId}`;
-  await sendEmail({
-    to: order.email,
-    subject: `Message about your order ${order.orderId}`,
-    text: [`Hi ${order.customerName},`, '', message, '', `Order: ${order.orderId} (${order.orderStatus})`, `View your order: ${link}`, '', 'WILDTANE'].join('\n'),
-    html: `<p>Hi ${esc(order.customerName)},</p><p style="white-space:pre-line">${esc(message)}</p><p style="color:#666">Order <b>${esc(order.orderId)}</b> · ${esc(order.orderStatus)}</p><p><a href="${esc(link)}" style="background:#000;color:#fff;padding:12px 20px;text-decoration:none;border-radius:4px;display:inline-block">View your order</a></p><p>WILDTANE</p>`,
+  return await sendEmail({
+    to: recipient,
+    subject: `Message about your order #${order.orderId}`,
+    text: [`Hi ${order.customerName || 'Customer'},`, '', message, '', `Order: #${order.orderId} (${order.orderStatus})`, `View your order: ${link}`, '', 'WILDTANE'].join('\n'),
+    html: `<div style="font-family:sans-serif;max-width:560px;margin:0 auto;padding:24px;border:1px solid #e5e7eb;border-radius:10px;"><h2 style="margin:0 0 12px;color:#111;">WILDTANE</h2><p>Hi ${esc(order.customerName || 'Customer')},</p><p style="white-space:pre-line;font-size:15px;line-height:1.6;color:#1f2937;background:#f9fafb;padding:12px 16px;border-radius:6px;border-left:4px solid #111827;">${esc(message)}</p><p style="color:#666;font-size:14px;">Order: <b>#${esc(order.orderId)}</b> · Status: <b>${esc(order.orderStatus)}</b></p><p style="margin:20px 0;"><a href="${esc(link)}" style="background:#111827;color:#fff;padding:12px 20px;text-decoration:none;border-radius:6px;display:inline-block;font-weight:600;">View Your Order</a></p><hr style="border:none;border-top:1px solid #eee;margin:20px 0;" /><p style="font-size:12px;color:#888;">WILDTANE Customer Care · info@wildtane.com</p></div>`,
   });
 }
 
 /** Sends a team message about an order: saved on the order (customer sees it), emailed if asked. */
-export async function addOrderMessage(order, { text, email = true }, adminId) {
+export async function addOrderMessage(order, { text, email = true, recipientEmail }, adminId) {
   const message = String(text || '').trim().slice(0, 1000);
   if (message.length < 2) throw ApiError.badRequest('Write a message');
-  const emailed = Boolean(email && order.email);
+  const target = (recipientEmail || order.email || '').trim();
+  const emailed = Boolean(email && target);
   order.customerMessages.push({ text: message, status: order.orderStatus, emailed, sentAt: new Date(), by: adminId });
   await order.save();
-  if (emailed) sendOrderMessageEmail(order, message).catch((e) => console.error('[email] order message failed:', e.message));
-  return order;
+  let emailOutcome = null;
+  if (emailed) {
+    try {
+      emailOutcome = await sendOrderMessageEmail(order, message, target);
+    } catch (e) {
+      console.error('[email] order message failed:', e.message);
+      emailOutcome = { delivered: false, error: e.message };
+    }
+  }
+  return { order, emailOutcome, targetEmail: target };
 }
 
 async function notifyCustomerOfStatus(order, when, note, message = '') {

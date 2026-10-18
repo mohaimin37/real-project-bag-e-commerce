@@ -63,11 +63,12 @@ const returnRequestSchema = new mongoose.Schema(
     },
     refundMethod: {
       type: String,
-      enum: ['Original Payment Method', 'UPI', 'Bank Transfer', 'Store Coins Wallet'],
+      enum: ['Original Payment Method', 'UPI', 'UPI QR Scanner', 'Bank Transfer', 'Store Coins Wallet'],
       default: 'Original Payment Method',
     },
     refundDetails: {
       upiId: { type: String, default: '' },
+      qrCodeImage: { type: String, default: '' },
       bankName: { type: String, default: '' },
       accountNumber: { type: String, default: '' },
       ifsc: { type: String, default: '' },

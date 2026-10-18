@@ -38,7 +38,7 @@ export function HomeCategoryTiles({ className }) {
   featured.sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
   return (
     <section aria-label="Shop by category" className={cn('container-x', className)}>
-      <div className="flex gap-3 md:gap-5 overflow-x-auto scrollbar-none -mx-3 px-3 md:mx-0 md:px-0 py-1">
+      <div className="flex gap-3 md:gap-5 overflow-x-auto scrollbar-none -mx-3 px-3 md:mx-0 md:px-0 py-1 md:justify-center md:[justify-content:safe_center]">
         {featured.map((c) => (
           <Tile key={c._id} item={{ label: c.name, to: `/shop/${c.slug}`, count: c.productCount, img: c.image?.url || c.children?.find((x) => x.image?.url)?.image?.url }} tone={categoryTone(c)} />
         ))}

@@ -41,6 +41,7 @@ const Banners = lazy(() => import('./Banners'));
 const LiveUpdates = lazy(() => import('./LiveUpdates'));
 const Settings = lazy(() => import('./Settings'));
 const Notifications = lazy(() => import('./Notifications'));
+const Chat = lazy(() => import('./Chat'));
 // Sidebar sections; the full list lives in nav.js (also used by the storefront Admin menu).
 const NAV = ADMIN_NAV.map((g) => ({ ...g, items: g.items.filter(([to]) => to !== 'products/new') }));
 
@@ -275,6 +276,7 @@ export default function AdminApp() {
               <Route path="reviews" element={<Reviews />} />
               <Route path="comments" element={<Comments />} />
               <Route path="enquiries/:kind" element={<Enquiries />} />
+              <Route path="chat" element={<Chat />} />
               <Route path="notifications" element={<Notifications />} />
               <Route path="blogs" element={<Blogs />} />
               <Route path="blogs/new" element={<BlogForm />} />

@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { setCartOpen, setCurrency, setMobileNavOpen, setSearchOpen, setShopModalOpen, setThemeOpen, toggleContrast, toggleTheme } from '../../store';
+import { useQuery } from '@tanstack/react-query';
+import { setCartOpen, setChatOpen, setCurrency, setMobileNavOpen, setSearchOpen, setShopModalOpen, setThemeOpen, toggleContrast, toggleTheme } from '../../store';
+import { api } from '../../lib/api';
 import { useCategories, useConfig, useUser } from '../../hooks/useStore';
 import { useCart } from '../../hooks/useCart';
 import { useWishlist } from '../../hooks/useWishlist';
@@ -32,6 +34,7 @@ export const MAIN_NAV = [
   ['/shop/fragrance', 'Perfumes'],
   ['/shop', 'Shop'],
   ['/returns-exchange', 'Returns & Exchange'],
+  ['/help', 'Help & Live Chat'],
   ['/about', 'About Us'],
 ];
 
@@ -342,6 +345,26 @@ function SideNav({ categories }) {
               <Icon name="chevron_right" className="text-[18px] opacity-70" />
             </Link>
           </div>
+
+          <div className="mt-2">
+            <button
+              type="button"
+              onClick={() => {
+                close();
+                dispatch(setChatOpen(true));
+              }}
+              className="w-full flex items-center gap-3 p-3 rounded-xl bg-secondary/10 border border-secondary/25 text-on-surface hover:bg-secondary/20 active:scale-[0.99] transition-all shadow-xs text-left"
+            >
+              <span className="w-8 h-8 rounded-lg bg-secondary text-on-secondary flex items-center justify-center shrink-0">
+                <Icon name="chat" className="text-[19px]" />
+              </span>
+              <div className="flex-1 min-w-0">
+                <span className="block text-[13px] font-bold leading-tight">Live Support Chat</span>
+                <span className="block text-[11px] text-outline">Chat with team · Orders & refunds</span>
+              </div>
+              <Icon name="chevron_right" className="text-[18px] opacity-70" />
+            </button>
+          </div>
         </div>
 
         {user?.role === 'admin' && (
@@ -395,6 +418,17 @@ function SideNav({ categories }) {
         {Object.values(DIRECTORIES).map((dir) => (
           <DirectoryAccordion key={dir.key} dir={dir} open={expanded === dir.key} onToggle={() => setExpanded(expanded === dir.key ? null : dir.key)} onNavigate={close} row={row} />
         ))}
+
+        <p className={heading}>Download App</p>
+        <Link
+          to="/download"
+          onClick={close}
+          className={cn(row, 'font-bold text-secondary')}
+        >
+          <Icon name="android" className="text-[20px] text-emerald-600" />
+          <span className="flex-1">Download Android App (.apk)</span>
+          <span className="text-[10px] bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-black px-2 py-0.5 rounded-full">v1.0 APK</span>
+        </Link>
 
         <p className={heading}>More</p>
         <SpinMenuItem className={cn(row, 'w-full')} onPick={close} />
@@ -535,6 +569,13 @@ export default function Header() {
   const { count } = useCart();
   const { count: wishCount } = useWishlist();
   const coins = useMyCoins();
+  const chatQuery = useQuery({
+    queryKey: ['chat', 'unreadCustomer'],
+    queryFn: () => api.activeChat(),
+    select: (d) => d?.thread?.unreadCustomer || 0,
+    refetchInterval: 12000,
+  });
+  const unreadChat = chatQuery.data || 0;
   // Shop listing pages draw their own compact header on phones.
   const isMobileCustomHeader =
     pathname === '/' ||
@@ -637,6 +678,22 @@ export default function Header() {
                 </span>
               )}
             </Link>
+
+            {/* Live Support Chat Button */}
+            <button
+              type="button"
+              onClick={() => dispatch(setChatOpen(true))}
+              aria-label="Live Support Chat"
+              title="Live Support Chat"
+              className="relative inline-flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-full text-on-surface hover:text-secondary hover:bg-secondary/10 ring-1 ring-outline-variant/35 hover:ring-secondary/50 transition-all hover:scale-105 active:scale-95 shadow-2xs group"
+            >
+              <Icon name="chat" className="text-[20px] sm:text-[21px] transition-transform group-hover:scale-110 text-secondary" />
+              {unreadChat > 0 && (
+                <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-extrabold flex items-center justify-center bg-rose-600 text-white shadow-md ring-2 ring-surface animate-pop-in">
+                  {unreadChat}
+                </span>
+              )}
+            </button>
 
             {/* Shopping Bag Cart Icon with Count Badge */}
             <button

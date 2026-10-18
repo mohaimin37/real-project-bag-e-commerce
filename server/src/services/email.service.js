@@ -60,12 +60,19 @@ export async function sendEmail({ to, subject, text, html, attachments, priority
   }
 
   const start = Date.now();
+  const emailHtml =
+    html ||
+    (text
+      ? `<div style="font-family:sans-serif;max-width:560px;margin:0 auto;padding:24px;border:1px solid #e5e7eb;border-radius:10px;"><h2 style="margin:0 0 16px;color:#111;">WILDTANE</h2><p style="white-space:pre-line;font-size:15px;line-height:1.6;color:#333;">${String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</p><hr style="border:none;border-top:1px solid #eee;margin:24px 0;" /><p style="font-size:12px;color:#888;margin:0;">WILDTANE Care · info@wildtane.com · +91 8920550465</p></div>`
+      : undefined);
+
   const info = await t.sendMail({
     from: env.smtp.from,
     to,
+    replyTo: env.smtp.user || 'info@wildtane.com',
     subject,
     text,
-    html,
+    html: emailHtml,
     attachments,
     priority: priority === 'high' ? 'high' : 'normal',
     headers: {

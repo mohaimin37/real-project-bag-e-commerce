@@ -1,8 +1,10 @@
 import { useState, useMemo, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { api } from '../lib/api';
+import { setChatOpen } from '../store';
 import { useUser, useMoney, useConfig } from '../hooks/useStore';
 import { cn, formatDate, productImage } from '../lib/format';
 import { Icon, Img, Button, Modal, Field, Input, Textarea, Skeleton, ErrorState, StatusBadge } from '../components/ui';
@@ -512,16 +514,28 @@ function CancelOrderModal({ order, open, onClose, onSuccess }) {
   const [reason, setReason] = useState('Changed mind or style preference');
   const [customReason, setCustomReason] = useState('');
   const qc = useQueryClient();
+  const dispatch = useDispatch();
 
   const cancel = useMutation({
     mutationFn: () => api.cancelOrder(order._id, reason === 'Other' ? customReason.trim() : reason),
     onSuccess: (res) => {
-      toast.success('Cancellation request submitted to admin team. Awaiting confirmation.');
+      const selectedReason = reason === 'Other' ? customReason.trim() : reason;
+      toast.success('Cancellation submitted. Support chat is open to assist you.');
       qc.invalidateQueries({ queryKey: ['returns'] });
       qc.invalidateQueries({ queryKey: ['orders'] });
       qc.invalidateQueries({ queryKey: ['order', order._id] });
+      qc.invalidateQueries({ queryKey: ['chat'] });
       onSuccess?.(res);
       onClose();
+      // Auto-open support chatbox with cancelled order context
+      dispatch(
+        setChatOpen({
+          open: true,
+          orderId: order.orderId,
+          topic: `Cancellation Support · #${order.orderId}`,
+          cancellationReason: selectedReason,
+        })
+      );
     },
     onError: (e) => toast.error(e.message || 'Failed to submit cancellation request'),
   });

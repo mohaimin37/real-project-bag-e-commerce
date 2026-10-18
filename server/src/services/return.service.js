@@ -287,7 +287,7 @@ export async function getOrdersWithReturnStatus(userId) {
   });
 }
 
-const REFUND_METHODS = ['Original Payment Method', 'UPI', 'Bank Transfer', 'Store Coins Wallet'];
+const REFUND_METHODS = ['Original Payment Method', 'UPI', 'UPI QR Scanner', 'Bank Transfer', 'Store Coins Wallet'];
 const UPI_RE = /^[a-zA-Z0-9.\-_]{2,256}@[a-zA-Z][a-zA-Z0-9.]{1,63}$/;
 const IFSC_RE = /^[A-Z]{4}0[A-Z0-9]{6}$/;
 
@@ -300,8 +300,15 @@ export function cleanRefundDestination(method, details = {}) {
   const s = (v, max = 80) => String(v || '').trim().slice(0, max);
   if (m === 'UPI') {
     const upiId = s(details.upiId, 120).replace(/\s+/g, '');
-    if (!UPI_RE.test(upiId)) throw ApiError.badRequest('Please enter a valid UPI ID, like yourname@okhdfcbank.');
-    return { refundMethod: m, refundDetails: { upiId } };
+    const qrCodeImage = details.qrCodeImage ? String(details.qrCodeImage).slice(0, 5000000) : '';
+    if (!UPI_RE.test(upiId) && !qrCodeImage) throw ApiError.badRequest('Please enter a valid UPI ID (e.g. name@upi) or upload your QR scanner image.');
+    return { refundMethod: m, refundDetails: { upiId, qrCodeImage } };
+  }
+  if (m === 'UPI QR Scanner') {
+    const qrCodeImage = details.qrCodeImage ? String(details.qrCodeImage).slice(0, 5000000) : '';
+    const upiId = s(details.upiId, 120).replace(/\s+/g, '');
+    if (!qrCodeImage && !upiId) throw ApiError.badRequest('Please upload your UPI QR scanner image or enter your UPI ID.');
+    return { refundMethod: m, refundDetails: { qrCodeImage, upiId } };
   }
   if (m === 'Bank Transfer') {
     const accountHolder = s(details.accountHolder);
@@ -491,7 +498,7 @@ export async function notifyReturnDecision(request, order) {
       ? [
           `Good news — your ${what} request ${request.requestId} for order ${order.orderId} is approved.`,
           ...(request.type === 'return' && !request.refundDetailsSubmittedAt
-            ? ['', 'Please tell us how you would like your money back (UPI, bank account or another option):', requestLink(request)]
+            ? ['', 'Please choose how you would like to receive your refund (UPI ID, Scanner QR code, or Bank Account):', requestLink(request)]
             : []),
           '',
           ...(request.adminMessage ? [`Message from WILDTANE: "${request.adminMessage}"`, ''] : []),

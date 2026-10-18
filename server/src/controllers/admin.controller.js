@@ -18,6 +18,7 @@ import ApiError from '../utils/ApiError.js';
 import asyncHandler from '../utils/asyncHandler.js';
 import { escapeRegex, paginated, parsePagination, round2 } from '../utils/helpers.js';
 import env from '../config/env.js';
+import { sendEmail } from '../services/email.service.js';
 
 // Orders that count toward revenue.
 const REVENUE_MATCH = { orderStatus: { $nin: ['Cancelled', 'Returned'] } };
@@ -228,12 +229,48 @@ export const getCustomer = asyncHandler(async (req, res) => {
   const user = await User.findById(req.params.id);
   if (!user) throw ApiError.notFound('Customer not found');
   const [orders, reviews, coinHistory] = await Promise.all([
-    Order.find({ user: user._id }).sort({ createdAt: -1 }).limit(20).select('orderId grandTotal orderStatus paymentStatus createdAt'),
+    Order.find({ user: user._id })
+      .sort({ createdAt: -1 })
+      .limit(50)
+      .select('orderId grandTotal orderStatus paymentStatus paymentMethod paymentDetails paidAt refundDetails giftCard walletAmount createdAt')
+      .lean(),
     Review.find({ user: user._id }).populate('product', 'name slug').sort({ createdAt: -1 }).limit(10),
     CoinTransaction.find({ user: user._id }).sort({ createdAt: -1 }).limit(30).populate('by', 'name').lean(),
   ]);
-  const spent = orders.filter((o) => !['Cancelled', 'Returned'].includes(o.orderStatus)).reduce((s, o) => s + o.grandTotal, 0);
-  res.json({ success: true, customer: user, orders, reviews, coinHistory, stats: { orders: orders.length, spent: round2(spent) } });
+
+  const spent = orders.filter((o) => !['Cancelled', 'Returned'].includes(o.orderStatus) && o.paymentStatus === 'Paid').reduce((s, o) => s + (o.grandTotal || 0), 0);
+  const totalPaid = orders.filter((o) => o.paymentStatus === 'Paid').reduce((s, o) => s + (o.grandTotal || 0), 0);
+  const totalRefunded = orders.reduce((s, o) => s + (o.refundDetails?.amount || 0), 0);
+
+  const payments = orders.map((o) => ({
+    _id: o._id,
+    orderId: o.orderId,
+    date: o.createdAt,
+    paidAt: o.paidAt || (o.paymentStatus === 'Paid' ? o.createdAt : null),
+    amount: o.grandTotal || 0,
+    paymentMethod: o.paymentMethod || 'cod',
+    paymentStatus: o.paymentStatus || 'Pending',
+    orderStatus: o.orderStatus,
+    reference: o.paymentDetails?.razorpayPaymentId || o.paymentDetails?.razorpayOrderId || o.reference || '',
+    gateway: o.paymentMethod === 'razorpay' ? 'Razorpay (UPI / Card)' : o.paymentMethod === 'cod' ? 'Cash on Delivery' : o.paymentMethod === 'wtwallet' ? 'WILDTANE Wallet' : 'Gift Card',
+    refundedAmount: o.refundDetails?.amount || 0,
+    refundStatus: o.refundDetails?.status || null,
+  }));
+
+  res.json({
+    success: true,
+    customer: user,
+    orders,
+    payments,
+    reviews,
+    coinHistory,
+    stats: {
+      orders: orders.length,
+      spent: round2(spent),
+      totalPaid: round2(totalPaid),
+      totalRefunded: round2(totalRefunded),
+    },
+  });
 });
 
 /**
@@ -491,4 +528,91 @@ export const listNotifications = asyncHandler(async (req, res) => {
     Notification.countDocuments(filter),
   ]);
   res.json({ success: true, ...paginated(items, total, page, limit), whatsappConfigured: env.whatsapp.enabled, adminNumber: env.whatsapp.adminNumber });
+});
+
+/**
+ * Admin: Send a direct email to a customer from info@wildtane.com
+ */
+export const sendCustomerDirectEmail = asyncHandler(async (req, res) => {
+  const customer = await User.findById(req.params.id);
+  if (!customer) throw ApiError.notFound('Customer not found');
+  const to = (req.body.to || customer.email || '').trim();
+  if (!to) throw ApiError.badRequest('Recipient email is required');
+  const subject = String(req.body.subject || '').trim();
+  if (!subject) throw ApiError.badRequest('Subject is required');
+  const message = String(req.body.message || req.body.text || '').trim();
+  if (!message) throw ApiError.badRequest('Message content is required');
+
+  const outcome = await sendEmail({
+    to,
+    subject,
+    text: [
+      `Hi ${customer.name || 'there'},`,
+      '',
+      message,
+      '',
+      'Warm regards,',
+      'WILDTANE Customer Care',
+      'info@wildtane.com · 8920550465',
+    ].join('\n'),
+    html: `
+      <div style="font-family:sans-serif;max-width:560px;margin:0 auto;padding:24px;border:1px solid #e5e7eb;border-radius:12px;">
+        <h2 style="margin:0 0 16px;color:#111827;">WILDTANE</h2>
+        <p style="font-size:15px;color:#374151;">Hi ${customer.name || 'there'},</p>
+        <div style="font-size:15px;color:#1f2937;line-height:1.6;white-space:pre-line;margin:16px 0;">
+          ${message.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}
+        </div>
+        <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0;" />
+        <p style="font-size:12px;color:#9ca3af;margin:0;">WILDTANE Customer Care · info@wildtane.com · +91 8920550465</p>
+      </div>
+    `,
+  });
+
+  await Notification.create({
+    type: 'admin_direct_message',
+    channel: 'email',
+    recipient: to,
+    message: `${subject}\n\n${message}`,
+    provider: outcome?.delivered ? 'smtp' : 'dev_log',
+    status: outcome?.delivered ? 'sent' : 'logged',
+    providerMessageId: outcome?.messageId,
+  }).catch(() => {});
+
+  res.json({
+    success: true,
+    message: `Email delivered to ${to}`,
+    details: outcome,
+  });
+});
+
+/**
+ * Admin: Test SMTP connection and send test email
+ */
+export const sendTestEmail = asyncHandler(async (req, res) => {
+  const to = String(req.body.to || env.smtp.user || 'info@wildtane.com').trim();
+  if (!to) throw ApiError.badRequest('Please enter a recipient email address');
+
+  const outcome = await sendEmail({
+    to,
+    subject: 'WILDTANE Store Email Test',
+    text: `This is a test email sent from the WILDTANE Admin panel using ${env.smtp.user || 'info@wildtane.com'} (Hostinger SMTP). If you received this, store notifications, invoices, and message replies are working!`,
+    html: `
+      <div style="font-family:sans-serif;max-width:540px;margin:0 auto;padding:24px;border:1px solid #e5e7eb;border-radius:12px;">
+        <h2 style="margin:0 0 12px;color:#111827;">WILDTANE Store Email Test</h2>
+        <p style="font-size:15px;color:#374151;">This is a test email sent from the WILDTANE Admin panel.</p>
+        <div style="background:#ecfdf5;border:1px solid #a7f3d0;padding:12px 16px;border-radius:8px;color:#065f46;font-size:14px;margin:16px 0;">
+          ✓ SMTP Hostinger connection is active and operational.<br />
+          <b>Sender:</b> ${env.smtp.user || 'info@wildtane.com'}<br />
+          <b>Recipient:</b> ${to}
+        </div>
+        <p style="font-size:13px;color:#6b7280;">Order updates, password resets, tax invoices, and customer message replies will arrive smoothly.</p>
+      </div>
+    `,
+  });
+
+  res.json({
+    success: true,
+    message: `Test email successfully sent to ${to}`,
+    details: outcome,
+  });
 });

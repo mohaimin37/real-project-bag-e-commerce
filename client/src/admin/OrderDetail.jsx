@@ -138,38 +138,72 @@ export function whatsappLink(phone, text) {
 }
 
 /** Send the customer a message about this order at any time; lists what was sent before. */
+/** Send the customer a message about this order at any time; lists what was sent before. */
 function CustomerMessages({ order: o, onSaved }) {
   const [text, setText] = useState('');
   const [email, setEmail] = useState(true);
+  const [recipientEmail, setRecipientEmail] = useState(o.email || '');
+  const [showEmailEdit, setShowEmailEdit] = useState(false);
+
   const send = useMutation({
-    mutationFn: () => adminApi.orderMessage(o._id, { text: text.trim(), email }),
-    onSuccess: () => {
-      toast.success(email ? 'Message sent — emailed and shown on their order page' : 'Message added to their order page');
+    mutationFn: () => adminApi.orderMessage(o._id, { text: text.trim(), email, recipientEmail: recipientEmail.trim() }),
+    onSuccess: (data) => {
+      if (email && data?.emailOutcome?.error) {
+        toast.error(`Saved to order page, but email failed: ${data.emailOutcome.error}`);
+      } else if (email && data?.emailOutcome?.delivered) {
+        toast.success(`Message sent & delivered to ${data?.targetEmail || o.email} from info@wildtane.com`);
+      } else {
+        toast.success(email ? `Message sent — emailed to ${recipientEmail || o.email}` : 'Message added to order page');
+      }
       setText('');
       onSaved();
     },
     onError: (e) => toast.error(e.message),
   });
+
   const phone = o.phone || o.shippingAddress?.phone;
   const wa = text.trim() ? whatsappLink(phone, text.trim()) : '';
   const sent = [...(o.customerMessages || [])].reverse();
+
   return (
     <div className="flex flex-col gap-3">
       <Textarea rows={3} maxLength={1000} value={text} onChange={(e) => setText(e.target.value)} placeholder="e.g. Your bag is being personalised — it will ship tomorrow." aria-label="Message to the customer" />
-      <div className="flex flex-wrap items-center gap-2">
-        <Toggle checked={email} onChange={setEmail} label="Also email it" />
-        <span className="flex-1" />
-        {wa && (
-          <a href={wa} target="_blank" rel="noopener noreferrer" className="btn-tonal btn-sm gap-1.5"><Icon name="chat" className="text-[16px]" /> WhatsApp</a>
+      <div className="flex flex-col gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <Toggle checked={email} onChange={setEmail} label="Also email it" />
+          {email && (
+            <div className="flex items-center gap-2 text-label-sm text-outline">
+              <span>To: <b className="text-on-surface">{recipientEmail || o.email}</b></span>
+              <button type="button" onClick={() => setShowEmailEdit(!showEmailEdit)} className="text-secondary underline hover:opacity-80">
+                {showEmailEdit ? 'Close' : 'Change recipient'}
+              </button>
+            </div>
+          )}
+          <span className="flex-1" />
+          {wa && (
+            <a href={wa} target="_blank" rel="noopener noreferrer" className="btn-tonal btn-sm gap-1.5"><Icon name="chat" className="text-[16px]" /> WhatsApp</a>
+          )}
+          <Button size="sm" icon="send" loading={send.isPending} disabled={text.trim().length < 2} onClick={() => send.mutate()}>Send</Button>
+        </div>
+        {email && showEmailEdit && (
+          <div className="flex items-center gap-2 p-2 rounded-lg bg-surface-container-low">
+            <span className="text-label-sm text-outline">Recipient Email:</span>
+            <input
+              type="email"
+              value={recipientEmail}
+              onChange={(e) => setRecipientEmail(e.target.value)}
+              placeholder="customer@example.com"
+              className="input input-sm flex-1 text-body-sm"
+            />
+          </div>
         )}
-        <Button size="sm" icon="send" loading={send.isPending} disabled={text.trim().length < 2} onClick={() => send.mutate()}>Send</Button>
       </div>
       {sent.length > 0 && (
         <ul className="flex flex-col gap-2 pt-2 border-t border-surface-container-high">
           {sent.map((m, i) => (
             <li key={i} className="p-2.5 rounded-lg bg-surface-container-low text-body-sm">
               <p className="whitespace-pre-line">{m.text}</p>
-              <p className="text-label-sm font-normal text-outline mt-1">{formatDateTime(m.sentAt)}{m.status ? ` · ${m.status}` : ''} · {m.emailed ? 'emailed + on order page' : 'on order page'}</p>
+              <p className="text-label-sm font-normal text-outline mt-1">{formatDateTime(m.sentAt)}{m.status ? ` · ${m.status}` : ''} · {m.emailed ? 'emailed from info@wildtane.com + on order page' : 'on order page'}</p>
             </li>
           ))}
         </ul>

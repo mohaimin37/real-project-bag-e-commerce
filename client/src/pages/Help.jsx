@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
+import { setChatOpen } from '../store';
 import { useConfig } from '../hooks/useStore';
 import { cn } from '../lib/format';
 import { Breadcrumbs, EmptyState, Icon } from '../components/ui';
@@ -79,6 +81,14 @@ function ContactCard({ config }) {
         <p className="text-[13px] text-on-band/60">Please always share: {SUPPORT.share.join(' · ')}.</p>
       </div>
       <div className="flex flex-wrap gap-2">
+        <button
+          type="button"
+          onClick={() => dispatch(setChatOpen(true))}
+          className="btn bg-secondary text-on-secondary hover:opacity-95 font-bold gap-1.5 shadow-md active:scale-95 transition-transform"
+        >
+          <Icon name="chat" className="text-[18px]" /> Start Live Chat
+          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse ml-0.5" />
+        </button>
         <a href={`tel:${phone.replace(/\s/g, '')}`} className="btn bg-rose-600 text-white hover:bg-rose-500"><Icon name="call" className="text-[18px]" /> Call {phone}</a>
         <a href={`mailto:${email}`} className="btn border border-on-band/25 text-on-band hover:bg-on-band/10"><Icon name="mail" className="text-[18px]" /> Email us</a>
         <Link to="/contact" className="btn border border-on-band/25 text-on-band hover:bg-on-band/10">Contact form</Link>
@@ -120,6 +130,7 @@ export default function HelpCentre() {
     [query]
   );
   const crumbs = [{ label: 'Home', to: '/' }, { label: 'Help Centre' }];
+  const dispatch = useDispatch();
 
   return (
     <div className="container-x max-w-5xl py-6 md:py-10 flex flex-col gap-8">
@@ -132,6 +143,33 @@ export default function HelpCentre() {
         <p className="text-body-md text-on-surface-variant max-w-2xl">{HELP_INTRO}</p>
         <SearchBox value={q} onChange={setQ} placeholder="Search: refund, delivery, payment…" />
       </header>
+
+      {/* Live Support Chat Card */}
+      <div className="rounded-2xl p-5 md:p-6 bg-gradient-to-r from-secondary/15 via-surface-container to-secondary/10 border border-secondary/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm">
+        <div className="flex items-center gap-3.5">
+          <span className="w-12 h-12 rounded-2xl bg-secondary text-on-secondary flex items-center justify-center shrink-0 shadow-sm">
+            <Icon name="support_agent" className="text-[26px]" />
+          </span>
+          <div className="flex flex-col">
+            <div className="flex items-center gap-2">
+              <h3 className="font-bold text-headline-sm text-on-surface">Live Support Chat</h3>
+              <span className="px-2 py-0.5 rounded-full text-[10.5px] font-bold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25 flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> Online
+              </span>
+            </div>
+            <p className="text-[13px] text-on-surface-variant mt-0.5">
+              Need immediate help with order cancellation, refund status, UPI payments or product questions? Chat directly with our support team.
+            </p>
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={() => dispatch(setChatOpen(true))}
+          className="btn-primary h-11 px-5 rounded-xl font-bold gap-2 shrink-0 shadow-md hover:scale-[1.02] active:scale-[0.98] transition-all"
+        >
+          <Icon name="chat" className="text-[19px]" /> Open Live Chat
+        </button>
+      </div>
 
       {!query && (
         <nav aria-label="Help topics" className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">

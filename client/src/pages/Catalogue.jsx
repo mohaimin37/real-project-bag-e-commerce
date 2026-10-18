@@ -205,7 +205,7 @@ export default function Catalogue() {
       {/* Sticky category bar */}
       {sections.length > 0 && (
         <nav aria-label="Catalogue categories" className="sticky top-[154px] md:top-[114px] z-30 bg-surface/90 backdrop-blur-xl border-b border-surface-container-high">
-          <div className="container-x flex gap-2 overflow-x-auto scrollbar-none py-2.5">
+          <div className="container-x flex gap-2 overflow-x-auto scrollbar-none py-2.5 md:justify-center md:[justify-content:safe_center]">
             {sections.map(({ cat, count }) => {
               const tone = categoryTone(cat);
               const on = active === cat.slug;

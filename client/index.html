@@ -85,8 +85,33 @@
     <!-- Icons: only the axes the CSS uses (opsz 24, weight 400, outline + filled) — a fraction of the full variable font. -->
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0..1,0&display=block" rel="stylesheet" />
     <script src="/theme.js"></script>
+    <style>
+      /* Suppress Netlify badge/HUD completely so it never blocks UI, bottom nav, or clicks */
+      #nl-badge-frame,
+      #nl-hud-frame,
+      iframe[id^="nl-"],
+      iframe[title*="Netlify" i] {
+        display: none !important;
+        visibility: hidden !important;
+        pointer-events: none !important;
+        opacity: 0 !important;
+        width: 0 !important;
+        height: 0 !important;
+        max-width: 0 !important;
+        max-height: 0 !important;
+        position: fixed !important;
+        left: -99999px !important;
+        top: -99999px !important;
+        z-index: -99999 !important;
+        clip-path: circle(0) !important;
+        transform: scale(0) !important;
+      }
+    </style>
   </head>
   <body>
+    <!-- Pre-empt Netlify HUD script: its internal guard exits immediately if these IDs already exist -->
+    <div id="nl-badge-frame" style="display:none!important;width:0;height:0;position:absolute;left:-9999px" aria-hidden="true"></div>
+    <div id="nl-hud-frame" style="display:none!important;width:0;height:0;position:absolute;left:-9999px" aria-hidden="true"></div>
     <div id="root"></div>
     <noscript>
       <div style="font-family: system-ui, sans-serif; padding: 2rem; max-width: 40rem; margin: auto">

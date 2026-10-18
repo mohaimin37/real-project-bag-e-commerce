@@ -160,6 +160,9 @@ export default async (request, context) => {
     // Serve the page with default tags rather than fail.
   }
 
+  html = html
+    .replace(/<script[^>]*src="[^"]*\/hud[^"]*"[^>]*><\/script>/gi, '')
+    .replace(/<script[^>]*data-nf-variant[^>]*><\/script>/gi, '');
   html = html.replace('</head>', `${head}</head>`);
   const headers = new Headers(res.headers);
   headers.delete('content-length');

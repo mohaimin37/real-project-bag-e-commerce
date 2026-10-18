@@ -71,17 +71,6 @@ const cod = {
   },
 };
 
-const comingSoon = (code, label, description, icon) => ({
-  code,
-  label,
-  description,
-  icon,
-  isAvailable: () => ({ available: false, reason: 'Coming soon' }),
-  async initiate() {
-    throw new Error(`${label} is not configured`);
-  },
-});
-
 const giftcard = {
   code: 'giftcard',
   label: 'Gift Card',
@@ -120,9 +109,6 @@ const providers = [
   cod,
   giftcard,
   wtwallet,
-  comingSoon('card', 'Credit / Debit Card', 'Visa, Mastercard, RuPay, Amex via secure gateway', 'credit_card'),
-  comingSoon('upi', 'UPI / Net Banking', 'Google Pay, PhonePe, Paytm and all major banks', 'account_balance'),
-  comingSoon('wallet', 'Apple Pay / Google Pay', 'One-tap express wallet checkout', 'contactless'),
 ];
 
 export function getProvider(code) {

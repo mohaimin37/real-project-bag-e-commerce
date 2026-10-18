@@ -5,7 +5,7 @@ import toast from 'react-hot-toast';
 import { adminApi } from '../lib/api';
 import { cn, formatDateTime, imgUrl, timeAgo } from '../lib/format';
 import { countryName } from '../lib/countries';
-import { Button, Drawer, EmptyState, Field, Icon, Pagination, Textarea, useConfirm } from '../components/ui';
+import { Button, Drawer, EmptyState, Field, Icon, Input, Modal, Pagination, Textarea, useConfirm } from '../components/ui';
 import NotFound from '../pages/NotFound';
 import { DataTable, PageHeader, SearchBox, Toolbar, useListParams } from './kit';
 
@@ -42,6 +42,23 @@ function Detail({ kind, item, onClose }) {
     mutationFn: () => adminApi.deleteEnquiry(kind, item._id),
     onSuccess: () => { toast.success('Deleted'); qc.invalidateQueries({ queryKey: ['admin', 'enquiries', kind] }); onClose(); },
   });
+  const [replyModalOpen, setReplyModalOpen] = useState(false);
+  const [replyForm, setReplyForm] = useState({
+    to: item.email || '',
+    subject: kind === 'corporate' ? `WILDTANE corporate quote for ${item.company}` : `Re: ${item.subject || 'Your enquiry'}`,
+    message: '',
+  });
+
+  const sendReply = useMutation({
+    mutationFn: (body) => adminApi.replyEnquiryEmail(kind, item._id, body),
+    onSuccess: (res) => {
+      toast.success(res.message || 'Reply delivered from info@wildtane.com');
+      setReplyModalOpen(false);
+      qc.invalidateQueries({ queryKey: ['admin', 'enquiries', kind] });
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
   const rows =
     kind === 'corporate'
       ? [['Company', item.company], ['Contact', item.contactPerson], ['Email', item.email], ['Phone', item.phone], ['Country', countryName(item.country)], ['Address', item.address], ['Product type', item.productType], ['Quantity', `${item.quantity} units`], ['Customisation', item.customization], ['Message', item.message]]
@@ -69,9 +86,21 @@ function Detail({ kind, item, onClose }) {
           <Icon name="download" className="ml-auto" />
         </a>
       )}
-      <a href={`mailto:${item.email}?subject=${encodeURIComponent(subject)}`} className="btn-secondary" onClick={() => item.status === 'new' && update.mutate({ status: kind === 'corporate' ? 'contacted' : 'replied' })}>
-        <Icon name="reply" className="text-[18px]" /> Reply by email
-      </a>
+      <Button
+        variant="filled"
+        icon="send"
+        className="w-full justify-center gap-2"
+        onClick={() => {
+          setReplyForm({
+            to: item.email || '',
+            subject: kind === 'corporate' ? `WILDTANE corporate quote for ${item.company}` : `Re: ${item.subject || 'Your enquiry'}`,
+            message: '',
+          });
+          setReplyModalOpen(true);
+        }}
+      >
+        Send Email Reply (from info@wildtane.com)
+      </Button>
       <Field label="Status">
         <div className="flex flex-wrap gap-1.5">
           {CONFIG[kind].statuses.map((s) => (
@@ -86,6 +115,57 @@ function Detail({ kind, item, onClose }) {
         <Button variant="tonal" icon="delete" className="text-error" onClick={async () => (await confirm({ title: 'Delete this enquiry?', confirmLabel: 'Delete' })) && remove.mutate()}>Delete</Button>
         <Button loading={update.isPending} onClick={() => update.mutate({ adminNotes: notes })}>Save notes</Button>
       </div>
+
+      <Modal open={replyModalOpen} onClose={() => setReplyModalOpen(false)} title={`Reply to ${item.contactPerson || item.name || 'Enquiry'}`}>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            sendReply.mutate(replyForm);
+          }}
+          className="flex flex-col gap-4 p-space-md"
+        >
+          <div className="flex items-center gap-2 p-2.5 rounded-lg bg-surface-container-low text-label-sm text-outline">
+            <Icon name="verified_user" className="text-secondary text-[18px]" />
+            <span>Replying directly from authenticated sender <b>info@wildtane.com</b></span>
+          </div>
+          <div>
+            <label className="block text-label-sm uppercase tracking-wider text-outline mb-1">Recipient</label>
+            <Input
+              type="email"
+              required
+              value={replyForm.to}
+              onChange={(e) => setReplyForm({ ...replyForm, to: e.target.value })}
+              placeholder="recipient@example.com"
+            />
+          </div>
+          <div>
+            <label className="block text-label-sm uppercase tracking-wider text-outline mb-1">Subject</label>
+            <Input
+              type="text"
+              required
+              value={replyForm.subject}
+              onChange={(e) => setReplyForm({ ...replyForm, subject: e.target.value })}
+              placeholder="Subject line"
+            />
+          </div>
+          <div>
+            <label className="block text-label-sm uppercase tracking-wider text-outline mb-1">Reply Message</label>
+            <Textarea
+              rows={5}
+              required
+              value={replyForm.message}
+              onChange={(e) => setReplyForm({ ...replyForm, message: e.target.value })}
+              placeholder="Write your reply to the customer…"
+            />
+          </div>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button variant="tonal" type="button" onClick={() => setReplyModalOpen(false)}>Cancel</Button>
+            <Button variant="filled" type="submit" icon="send" loading={sendReply.isPending} disabled={!replyForm.to || !replyForm.message.trim()}>
+              Send Email Reply
+            </Button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 }

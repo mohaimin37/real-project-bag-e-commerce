@@ -16,6 +16,7 @@ import * as comments from '../controllers/comment.controller.js';
 import * as returns from '../controllers/return.controller.js';
 import * as payments from '../controllers/payments.controller.js';
 import * as giftcards from '../controllers/giftcard.controller.js';
+import * as chat from '../controllers/chat.controller.js';
 
 import { productSchema, categorySchema, stockUpdateSchema, quickProductSchema, bulkProductSchema } from '../validators/catalog.validators.js';
 import {
@@ -107,6 +108,7 @@ r.get('/customers', admin.listCustomers);
 r.get('/customers/board', admin.customerBoard);
 r.get('/customers/:id', admin.getCustomer);
 r.patch('/customers/:id', admin.updateCustomer);
+r.post('/customers/:id/email', admin.sendCustomerDirectEmail);
 r.post('/customers/:id/coins', validate(coinAdjustSchema), admin.adjustCustomerCoins);
 r.get('/customers/:id/wallet', admin.customerWalletLedger);
 r.post('/customers/:id/wallet', validate(walletAdjustSchema), admin.adjustCustomerWallet);
@@ -129,9 +131,17 @@ r.post('/comments', validate(adminCommentSchema), comments.adminCreateComment);
 r.patch('/comments/:id', comments.adminSetCommentStatus);
 r.delete('/comments/:id', comments.adminDeleteComment);
 
+// Support Chat
+r.get('/chat/threads', chat.adminListThreads);
+r.get('/chat/threads/:threadId', chat.adminGetThread);
+r.post('/chat/threads/:threadId/messages', chat.adminSendMessage);
+r.patch('/chat/threads/:threadId/status', chat.adminUpdateStatus);
+r.get('/chat/stats', chat.adminChatStats);
+
 // Enquiries & newsletter
 for (const kind of ['corporate', 'contact']) {
   r.get(`/enquiries/${kind}`, enquiries.adminList(kind));
+  r.post(`/enquiries/${kind}/:id/reply-email`, enquiries.adminReplyEmail(kind));
   r.patch(`/enquiries/${kind}/:id`, validate(enquiryUpdateSchema), enquiries.adminUpdate(kind));
   r.delete(`/enquiries/${kind}/:id`, enquiries.adminDelete(kind));
 }
@@ -160,5 +170,6 @@ r.delete('/banners/:id', content.deleteBanner);
 r.post('/uploads', imageUpload.single('image'), content.uploadImage);
 r.get('/settings', content.getSettings);
 r.put('/settings', validate(settingsSchema), content.updateSettings);
+r.post('/settings/test-email', admin.sendTestEmail);
 
 export default r;

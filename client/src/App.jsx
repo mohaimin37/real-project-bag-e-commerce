@@ -13,6 +13,7 @@ import { useSiteAppearanceSync } from './components/theme/siteAppearance';
 import { PageLoader } from './components/ui';
 import { usePageTracking } from './hooks/usePageTracking';
 import { SpinWheelModal, SpinFloatingBadge, useDailySpinPrompt } from './components/growth/SpinWheelModal';
+import SupportChatDrawer from './components/chat/SupportChatDrawer';
 
 import Home from './pages/Home';
 // Home (the product grid) loads with the app; other pages load when first visited (smaller first download).
@@ -45,6 +46,7 @@ const FaqPage = lazy(() => import('./pages/Help').then((m) => ({ default: m.FaqP
 const ReturnsExchange = lazy(() => import('./pages/ReturnsExchange'));
 const ReturnHelp = lazy(() => import('./pages/ReturnHelp'));
 const ReturnRefund = lazy(() => import('./pages/ReturnRefund'));
+const DownloadApp = lazy(() => import('./pages/DownloadApp'));
 
 // Policy pages live at short, readable URLs; older addresses redirect so saved links keep working.
 const POLICY_SLUGS = ['return-policy', 'shipping-policy', 'privacy-policy', 'terms-and-conditions', 'csr-policy'];
@@ -153,13 +155,13 @@ function StoreLayout() {
   // Shows the wheel by itself once a day while today's spin is available.
   useDailySpinPrompt(() => setSpinOpen(true));
   return (
-    <div className="min-h-screen flex flex-col w-full max-w-full overflow-x-hidden">
+    <div className="min-h-screen flex flex-col w-full max-w-full">
       <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[100] btn-primary">
         Skip to content
       </a>
       <Header />
       <InstallAppBanner />
-      <main id="main" className="flex-1 w-full max-w-full overflow-x-hidden">
+      <main id="main" className="flex-1 w-full max-w-full">
         <Suspense fallback={<PageLoader />}>
           {/* Keyed by path so each page fades in on navigation. */}
           <div key={pathname} className="page-enter">
@@ -177,6 +179,7 @@ function StoreLayout() {
       <ShopDrawerModal />
       <QuickViewModal />
       <WhenOpened open={themeOpen}><ThemeDrawer /></WhenOpened>
+      <SupportChatDrawer />
     </div>
   );
 }
@@ -287,6 +290,9 @@ export default function App() {
           <Route path="policies" element={<PoliciesIndex />} />
           <Route path="help" element={<HelpCentre />} />
           <Route path="faq" element={<FaqPage />} />
+          <Route path="download" element={<DownloadApp />} />
+          <Route path="download-app" element={<DownloadApp />} />
+          <Route path="app" element={<DownloadApp />} />
           {POLICY_SLUGS.map((slug) => (
             <Route key={slug} path={slug} element={<Policy slug={slug} />} />
           ))}

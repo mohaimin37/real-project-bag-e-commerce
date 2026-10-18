@@ -1088,9 +1088,15 @@ export const liveUpdates = [
 ];
 
 export const coupons = [
+  { code: 'FLAT50', description: 'Flat ₹50 OFF on orders above ₹499', type: 'fixed', value: 50, minOrder: 499, perUserLimit: 0 },
+  { code: 'FLAT100', description: 'Flat ₹100 OFF on orders above ₹999', type: 'fixed', value: 100, minOrder: 999, perUserLimit: 0 },
+  { code: 'FLAT200', description: 'Flat ₹200 OFF on orders above ₹1,999', type: 'fixed', value: 200, minOrder: 1999, perUserLimit: 0 },
+  { code: 'FLAT300', description: 'Flat ₹300 OFF on orders above ₹2,999', type: 'fixed', value: 300, minOrder: 2999, perUserLimit: 0 },
+  { code: 'FLAT500', description: 'Flat ₹500 OFF on orders above ₹4,999', type: 'fixed', value: 500, minOrder: 4999, perUserLimit: 0 },
+  { code: 'FLAT1000', description: 'Flat ₹1,000 OFF on orders above ₹8,999', type: 'fixed', value: 1000, minOrder: 8999, perUserLimit: 0 },
   { code: 'WELCOME10', description: '10% off your first order', type: 'percentage', value: 10, minOrder: 2999, maxDiscount: 2000, perUserLimit: 1 },
   { code: 'LAUNCH15', description: 'Launch special: 15% off orders over ₹15,000', type: 'percentage', value: 15, minOrder: 15000, maxDiscount: 5000, perUserLimit: 1 },
-  { code: 'FLAT500', description: '₹500 off orders over ₹4,999', type: 'fixed', value: 500, minOrder: 4999, perUserLimit: 3, usageLimit: 500 },
+  { code: 'FREESHIP', description: 'Free Express Shipping on orders above ₹1,499', type: 'free_shipping', value: 0, minOrder: 1499, perUserLimit: 0 },
 ];
 
 export const banners = (now) => [

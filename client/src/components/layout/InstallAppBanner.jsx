@@ -32,7 +32,12 @@ export default function InstallAppBanner() {
     };
 
     window.addEventListener('beforeinstallprompt', handlePrompt);
-    return () => window.removeEventListener('beforeinstallprompt', handlePrompt);
+    const openHandler = () => setShow(true);
+    window.addEventListener('wt-open-install-app', openHandler);
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handlePrompt);
+      window.removeEventListener('wt-open-install-app', openHandler);
+    };
   }, []);
 
   const handleInstall = async () => {
@@ -45,7 +50,7 @@ export default function InstallAppBanner() {
     }
 
     if (!deferredPrompt) {
-      toast('Tap the browser menu ⋮ and select "Install app" or "Add to Home screen"', {
+      toast('Tap browser menu ⋮ -> "Install app" or tap "Download .APK"', {
         duration: 5000,
         icon: '📲',
       });
@@ -71,18 +76,20 @@ export default function InstallAppBanner() {
   return (
     <aside
       aria-label="Install WILDTANE App"
-      // Floats just above the bottom tab bar, so it never pushes the page content down.
-      className="md:hidden fixed inset-x-2 bottom-[calc(4.25rem+env(safe-area-inset-bottom))] z-40 rounded-2xl bg-surface-container-lowest border border-surface-container-high shadow-lift px-3 py-2 flex items-center justify-between gap-2.5 animate-fade-in"
+      className="md:hidden fixed inset-x-2 bottom-[calc(4.1rem+env(safe-area-inset-bottom))] z-40 rounded-2xl bg-surface-container-lowest/98 backdrop-blur-md border border-outline-variant/40 shadow-lift px-3 py-2 flex items-center justify-between gap-2 animate-fade-in max-w-[calc(100vw-16px)] mx-auto box-border"
     >
-      <div className="flex items-center gap-2.5 min-w-0">
+      <div className="flex items-center gap-2 min-w-0 flex-1">
         <img
           src="/logo-192.png"
           alt="WILDTANE App"
-          className="w-8 h-8 rounded-lg shrink-0 object-cover"
+          className="w-8 h-8 rounded-lg shrink-0 object-cover shadow-2xs border border-outline-variant/30"
         />
         <div className="flex flex-col min-w-0 leading-tight">
-          <span className="text-xs font-bold text-on-surface truncate">WILDTANE App</span>
-          <span className="text-[10px] text-on-surface-variant truncate">Fast, full-screen shopping experience</span>
+          <span className="text-[12px] font-bold text-on-surface truncate flex items-center gap-1">
+            WILDTANE App
+            <span className="text-[8.5px] font-black px-1 rounded bg-secondary/15 text-secondary">PRO</span>
+          </span>
+          <span className="text-[10px] text-on-surface-variant truncate">Fast 1-tap checkout</span>
         </div>
       </div>
 
@@ -90,17 +97,26 @@ export default function InstallAppBanner() {
         <button
           type="button"
           onClick={handleInstall}
-          className="h-7 px-3 rounded-full bg-on-surface text-surface-container-lowest text-[12px] font-semibold active:opacity-70"
+          className="h-7 px-2.5 rounded-lg bg-secondary text-on-secondary text-[11px] font-bold active:scale-95 transition-transform shadow-2xs"
         >
           Install
         </button>
+        <a
+          href="/wildtane.apk"
+          download="wildtane.apk"
+          className="h-7 px-2.5 rounded-lg bg-surface-container-high border border-outline-variant/40 text-on-surface text-[11px] font-bold active:scale-95 transition-transform flex items-center gap-1 shadow-2xs"
+          title="Download APK"
+        >
+          <Icon name="download" className="text-[13px] text-secondary" />
+          <span>APK</span>
+        </a>
         <button
           type="button"
           onClick={handleDismiss}
           aria-label="Dismiss install banner"
-          className="w-7 h-7 rounded-md flex items-center justify-center text-outline hover:text-on-surface active:bg-surface-container-low transition-colors"
+          className="w-7 h-7 rounded-lg flex items-center justify-center text-outline hover:text-on-surface active:bg-surface-container-low transition-colors"
         >
-          <Icon name="close" className="text-[18px]" />
+          <Icon name="close" className="text-[16px]" />
         </button>
       </div>
     </aside>

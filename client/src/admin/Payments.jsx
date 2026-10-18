@@ -28,19 +28,106 @@ function Copy({ text, label }) {
   );
 }
 
-/** Where a return refund should go, with copy buttons for the transfer. */
+/** Where a return refund should go, with copy buttons and QR scanner viewer for the transfer. */
 export function PayoutDetails({ method, details = {} }) {
-  if (method === 'UPI') return <p className="flex flex-wrap items-center gap-1.5 text-body-sm">UPI <Copy text={details.upiId} label="UPI ID" /></p>;
-  if (method === 'Bank Transfer')
+  const [showFullImage, setShowFullImage] = useState(false);
+
+  if (method === 'UPI' || method === 'UPI QR Scanner') {
     return (
-      <div className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-body-sm items-center">
-        <span className="text-outline">Name</span><Copy text={details.accountHolder} label="Name" />
-        <span className="text-outline">Account</span><Copy text={details.accountNumber} label="Account number" />
-        <span className="text-outline">IFSC</span><Copy text={details.ifsc} label="IFSC" />
-        {details.bankName && <><span className="text-outline">Bank</span><span>{details.bankName}</span></>}
+      <div className="p-3.5 rounded-xl bg-surface-container-high/40 border border-secondary/25 flex flex-col gap-2.5">
+        <div className="flex items-center gap-2 text-label-md font-bold text-secondary">
+          <Icon name="qr_code_2" className="text-[20px]" />
+          <span>UPI Refund Details</span>
+        </div>
+        {details.upiId && (
+          <div className="flex flex-wrap items-center gap-2 text-body-sm">
+            <span className="text-outline font-semibold">UPI ID:</span>
+            <Copy text={details.upiId} label="UPI ID" />
+            <a
+              href={`upi://pay?pa=${encodeURIComponent(details.upiId)}&pn=Customer&cu=INR`}
+              className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded bg-secondary/15 text-secondary hover:bg-secondary/25 transition-colors"
+            >
+              <Icon name="open_in_new" className="text-[13px]" /> Pay in App
+            </a>
+          </div>
+        )}
+        {details.qrCodeImage && (
+          <div className="flex flex-col gap-1.5 pt-1.5 border-t border-surface-container-high">
+            <span className="text-label-sm font-semibold text-outline">Customer's UPI Scanner / QR Code:</span>
+            <div className="relative inline-block w-fit">
+              <img
+                src={details.qrCodeImage}
+                alt="UPI Scanner QR"
+                className="w-44 h-44 object-contain rounded-xl border-2 border-secondary/40 bg-white p-2 shadow-md cursor-pointer hover:opacity-95 transition-opacity"
+                onClick={() => setShowFullImage(true)}
+              />
+              <button
+                type="button"
+                onClick={() => setShowFullImage(true)}
+                className="mt-1.5 inline-flex items-center gap-1 text-[12px] text-secondary font-bold hover:underline"
+              >
+                <Icon name="zoom_in" className="text-[16px]" /> Click to open large scanner / scan
+              </button>
+            </div>
+            {showFullImage && (
+              <div
+                className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs flex items-center justify-center p-4"
+                onClick={() => setShowFullImage(false)}
+              >
+                <div
+                  className="relative max-w-md w-full bg-surface-container-lowest p-5 rounded-2xl flex flex-col items-center gap-3.5 shadow-2xl"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div className="w-full flex items-center justify-between">
+                    <span className="font-bold text-label-lg flex items-center gap-1.5 text-secondary">
+                      <Icon name="crop_free" className="text-[20px]" /> Scan with GPay / PhonePe / Paytm
+                    </span>
+                    <button type="button" onClick={() => setShowFullImage(false)} className="btn-ghost btn-sm">
+                      <Icon name="close" className="text-[20px]" />
+                    </button>
+                  </div>
+                  <img src={details.qrCodeImage} alt="QR Scanner" className="max-h-[65vh] w-auto object-contain rounded-xl bg-white p-3 shadow-inner" />
+                  <div className="flex gap-2 w-full justify-end">
+                    <a href={details.qrCodeImage} download="customer-qr-scanner.png" className="btn-primary btn-sm gap-1.5">
+                      <Icon name="download" className="text-[16px]" /> Download QR Image
+                    </a>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+        {!details.upiId && !details.qrCodeImage && <p className="text-body-sm text-outline">No UPI ID or QR scanner provided yet.</p>}
       </div>
     );
-  return <p className="text-body-sm">{method || 'Original payment method'}</p>;
+  }
+
+  if (method === 'Bank Transfer') {
+    return (
+      <div className="p-3.5 rounded-xl bg-surface-container-high/40 border border-secondary/25 flex flex-col gap-2.5">
+        <div className="flex items-center gap-2 text-label-md font-bold text-secondary">
+          <Icon name="account_balance" className="text-[20px]" />
+          <span>Bank Account Details</span>
+        </div>
+        <div className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-2 text-body-sm items-center">
+          <span className="text-outline font-semibold">A/C Holder:</span>
+          <Copy text={details.accountHolder} label="Account holder name" />
+          <span className="text-outline font-semibold">Account No:</span>
+          <Copy text={details.accountNumber} label="Account number" />
+          <span className="text-outline font-semibold">IFSC Code:</span>
+          <Copy text={details.ifsc} label="IFSC Code" />
+          {details.bankName && (
+            <>
+              <span className="text-outline font-semibold">Bank Name:</span>
+              <span className="font-medium text-on-surface">{details.bankName}</span>
+            </>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  return <p className="text-body-sm text-on-surface-variant font-medium">{method || 'Original payment method'}</p>;
 }
 
 function Stat({ icon, label, value, hint, tone }) {

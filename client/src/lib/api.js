@@ -100,7 +100,7 @@ export const api = {
   clearCart: () => http.delete('/cart'),
   mergeCart: (items) => http.post('/cart/merge', { items }),
   applyCoupon: (code) => http.post('/cart/coupon', { code }),
-  removeCoupon: () => http.delete('/cart/coupon'),
+  removeCoupon: (code) => http.delete(`/cart/coupon${code ? `?code=${encodeURIComponent(code)}` : ''}`),
   setShipping: (code) => http.put('/cart/shipping', { code }),
   paymentMethods: () => http.get('/cart/payment-methods'),
   setUseCoins: (use) => http.put('/cart/coins', { use }),
@@ -137,6 +137,11 @@ export const api = {
   myReturnRequest: (requestId) => http.get(`/returns/requests/${encodeURIComponent(requestId)}`),
   cancelReturnRequest: (requestId) => http.post(`/returns/requests/${encodeURIComponent(requestId)}/cancel`),
   setReturnRefund: (requestId, body) => http.put(`/returns/requests/${encodeURIComponent(requestId)}/refund`, body),
+
+  // support chat
+  activeChat: (params) => http.get(`/chat/active${qs(params)}`),
+  sendChatMessage: (body) => http.post('/chat/messages', body),
+  markChatRead: (threadId) => http.post(`/chat/threads/${threadId}/read`),
 
   // reviews
   reviews: (productId, params) => http.get(`/reviews/product/${productId}${qs(params)}`),
@@ -239,6 +244,7 @@ export const adminApi = {
   adjustCoins: (id, body) => http.post(`/admin/customers/${id}/coins`, body),
   customer: (id) => http.get(`/admin/customers/${id}`),
   updateCustomer: (id, body) => http.patch(`/admin/customers/${id}`, body),
+  sendCustomerEmail: (id, body) => http.post(`/admin/customers/${id}/email`, body),
 
   coupons: (params) => http.get(`/admin/coupons${qs(params)}`),
   coupon: (id) => http.get(`/admin/coupons/${id}`),
@@ -259,6 +265,7 @@ export const adminApi = {
 
   enquiries: (kind, params) => http.get(`/admin/enquiries/${kind}${qs(params)}`),
   updateEnquiry: (kind, id, body) => http.patch(`/admin/enquiries/${kind}/${id}`, body),
+  replyEnquiryEmail: (kind, id, body) => http.post(`/admin/enquiries/${kind}/${id}/reply-email`, body),
   deleteEnquiry: (kind, id) => http.delete(`/admin/enquiries/${kind}/${id}`),
   subscribers: (params) => http.get(`/admin/subscribers${qs(params)}`),
 
@@ -285,4 +292,12 @@ export const adminApi = {
   },
   settings: () => http.get('/admin/settings'),
   updateSettings: (body) => http.put('/admin/settings', body),
+  sendTestEmail: (body) => http.post('/admin/settings/test-email', body),
+
+  // chat / support desk
+  chatThreads: (params) => http.get(`/admin/chat/threads${qs(params)}`),
+  chatThread: (id) => http.get(`/admin/chat/threads/${id}`),
+  sendAdminChatMessage: (id, body) => http.post(`/admin/chat/threads/${id}/messages`, body),
+  updateChatStatus: (id, status) => http.patch(`/admin/chat/threads/${id}/status`, { status }),
+  chatStats: () => http.get('/admin/chat/stats'),
 };

@@ -14,3 +14,6 @@ server/uploads/*
 .netlify
 deno.lock
 client/public/uploads/
+scratch/
+*.keystore
+*.idsig

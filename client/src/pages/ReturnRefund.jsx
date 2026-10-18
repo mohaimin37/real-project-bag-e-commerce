@@ -14,7 +14,7 @@ const IFSC_RE = /^[A-Z]{4}0[A-Z0-9]{6}$/;
 
 // Shown in the order the team enabled them (Admin → Settings → Returns).
 const OPTIONS = {
-  UPI: { label: 'UPI ID', hint: 'Fastest — straight to your UPI app (GPay, PhonePe, Paytm…)', icon: 'qr_code_2' },
+  UPI: { label: 'UPI ID & Scanner', hint: 'Fastest — UPI ID or upload scanner QR code (GPay, PhonePe, Paytm)', icon: 'qr_code_2' },
   'Bank Transfer': { label: 'Bank account', hint: 'NEFT / IMPS to your savings or current account', icon: 'account_balance' },
   'Original Payment Method': { label: 'Original payment', hint: 'Back to the card / UPI / net banking you paid with', icon: 'credit_card' },
   'Store Coins Wallet': { label: 'WILDTANE Wallet', hint: 'Instant credit to spend on your next order', icon: 'account_balance_wallet' },
@@ -22,8 +22,12 @@ const OPTIONS = {
 const OPEN = ['Approved', 'Pickup Scheduled', 'In Inspection'];
 
 /** Same rules as the server, so mistakes show before sending. */
-function problem(method, upiId, bank) {
-  if (method === 'UPI' && !UPI_RE.test(upiId.trim())) return 'Please enter a valid UPI ID, like yourname@okhdfcbank.';
+function problem(method, upiId, qrCodeImage, bank) {
+  if (method === 'UPI' || method === 'UPI QR Scanner') {
+    if (!UPI_RE.test(upiId.trim()) && !qrCodeImage) {
+      return 'Please enter a valid UPI ID (e.g. yourname@okhdfcbank) or upload your QR scanner image.';
+    }
+  }
   if (method === 'Bank Transfer') {
     if (bank.accountHolder.trim().length < 2) return 'Please enter the account holder’s name.';
     if (!/^\d{9,18}$/.test(bank.accountNumber)) return 'Please enter a valid bank account number (9 to 18 digits).';
@@ -54,20 +58,40 @@ export default function ReturnRefund() {
 
   const [method, setMethod] = useState('');
   const [upiId, setUpiId] = useState('');
+  const [qrCodeImage, setQrCodeImage] = useState('');
   const [bank, setBank] = useState({ accountHolder: '', accountNumber: '', confirmNumber: '', ifsc: '', bankName: '' });
   const [editing, setEditing] = useState(false);
   useEffect(() => {
     if (!r) return;
     setMethod(methods.includes(r.refundMethod) && r.refundDetailsSubmittedAt ? r.refundMethod : methods[0] || '');
     setUpiId(r.refundDetails?.upiId || '');
+    setQrCodeImage(r.refundDetails?.qrCodeImage || '');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [r?.requestId, r?.refundMethod]);
+
+  const handleQrUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) return toast.error('Please upload an image (PNG or JPG).');
+    if (file.size > 5 * 1024 * 1024) return toast.error('Scanner image must be under 5MB.');
+    const reader = new FileReader();
+    reader.onload = () => {
+      setQrCodeImage(reader.result);
+      toast.success('QR Scanner image uploaded successfully!');
+    };
+    reader.readAsDataURL(file);
+  };
 
   const save = useMutation({
     mutationFn: () =>
       api.setReturnRefund(requestId, {
         refundMethod: method,
-        refundDetails: method === 'UPI' ? { upiId: upiId.trim() } : method === 'Bank Transfer' ? { accountHolder: bank.accountHolder, accountNumber: bank.accountNumber, ifsc: bank.ifsc, bankName: bank.bankName } : {},
+        refundDetails:
+          method === 'UPI' || method === 'UPI QR Scanner'
+            ? { upiId: upiId.trim(), qrCodeImage }
+            : method === 'Bank Transfer'
+              ? { accountHolder: bank.accountHolder, accountNumber: bank.accountNumber, ifsc: bank.ifsc, bankName: bank.bankName }
+              : {},
       }),
     onSuccess: () => {
       toast.success('Thanks! We’ll send your refund this way.');
@@ -80,7 +104,7 @@ export default function ReturnRefund() {
 
   const submit = (e) => {
     e.preventDefault();
-    const p = problem(method, upiId, bank);
+    const p = problem(method, upiId, qrCodeImage, bank);
     if (p) return toast.error(p);
     save.mutate();
   };
@@ -93,7 +117,7 @@ export default function ReturnRefund() {
   const setB = (patch) => setBank((b) => ({ ...b, ...patch }));
 
   return (
-    <div className="container-x max-w-3xl py-space-xl flex flex-col gap-space-lg">
+    <div className="container-x max-w-3xl py-space-md sm:py-space-xl flex flex-col gap-space-md sm:gap-space-lg">
       <Seo title="Choose how to get your refund" noindex />
       <Breadcrumbs items={[{ label: 'Home', to: '/' }, { label: 'Returns & Exchange', to: '/returns-exchange' }, { label: 'Refund details' }]} />
 
@@ -113,7 +137,7 @@ export default function ReturnRefund() {
       ) : r ? (
         <>
           {/* The return this refund is for */}
-          <section className="card p-4 sm:p-5 flex flex-col gap-3 border border-surface-container-high">
+          <section className="card p-3.5 sm:p-5 flex flex-col gap-3 border border-surface-container-high">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div>
                 <p className="text-label-sm uppercase tracking-wider text-outline">Return {r.requestId}</p>
@@ -125,10 +149,10 @@ export default function ReturnRefund() {
               <div key={`${it.productId}-${it.variantId}`} className="flex items-center gap-3">
                 <Img src={it.image} alt="" className="w-12 h-12 rounded-lg shrink-0" />
                 <div className="flex-1 min-w-0">
-                  <p className="text-label-lg">{it.productName}</p>
+                  <p className="text-label-lg truncate">{it.productName}</p>
                   <p className="text-label-sm font-normal text-outline">{it.variantName ? `${it.variantName} · ` : ''}Qty {it.quantity}</p>
                 </div>
-                {it.totalPrice > 0 && <span className="text-label-lg">{money(it.totalPrice)}</span>}
+                {it.totalPrice > 0 && <span className="text-label-lg shrink-0">{money(it.totalPrice)}</span>}
               </div>
             ))}
             {value > 0 && <p className="text-body-sm pt-2 border-t border-surface-container-high">Refund for these items: <b>{money(value)}</b> <span className="text-outline">(the amount actually paid for them, sent after the item passes inspection)</span></p>}
@@ -149,7 +173,7 @@ export default function ReturnRefund() {
               text={`${r.refund?.amount ? `${money(r.refund.amount)} ` : ''}to ${r.refund?.method || r.refundMethod}${r.refund?.status === 'Processed' && r.refund?.reference ? ` · Reference ${r.refund.reference}` : ''}. ${r.refund?.status === 'Processed' ? 'It can take a little time to show in your bank or UPI app.' : 'You’ll see the transaction reference here once it is sent.'}`}
             />
           ) : showForm ? (
-            <form onSubmit={submit} className="card p-4 sm:p-6 flex flex-col gap-5 border border-secondary/30">
+            <form onSubmit={submit} className="card p-3.5 sm:p-6 flex flex-col gap-4 sm:gap-5 border border-secondary/30">
               <div className="flex items-start gap-3">
                 <span className="w-10 h-10 rounded-xl bg-secondary text-on-secondary flex items-center justify-center shrink-0"><Icon name="task_alt" className="text-[22px]" /></span>
                 <div>
@@ -160,7 +184,7 @@ export default function ReturnRefund() {
 
               <div role="radiogroup" aria-label="Refund method" className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                 {methods.map((m) => (
-                  <label key={m} className={cn('flex items-start gap-3 p-3.5 rounded-xl border cursor-pointer transition-colors', method === m ? 'border-secondary bg-secondary/5 ring-1 ring-secondary' : 'border-outline-variant/50 hover:border-outline')}>
+                  <label key={m} className={cn('flex items-start gap-3 p-3 sm:p-3.5 rounded-xl border cursor-pointer transition-colors', method === m ? 'border-secondary bg-secondary/5 ring-1 ring-secondary' : 'border-outline-variant/50 hover:border-outline')}>
                     <input type="radio" name="refund-method" value={m} checked={method === m} onChange={() => setMethod(m)} className="mt-1" />
                     <Icon name={OPTIONS[m]?.icon || 'payments'} className="text-[22px] text-secondary shrink-0" />
                     <span className="flex flex-col">
@@ -171,10 +195,44 @@ export default function ReturnRefund() {
                 ))}
               </div>
 
-              {method === 'UPI' && (
-                <Field label="Your UPI ID" required error={upiId.length > 3 && !UPI_RE.test(upiId.trim()) ? 'That doesn’t look like a UPI ID (name@bank).' : undefined}>
-                  <Input placeholder="yourname@okhdfcbank" value={upiId} onChange={(e) => setUpiId(e.target.value.replace(/\s/g, ''))} autoComplete="off" />
-                </Field>
+              {(method === 'UPI' || method === 'UPI QR Scanner') && (
+                <div className="flex flex-col gap-3.5 sm:gap-4 p-3 sm:p-4 rounded-xl bg-surface-container-low border border-secondary/20">
+                  <Field label="Your UPI ID" hint="e.g. phone-number@paytm or yourname@okhdfcbank">
+                    <Input placeholder="yourname@okhdfcbank" value={upiId} onChange={(e) => setUpiId(e.target.value.replace(/\s/g, ''))} autoComplete="off" />
+                  </Field>
+
+                  <div className="flex items-center gap-3">
+                    <span className="h-px flex-1 bg-surface-container-high" />
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-outline">OR / ALSO</span>
+                    <span className="h-px flex-1 bg-surface-container-high" />
+                  </div>
+
+                  <Field label="Upload QR Scanner Screenshot" hint="Screenshot of your QR code from GPay, PhonePe, or Paytm">
+                    <div className="flex flex-col gap-2">
+                      <label className="flex flex-col items-center justify-center p-3.5 sm:p-4 rounded-xl border-2 border-dashed border-secondary/40 hover:border-secondary bg-surface-container-lowest cursor-pointer transition-colors text-center">
+                        <Icon name="crop_free" className="text-[32px] text-secondary mb-1" />
+                        <span className="text-label-md font-bold text-on-surface">Choose QR Code / Scanner Image</span>
+                        <span className="text-[11.5px] text-outline mt-0.5">PNG or JPG, up to 5MB</span>
+                        <input type="file" accept="image/*" onChange={handleQrUpload} className="hidden" />
+                      </label>
+
+                      {qrCodeImage && (
+                        <div className="flex flex-wrap sm:flex-nowrap items-center gap-3 p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30">
+                          <img src={qrCodeImage} alt="QR Scanner preview" className="w-16 h-16 object-contain rounded-lg bg-white p-1 shadow-xs shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-label-md font-bold text-emerald-800 dark:text-emerald-300 flex items-center gap-1">
+                              <Icon name="check_circle" className="text-[16px]" /> QR Scanner Attached
+                            </p>
+                            <p className="text-[11.5px] text-outline">Our refund team will scan this code to pay you.</p>
+                          </div>
+                          <button type="button" onClick={() => setQrCodeImage('')} className="btn-ghost btn-sm text-error shrink-0">
+                            <Icon name="delete" className="text-[18px]" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </Field>
+                </div>
               )}
               {method === 'Bank Transfer' && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -192,28 +250,40 @@ export default function ReturnRefund() {
               {method === 'Store Coins Wallet' && <p className="text-body-sm text-on-surface-variant">The refund is added to your WILDTANE Wallet once the item passes inspection. You can use it on any order.</p>}
               {method === 'Original Payment Method' && <p className="text-body-sm text-on-surface-variant">We send it back to the card, UPI or net banking account you paid with. Banks usually take a few working days to show it.</p>}
 
-              <div className="flex flex-wrap items-center justify-end gap-2 pt-3 border-t border-surface-container-high">
-                {submitted && <button type="button" className="btn-ghost" onClick={() => setEditing(false)}>Keep current details</button>}
-                <Button type="submit" loading={save.isPending} icon="check" disabled={!method}>Save refund details</Button>
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-2 pt-3 border-t border-surface-container-high">
+                {submitted && <button type="button" className="btn-ghost w-full sm:w-auto" onClick={() => setEditing(false)}>Keep current details</button>}
+                <Button type="submit" className="w-full sm:w-auto h-11" loading={save.isPending} icon="check" disabled={!method}>Save refund details</Button>
               </div>
               <p className="text-[12px] text-outline flex items-center gap-1.5"><Icon name="lock" className="text-[14px]" /> Your details are used only to send this refund.</p>
             </form>
           ) : (
-            <section className="card p-4 sm:p-5 flex flex-col gap-3 border border-secondary/30">
+            <section className="card p-3.5 sm:p-5 flex flex-col gap-3 border border-secondary/30">
               <div className="flex items-start gap-3">
                 <span className="w-10 h-10 rounded-xl bg-secondary text-on-secondary flex items-center justify-center shrink-0"><Icon name={OPTIONS[r.refundMethod]?.icon || 'payments'} className="text-[22px]" /></span>
-                <div className="flex-1">
+                <div className="flex-1 min-w-0">
                   <p className="text-[15px] font-bold">We’ll refund you by {OPTIONS[r.refundMethod]?.label || r.refundMethod}</p>
-                  <p className="text-body-sm text-on-surface-variant">
-                    {r.refundMethod === 'UPI' && r.refundDetails?.upiId}
-                    {r.refundMethod === 'Bank Transfer' && `${r.refundDetails?.accountHolder || ''} · account ending ${r.refundDetails?.accountLast4 || '••••'}${r.refundDetails?.bankName ? ` · ${r.refundDetails.bankName}` : ''}`}
-                    {['Original Payment Method', 'Store Coins Wallet'].includes(r.refundMethod) && OPTIONS[r.refundMethod]?.hint}
-                  </p>
+                  <div className="text-body-sm text-on-surface-variant mt-1 flex flex-col gap-2">
+                    {(r.refundMethod === 'UPI' || r.refundMethod === 'UPI QR Scanner') && (
+                      <div className="flex flex-col gap-1.5">
+                        {r.refundDetails?.upiId && <p className="break-all">UPI ID: <strong className="text-on-surface font-mono">{r.refundDetails.upiId}</strong></p>}
+                        {r.refundDetails?.qrCodeImage && (
+                          <div className="flex items-center gap-2 mt-1">
+                            <img src={r.refundDetails.qrCodeImage} alt="QR Scanner" className="w-20 h-20 object-contain rounded-lg border border-secondary/30 bg-white p-1 shrink-0" />
+                            <span className="text-[12px] text-secondary font-semibold">QR Scanner image saved for refund</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    {r.refundMethod === 'Bank Transfer' && (
+                      <p className="break-words">{r.refundDetails?.accountHolder || ''} · account ending {r.refundDetails?.accountNumber?.slice(-4) || '••••'}{r.refundDetails?.bankName ? ` · ${r.refundDetails.bankName}` : ''}</p>
+                    )}
+                    {['Original Payment Method', 'Store Coins Wallet'].includes(r.refundMethod) && <p>{OPTIONS[r.refundMethod]?.hint}</p>}
+                  </div>
                 </div>
               </div>
               <div className="flex flex-wrap gap-2">
-                <button type="button" className="btn-tonal h-9 gap-1.5" onClick={() => setEditing(true)}><Icon name="edit" className="text-[16px]" /> Change</button>
-                <button type="button" className="btn-primary h-9 gap-1.5" onClick={() => navigate('/returns-exchange')}>Done</button>
+                <button type="button" className="btn-tonal h-10 px-4 gap-1.5 flex-1 sm:flex-none justify-center" onClick={() => setEditing(true)}><Icon name="edit" className="text-[16px]" /> Change</button>
+                <button type="button" className="btn-primary h-10 px-4 gap-1.5 flex-1 sm:flex-none justify-center" onClick={() => navigate('/returns-exchange')}>Done</button>
               </div>
             </section>
           )}

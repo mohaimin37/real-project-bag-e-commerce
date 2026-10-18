@@ -21,6 +21,7 @@ import * as comments from '../controllers/comment.controller.js';
 import * as returns from '../controllers/return.controller.js';
 import * as giftcards from '../controllers/giftcard.controller.js';
 import * as growth from '../controllers/growth.controller.js';
+import * as chat from '../controllers/chat.controller.js';
 
 import * as av from '../validators/auth.validators.js';
 import * as cv from '../validators/commerce.validators.js';
@@ -185,5 +186,12 @@ export const spinRoutes = Router()
 export const shippingRoutes = Router()
   .get('/estimate-pincode', formLimiter, growth.estimatePincode)
   .post('/webhook/shiprocket', orders.shiprocketWebhook);
+
+// ── /api/chat (Live Support Chat) ───────────────────────────
+export const chatRoutes = Router()
+  .get('/active', optionalAuth, chat.getActiveChat)
+  .post('/messages', formLimiter, optionalAuth, chat.sendCustomerMessage)
+  .post('/threads/:threadId/read', optionalAuth, chat.markCustomerRead);
+
 
 

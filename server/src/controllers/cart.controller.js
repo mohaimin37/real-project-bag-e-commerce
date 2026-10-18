@@ -1,5 +1,6 @@
 import Product from '../models/Product.js';
 import Setting from '../models/Setting.js';
+import Coupon from '../models/Coupon.js';
 import ApiError from '../utils/ApiError.js';
 import asyncHandler from '../utils/asyncHandler.js';
 import { getOrCreateCart, buildCartResponse, resolveLines, computeTotals } from '../services/cart.service.js';
@@ -73,7 +74,10 @@ export const removeItem = asyncHandler(async (req, res) => {
   const cart = await getOrCreateCart(req.user._id);
   const item = cart.items.id(req.params.itemId);
   if (item) item.deleteOne();
-  if (!cart.items.length) cart.couponCode = null;
+  if (!cart.items.length) {
+    cart.couponCode = null;
+    cart.couponCodes = [];
+  }
   await cart.save();
   await respond(res, cart, req.user._id);
 });
@@ -82,6 +86,7 @@ export const clearCart = asyncHandler(async (req, res) => {
   const cart = await getOrCreateCart(req.user._id);
   cart.items = [];
   cart.couponCode = null;
+  cart.couponCodes = [];
   await cart.save();
   await respond(res, cart, req.user._id);
 });
@@ -108,15 +113,45 @@ export const applyCoupon = asyncHandler(async (req, res) => {
   if (!cart.items.length) throw ApiError.badRequest('Add something to your bag first');
   const lines = await resolveLines(cart.items);
   const subtotal = lines.filter((l) => l.available && !l.issue).reduce((s, l) => s + l.lineTotal, 0);
-  await validateCoupon(req.body.code, req.user._id, subtotal);
-  cart.couponCode = req.body.code;
+  const targetCode = String(req.body.code).trim().toUpperCase();
+  const newCoupon = await validateCoupon(targetCode, req.user._id, subtotal);
+
+  let currentCodes = cart.couponCodes?.length ? cart.couponCodes : cart.couponCode ? [cart.couponCode] : [];
+  currentCodes = currentCodes.map((c) => String(c).trim().toUpperCase()).filter(Boolean);
+
+  if (currentCodes.includes(targetCode)) {
+    await respond(res, cart, req.user._id);
+    return;
+  }
+
+  // Look up existing coupons to inspect their kinds ('fixed', 'percentage', 'free_shipping')
+  const existingDocs = currentCodes.length ? await Coupon.find({ code: { $in: currentCodes }, isActive: true }) : [];
+
+  // Rule: Two DIFFERENT kinds of coupon can be applied at once!
+  // If an existing coupon has the SAME kind as newCoupon, the new coupon replaces it.
+  const differentKinds = existingDocs.filter((d) => d.type !== newCoupon.type);
+
+  // Keep at most 1 different kind doc plus the new one (max 2 total)
+  const updated = differentKinds.slice(-1).map((d) => d.code);
+  updated.push(targetCode);
+
+  cart.couponCodes = updated;
+  cart.couponCode = updated[0] || null;
   await cart.save();
   await respond(res, cart, req.user._id);
 });
 
 export const removeCoupon = asyncHandler(async (req, res) => {
   const cart = await getOrCreateCart(req.user._id);
-  cart.couponCode = null;
+  const codeToRemove = (req.body?.code || req.query?.code || '').trim().toUpperCase();
+  if (codeToRemove) {
+    let currentCodes = cart.couponCodes?.length ? cart.couponCodes : cart.couponCode ? [cart.couponCode] : [];
+    cart.couponCodes = currentCodes.filter((c) => c !== codeToRemove);
+    cart.couponCode = cart.couponCodes[0] || null;
+  } else {
+    cart.couponCodes = [];
+    cart.couponCode = null;
+  }
   await cart.save();
   await respond(res, cart, req.user._id);
 });

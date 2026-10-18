@@ -295,17 +295,35 @@ export const ProductCard = memo(function ProductCard({ product, priority }) {
               Free Delivery
             </span>
           </div>
+          {/* Desktop Add Button (Unchanged) */}
           <button
             type="button"
             disabled={soldOut || add.isPending}
             onClick={() => add.mutate({ productId: product._id, variantId: variant._id, quantity: 1 }, { onSuccess: () => setAdded(true) })}
             aria-label={`Add ${product.name} to bag`}
             className={cn(
-              'shrink-0 w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 rounded-full text-white flex items-center justify-center shadow-xs transition-all hover:shadow-md hover:scale-105 active:scale-90 disabled:opacity-30 disabled:pointer-events-none bg-gradient-to-br',
+              'hidden md:flex shrink-0 w-8 h-8 rounded-full text-white items-center justify-center shadow-xs transition-all hover:shadow-md hover:scale-105 active:scale-90 disabled:opacity-30 disabled:pointer-events-none bg-gradient-to-br',
               added ? 'from-emerald-500 to-teal-500 animate-pop' : 'from-indigo-600 to-violet-500'
             )}
           >
-            <Icon name={added ? 'check' : 'add'} className="text-[14px] sm:text-[16px]" />
+            <Icon name={added ? 'check' : 'add'} className="text-[16px]" />
+          </button>
+
+          {/* Mobile Child-Friendly Flipkart "+ ADD" Pill */}
+          <button
+            type="button"
+            disabled={soldOut || add.isPending}
+            onClick={() => add.mutate({ productId: product._id, variantId: variant._id, quantity: 1 }, { onSuccess: () => setAdded(true) })}
+            aria-label={`Add ${product.name} to bag`}
+            className={cn(
+              'md:hidden shrink-0 h-6 px-2.5 rounded-full text-[10.5px] font-black tracking-tight flex items-center gap-1 shadow-2xs active:scale-85 transition-all disabled:opacity-40 select-none border',
+              added
+                ? 'bg-emerald-600 text-white border-emerald-600 animate-pop'
+                : 'bg-surface-container-high border-outline-variant/60 text-secondary active:bg-secondary active:text-white'
+            )}
+          >
+            <Icon name={added ? 'check' : 'add'} className="text-[12px]" />
+            <span>{added ? 'ADDED' : 'ADD'}</span>
           </button>
         </div>
       </div>
@@ -315,9 +333,9 @@ export const ProductCard = memo(function ProductCard({ product, priority }) {
 
 export function ProductCardSkeleton() {
   return (
-    <div className="flex flex-col bg-surface-container-lowest rounded-2xl overflow-hidden shadow-xs">
+    <div className="flex flex-col bg-surface-container-lowest rounded-xl sm:rounded-2xl overflow-hidden shadow-xs border border-outline-variant/20">
       <Skeleton className="aspect-square rounded-none" />
-      <div className="p-2.5 sm:p-3 md:p-3.5 flex flex-col gap-1.5">
+      <div className="p-2 sm:p-3 md:p-3.5 flex flex-col gap-1.5">
         <Skeleton className="h-3 w-1/3 rounded-full" />
         <Skeleton className="h-3.5 w-11/12 rounded" />
         <Skeleton className="h-3 w-1/2 rounded" />
@@ -328,7 +346,7 @@ export function ProductCardSkeleton() {
 }
 
 /** Responsive product grid: 2 columns on mobile, 3 on tablets/laptops, 4 on desktop/office monitors. */
-export const GRID_COLS = 'grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 md:gap-5 lg:gap-6';
+export const GRID_COLS = 'grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-3.5 md:gap-5 lg:gap-6';
 
 export function ProductGrid({ products, loading, count = 8, className }) {
   return (

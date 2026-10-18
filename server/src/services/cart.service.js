@@ -56,28 +56,46 @@ export async function resolveLines(rawItems) {
  * Totals for a set of resolved lines. Pure apart from coupon lookup.
  * coinBalance + useCoins: loyalty coins the shopper has and whether to spend them on this order.
  */
-export async function computeTotals(lines, { userId, couponCode, shippingCode, settings, strictCoupon = false, coinBalance = 0, useCoins = false }) {
+export async function computeTotals(lines, { userId, couponCode, couponCodes, shippingCode, settings, strictCoupon = false, coinBalance = 0, useCoins = false }) {
   const s = settings || (await Setting.get());
   const billable = lines.filter((l) => l.available && !l.issue);
   const subtotal = round2(billable.reduce((sum, l) => sum + l.lineTotal, 0));
   const itemCount = billable.reduce((n, l) => n + l.quantity, 0);
 
-  let coupon = null;
+  const rawCodes = couponCodes?.length ? couponCodes : couponCode ? [couponCode] : [];
+  const uniqueCodes = [...new Set(rawCodes.map((c) => String(c).trim().toUpperCase()).filter(Boolean))];
+
+  const coupons = [];
+  const seenTypes = new Set();
   let couponError = null;
-  let discount = 0;
-  if (couponCode && subtotal > 0) {
-    try {
-      const doc = await validateCoupon(couponCode, userId, subtotal);
-      discount = computeDiscount(doc, subtotal);
-      coupon = { _id: doc._id, code: doc.code, type: doc.type, value: doc.value, description: doc.description, discount };
-    } catch (err) {
-      if (strictCoupon) throw err;
-      couponError = err.message;
+
+  if (subtotal > 0) {
+    for (const code of uniqueCodes) {
+      if (coupons.length >= 2) break; // Maximum 2 coupons allowed at once
+      try {
+        const doc = await validateCoupon(code, userId, subtotal);
+        // Only allow coupons of different kinds (fixed, percentage, free_shipping)
+        if (seenTypes.has(doc.type)) continue;
+        seenTypes.add(doc.type);
+        const cDiscount = computeDiscount(doc, subtotal);
+        coupons.push({
+          _id: doc._id,
+          code: doc.code,
+          type: doc.type,
+          value: doc.value,
+          description: doc.description,
+          discount: cDiscount,
+        });
+      } catch (err) {
+        if (strictCoupon) throw err;
+        couponError = err.message;
+      }
     }
   }
 
-  const afterDiscount = round2(subtotal - discount);
-  const freeShipCoupon = coupon?.type === 'free_shipping';
+  const discount = round2(Math.min(subtotal, coupons.reduce((sum, c) => sum + (c.discount || 0), 0)));
+  const afterDiscount = Math.max(0, round2(subtotal - discount));
+  const freeShipCoupon = coupons.some((c) => c.type === 'free_shipping');
   const methods = s.shippingMethods.map((m) => {
     const free = freeShipCoupon || (m.freeEligible && afterDiscount >= s.freeShippingThreshold) || afterDiscount <= 5;
     return { code: m.code, label: m.label, description: m.description, eta: m.eta, basePrice: m.price, price: free ? 0 : m.price, free };
@@ -91,7 +109,7 @@ export async function computeTotals(lines, { userId, couponCode, shippingCode, s
   const usableCoins = Math.max(0, Math.min(Math.floor(coinBalance), maxCoins));
   const coinsUsed = useCoins ? usableCoins : 0;
   const coinDiscount = round2(coinsUsed * rules.rupeesPerCoin);
-  const itemsPayable = round2(afterDiscount - coinDiscount);
+  const itemsPayable = Math.max(0, round2(afterDiscount - coinDiscount));
 
   const rate = s.taxRate / 100;
   const tax = s.pricesIncludeTax ? round2(itemsPayable - itemsPayable / (1 + rate)) : round2(itemsPayable * rate);
@@ -106,7 +124,9 @@ export async function computeTotals(lines, { userId, couponCode, shippingCode, s
     taxLabel: `${s.taxLabel} ${s.taxRate}%`,
     taxIncluded: s.pricesIncludeTax,
     grandTotal,
-    coupon,
+    coupon: coupons[0] || null,
+    coupons,
+    couponCodes: coupons.map((c) => c.code),
     couponError,
     coins: {
       enabled: rules.enabled,
@@ -129,6 +149,21 @@ export async function computeTotals(lines, { userId, couponCode, shippingCode, s
 
 export async function buildCartResponse(cart, userId) {
   const [lines, user] = await Promise.all([resolveLines(cart.items), userId ? User.findById(userId).select('coins').lean() : null]);
-  const summary = await computeTotals(lines, { userId, couponCode: cart.couponCode, shippingCode: cart.shippingMethod, coinBalance: user?.coins || 0, useCoins: cart.useCoins });
-  return { _id: cart._id, items: lines, couponCode: cart.couponCode, shippingMethod: cart.shippingMethod, useCoins: Boolean(cart.useCoins), summary };
+  const codes = cart.couponCodes?.length ? cart.couponCodes : cart.couponCode ? [cart.couponCode] : [];
+  const summary = await computeTotals(lines, {
+    userId,
+    couponCodes: codes,
+    shippingCode: cart.shippingMethod,
+    coinBalance: user?.coins || 0,
+    useCoins: cart.useCoins,
+  });
+  return {
+    _id: cart._id,
+    items: lines,
+    couponCode: summary.coupon?.code || null,
+    couponCodes: summary.couponCodes || [],
+    shippingMethod: cart.shippingMethod,
+    useCoins: Boolean(cart.useCoins),
+    summary,
+  };
 }

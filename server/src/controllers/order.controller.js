@@ -23,6 +23,7 @@ import {
 import { trackShipment, orderStatusFromProvider, shippingConfigured } from '../services/shipping.service.js';
 import { verifyRazorpayWebhookSignature } from '../services/payment.service.js';
 import { deliver, buildInvoiceCaption } from '../services/whatsapp.service.js';
+import { createOrUpdateCancellationChat, addAdminCancellationMessage } from './chat.controller.js';
 import { buildInvoiceCoverEmail } from '../services/invoice-email.template.js';
 import { generateInvoicePdfBuffer, invoiceFileName, getInvoiceToken } from '../services/pdf-invoice.service.js';
 import env from '../config/env.js';
@@ -122,8 +123,10 @@ export const myOrder = asyncHandler(async (req, res) => {
 export const cancelMyOrder = asyncHandler(async (req, res) => {
   const order = await Order.findOne({ ...findQuery(req.params.id), user: req.user._id });
   if (!order) throw ApiError.notFound('Order not found');
-  const updated = await cancelByCustomer(order, req.user._id, String(req.body?.reason || '').trim().slice(0, 300));
-  res.json({ success: true, order: updated });
+  const reason = String(req.body?.reason || '').trim().slice(0, 300);
+  const updated = await cancelByCustomer(order, req.user._id, reason);
+  const chatThread = await createOrUpdateCancellationChat(updated, reason, req.user);
+  res.json({ success: true, order: updated, chatThreadId: chatThread?.threadId, thread: chatThread });
 });
 
 // ── Admin ────────────────────────────────────────────────────
@@ -166,6 +169,9 @@ export const adminCancellationDecision = asyncHandler(async (req, res) => {
   const order = await Order.findOne(findQuery(req.params.id));
   if (!order) throw ApiError.notFound('Order not found');
   const updated = await decideOrderCancellation(order._id, { decision, adminMessage, notifyCustomer }, req.user._id);
+  if (adminMessage) {
+    await addAdminCancellationMessage(order.orderId, adminMessage, req.user);
+  }
   res.json({ success: true, order: updated });
 });
 
@@ -176,12 +182,15 @@ export const adminUpdateStatus = asyncHandler(async (req, res) => {
   res.json({ success: true, order });
 });
 
-/** Admin: message the customer about their order (shown on their order page; emailed if asked). */
+/** Admin: message the customer about their order (shown on their order page; emailed if asked; posted to chatbox). */
 export const adminMessageCustomer = asyncHandler(async (req, res) => {
   const order = await Order.findOne(findQuery(req.params.id));
   if (!order) throw ApiError.notFound('Order not found');
-  await addOrderMessage(order, req.body, req.user._id);
-  res.json({ success: true, order });
+  const { order: updatedOrder, emailOutcome, targetEmail } = await addOrderMessage(order, req.body, req.user._id);
+  if (req.body?.text) {
+    await addAdminCancellationMessage(order.orderId, req.body.text, req.user);
+  }
+  res.json({ success: true, order: updatedOrder, emailOutcome, targetEmail });
 });
 
 export const adminRetryRefund = asyncHandler(async (req, res) => {

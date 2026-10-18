@@ -21,7 +21,8 @@ import Refer from './Refer';
 import { ProductGrid, useProductsByIds } from '../../components/product';
 import { Button, CountrySelect, EmptyState, ErrorState, Field, Icon, Img, Input, Modal, Pagination, PhoneInput, Skeleton, Stars, StatusBadge, Textarea, useConfirm } from '../../components/ui';
 import { applyServerErrors } from '../Auth';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
+import { setChatOpen } from '../../store';
 import Seo from '../../components/Seo';
 
 const NAV = [
@@ -692,18 +693,29 @@ function OrderDetail() {
   const money = useMoney();
   const user = useUser();
   const qc = useQueryClient();
+  const dispatch = useDispatch();
   const [cancelOpen, setCancelOpen] = useState(false);
   const [reason, setReason] = useState('');
   const { data: o, isLoading, isError, error, refetch } = useQuery({ queryKey: ['order', id], queryFn: () => api.myOrder(id), select: (d) => d.order });
   const cancel = useMutation({
     mutationFn: () => api.cancelOrder(id, reason),
     onSuccess: (res) => {
-      toast.success('Cancellation request submitted to admin team. Awaiting confirmation.');
+      toast.success('Cancellation submitted. Support chat is open to assist you.');
       qc.setQueryData(['order', id], { order: res.order });
       setCancelOpen(false);
       qc.invalidateQueries({ queryKey: ['order', id] });
       qc.invalidateQueries({ queryKey: ['orders'] });
       qc.invalidateQueries({ queryKey: ['my-coins'] });
+      qc.invalidateQueries({ queryKey: ['chat'] });
+      // Auto-open support chatbox
+      dispatch(
+        setChatOpen({
+          open: true,
+          orderId: o?.orderId,
+          topic: `Cancellation Support · #${o?.orderId}`,
+          cancellationReason: reason,
+        })
+      );
     },
     onError: (e) => toast.error(e.message),
   });
